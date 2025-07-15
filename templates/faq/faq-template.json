@@ -1,0 +1,161 @@
+{
+  "template": {
+    "version": "1.0.0",
+    "name": "FAQ Entry Template",
+    "description": "Template for creating standardized FAQ entries",
+    "lastUpdated": "2025-07-15T00:00:00Z"
+  },
+  "metadata": {
+    "id": "{unique-id}",
+    "category": "{wallet|marketplace|dex|mobile|general}",
+    "subcategory": "{specific-subcategory}",
+    "priority": "{high|medium|low}",
+    "tags": ["{tag1}", "{tag2}", "{tag3}"],
+    "keywords": ["{keyword1}", "{keyword2}", "{keyword3}"],
+    "difficulty": "{beginner|intermediate|advanced}",
+    "estimatedReadTime": "{minutes}",
+    "language": "{locale-code}",
+    "lastReviewed": "{ISO-8601-date}",
+    "reviewedBy": "{reviewer-name}",
+    "version": "1.0.0"
+  },
+  "content": {
+    "question": {
+      "primary": "{main-question}",
+      "variations": [
+        "{alternative-phrasing-1}",
+        "{alternative-phrasing-2}",
+        "{alternative-phrasing-3}"
+      ],
+      "keywords": ["{question-keyword-1}", "{question-keyword-2}"]
+    },
+    "answer": {
+      "summary": "{brief-one-sentence-answer}",
+      "detailed": "{comprehensive-explanation}",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "title": "{step-title}",
+          "description": "{step-description}",
+          "code": "{optional-code-example}",
+          "warning": "{optional-warning}",
+          "tip": "{optional-tip}"
+        }
+      ],
+      "examples": [
+        {
+          "title": "{example-title}",
+          "description": "{example-description}",
+          "code": "{example-code}",
+          "output": "{expected-output}"
+        }
+      ]
+    },
+    "media": {
+      "images": [
+        {
+          "url": "{image-url}",
+          "alt": "{alt-text}",
+          "caption": "{caption}",
+          "type": "{screenshot|diagram|illustration}"
+        }
+      ],
+      "videos": [
+        {
+          "url": "{video-url}",
+          "title": "{video-title}",
+          "duration": "{duration-seconds}",
+          "thumbnail": "{thumbnail-url}"
+        }
+      ]
+    },
+    "relatedLinks": {
+      "internal": [
+        {
+          "title": "{link-title}",
+          "url": "{internal-url}",
+          "description": "{link-description}"
+        }
+      ],
+      "external": [
+        {
+          "title": "{external-link-title}",
+          "url": "{external-url}",
+          "description": "{external-link-description}"
+        }
+      ]
+    }
+  },
+  "automation": {
+    "aiContext": {
+      "intent": "{user-intent}",
+      "entities": ["{entity1}", "{entity2}"],
+      "sentimentExpected": "{positive|neutral|negative}",
+      "complexityLevel": "{1-5}",
+      "responseType": "{informational|procedural|troubleshooting}"
+    },
+    "routing": {
+      "primaryKeywords": ["{routing-keyword-1}", "{routing-keyword-2}"],
+      "fallbackCategories": ["{fallback-1}", "{fallback-2}"],
+      "escalationTriggers": ["{escalation-trigger-1}", "{escalation-trigger-2}"]
+    },
+    "validation": {
+      "requiredFields": ["question.primary", "answer.summary", "answer.detailed"],
+      "maxCharacterLimits": {
+        "question.primary": 200,
+        "answer.summary": 100,
+        "answer.detailed": 2000
+      },
+      "contentChecks": [
+        "noExternalLinks",
+        "properMarkdown",
+        "validCodeExamples"
+      ]
+    }
+  },
+  "analytics": {
+    "usage": {
+      "viewCount": 0,
+      "successfulResolutions": 0,
+      "userRating": 0,
+      "feedbackComments": [],
+      "lastAccessed": null
+    },
+    "performance": {
+      "averageReadTime": 0,
+      "bounceRate": 0,
+      "followUpQuestionRate": 0,
+      "escalationRate": 0
+    }
+  },
+  "localization": {
+    "translationStatus": {
+      "en-US": "complete",
+      "es-ES": "pending",
+      "fr-FR": "pending",
+      "de-DE": "pending",
+      "zh-CN": "pending",
+      "ja-JP": "pending"
+    },
+    "culturalAdaptations": [
+      {
+        "locale": "{locale-code}",
+        "adaptations": ["{adaptation-description}"]
+      }
+    ]
+  },
+  "maintenance": {
+    "reviewSchedule": "quarterly",
+    "nextReviewDate": "{ISO-8601-date}",
+    "maintenanceNotes": [
+      {
+        "date": "{ISO-8601-date}",
+        "author": "{author-name}",
+        "changes": "{description-of-changes}",
+        "reason": "{reason-for-change}"
+      }
+    ],
+    "deprecationDate": null,
+    "replacementContent": null
+  }
+}
