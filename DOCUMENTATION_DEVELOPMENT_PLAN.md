@@ -181,7 +181,8 @@ Create a self-maintaining, decentralized documentation ecosystem that provides i
 ### Core Components
 
 #### 1. Distributed Documentation Layer
-```
+
+```text
 IPFS Network
 ├── Documentation Nodes
 │   ├── Core Documentation
@@ -199,12 +200,14 @@ IPFS Network
 ```
 
 #### 2. AI Processing Pipeline
-```
+
+```text
 Query → Intent Recognition → Context Analysis → Knowledge Retrieval → Response Generation → Quality Check → User Delivery
 ```
 
 #### 3. Content Management Flow
-```
+
+```text
 Code Changes → Auto-Documentation → Content Validation → Version Control → Distribution → User Access
 ```
 
