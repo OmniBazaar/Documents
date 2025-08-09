@@ -60,3 +60,7 @@ cache/
 tmp/
 temp/
 backups/
+
+# Claude Files
+.claude/
+CLAUDE.md
