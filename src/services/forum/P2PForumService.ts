@@ -1,15 +1,15 @@
 /**
  * P2P Forum Service for OmniBazaar
- * 
+ *
  * Implements a decentralized forum system inspired by Retroshare's offline-first
- * design and IPFS-Boards' decentralized moderation. All data is stored in 
+ * design and IPFS-Boards' decentralized moderation. All data is stored in
  * YugabyteDB for automatic replication across validators.
- * 
+ *
  * @module P2PForumService
  */
 
-import { Database } from '../../../../Validator/src/database/Database';
-import { ParticipationScoreService } from '../../../../Validator/src/services/ParticipationScoreService';
+import { Database } from '../database/Database';
+import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { ForumConsensus } from './ForumConsensus';
 import { ForumIncentives } from './ForumIncentives';
 import {
@@ -23,7 +23,7 @@ import {
   CreatePostRequest,
   VoteRequest,
   ForumSearchOptions,
-  ForumSearchResult
+  ForumSearchResult,
 } from './ForumTypes';
 
 /**
@@ -94,18 +94,18 @@ const DEFAULT_CONFIG: P2PForumConfig = {
     { id: 'dex', name: 'DEX Trading', description: 'Decentralized exchange support' },
     { id: 'technical', name: 'Technical Support', description: 'Technical issues and bugs' },
     { id: 'feature', name: 'Feature Requests', description: 'Suggest new features' },
-    { id: 'governance', name: 'Community Governance', description: 'Proposals and voting' }
-  ]
+    { id: 'governance', name: 'Community Governance', description: 'Proposals and voting' },
+  ],
 };
 
 /**
  * P2P Forum Service implementation
- * 
+ *
  * @example
  * ```typescript
  * const forumService = new P2PForumService(db, participationService);
  * await forumService.initialize();
- * 
+ *
  * // Create a new thread
  * const thread = await forumService.createThread({
  *   title: "How to stake XOM?",
@@ -121,7 +121,7 @@ export class P2PForumService {
 
   /**
    * Creates a new P2P Forum Service instance
-   * 
+   *
    * @param db - Database instance for storage
    * @param participationService - Service for managing participation scores
    * @param config - Forum configuration options
@@ -129,7 +129,7 @@ export class P2PForumService {
   constructor(
     private db: Database,
     private participationService: ParticipationScoreService,
-    private config: P2PForumConfig = DEFAULT_CONFIG
+    private config: P2PForumConfig = DEFAULT_CONFIG,
   ) {
     this.consensus = new ForumConsensus(db);
     this.incentives = new ForumIncentives(participationService, db);
@@ -137,7 +137,7 @@ export class P2PForumService {
 
   /**
    * Initializes the forum service and creates necessary database tables
-   * 
+   *
    * @throws {Error} If database initialization fails
    */
   async initialize(): Promise<void> {
@@ -153,11 +153,11 @@ export class P2PForumService {
 
   /**
    * Creates a new forum thread
-   * 
+   *
    * @param request - Thread creation request
    * @returns The created thread with generated ID
    * @throws {Error} If validation fails or user lacks permissions
-   * 
+   *
    * @example
    * ```typescript
    * const thread = await forumService.createThread({
@@ -175,7 +175,9 @@ export class P2PForumService {
     // Check user reputation
     const userData = await this.participationService.getUserData(request.authorAddress);
     if (userData.totalScore < this.config.minReputationToPost) {
-      throw new Error(`Insufficient reputation to create threads. Required: ${this.config.minReputationToPost}, Current: ${userData.totalScore}`);
+      throw new Error(
+        `Insufficient reputation to create threads. Required: ${this.config.minReputationToPost}, Current: ${userData.totalScore}`,
+      );
     }
 
     // Create thread in database
@@ -195,7 +197,7 @@ export class P2PForumService {
       isPinned: false,
       isLocked: false,
       tags: request.tags ?? [],
-      metadata: request.metadata ?? {}
+      metadata: request.metadata ?? {},
     };
 
     // Store thread
@@ -206,22 +208,33 @@ export class P2PForumService {
         tags, metadata
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
-        thread.id, thread.title, thread.category, thread.authorAddress,
-        new Date(thread.createdAt), new Date(thread.updatedAt),
-        thread.viewCount, thread.replyCount, new Date(thread.lastReplyAt),
-        thread.isPinned, thread.isLocked, JSON.stringify(thread.tags),
-        JSON.stringify(thread.metadata)
-      ]
+        thread.id,
+        thread.title,
+        thread.category,
+        thread.authorAddress,
+        new Date(thread.createdAt),
+        new Date(thread.updatedAt),
+        thread.viewCount,
+        thread.replyCount,
+        new Date(thread.lastReplyAt),
+        thread.isPinned,
+        thread.isLocked,
+        JSON.stringify(thread.tags),
+        JSON.stringify(thread.metadata),
+      ],
     );
 
     // Create initial post
     if (request.content !== undefined && request.content !== null && request.content !== '') {
-      await this.createPost({
+      const postRequest: CreatePostRequest = {
         threadId: thread.id,
         content: request.content,
         authorAddress: request.authorAddress,
-        attachments: request.attachments
-      });
+      };
+      if (request.attachments !== undefined) {
+        postRequest.attachments = request.attachments;
+      }
+      await this.createPost(postRequest);
     }
 
     // Award PoP points for thread creation
@@ -232,7 +245,7 @@ export class P2PForumService {
 
   /**
    * Creates a new post in a thread
-   * 
+   *
    * @param request - Post creation request
    * @returns The created post
    * @throws {Error} If thread is locked or user lacks permissions
@@ -253,7 +266,9 @@ export class P2PForumService {
     // Check user reputation
     const userData = await this.participationService.getUserData(request.authorAddress);
     if (userData.totalScore < this.config.minReputationToPost) {
-      throw new Error(`Insufficient reputation to post. Required: ${this.config.minReputationToPost}`);
+      throw new Error(
+        `Insufficient reputation to post. Required: ${this.config.minReputationToPost}`,
+      );
     }
 
     // Create post
@@ -263,7 +278,6 @@ export class P2PForumService {
     const post: ForumPost = {
       id: postId,
       threadId: request.threadId,
-      parentId: request.parentId,
       authorAddress: request.authorAddress,
       content: request.content,
       createdAt: timestamp,
@@ -273,8 +287,12 @@ export class P2PForumService {
       isAcceptedAnswer: false,
       isDeleted: false,
       attachments: request.attachments ?? [],
-      metadata: request.metadata ?? {}
+      metadata: request.metadata ?? {},
     };
+
+    if (request.parentId !== undefined) {
+      post.parentId = request.parentId;
+    }
 
     // Store post
     await this.db.query(
@@ -284,12 +302,20 @@ export class P2PForumService {
         is_accepted_answer, is_deleted, attachments, metadata
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
-        post.id, post.threadId, post.parentId, post.authorAddress,
-        post.content, new Date(post.createdAt), post.editedAt,
-        post.upvotes, post.downvotes, post.isAcceptedAnswer,
-        post.isDeleted, JSON.stringify(post.attachments),
-        JSON.stringify(post.metadata)
-      ]
+        post.id,
+        post.threadId,
+        post.parentId,
+        post.authorAddress,
+        post.content,
+        new Date(post.createdAt),
+        post.editedAt,
+        post.upvotes,
+        post.downvotes,
+        post.isAcceptedAnswer,
+        post.isDeleted,
+        JSON.stringify(post.attachments),
+        JSON.stringify(post.metadata),
+      ],
     );
 
     // Update thread stats
@@ -303,7 +329,7 @@ export class P2PForumService {
 
   /**
    * Votes on a post
-   * 
+   *
    * @param request - Vote request
    * @throws {Error} If vote is invalid or user already voted
    */
@@ -311,7 +337,7 @@ export class P2PForumService {
     // Check if user already voted
     const existingVote = await this.db.query(
       'SELECT * FROM forum_votes WHERE post_id = $1 AND voter_address = $2',
-      [request.postId, request.voterAddress]
+      [request.postId, request.voterAddress],
     );
 
     if (existingVote.rows.length > 0) {
@@ -324,19 +350,19 @@ export class P2PForumService {
       postId: request.postId,
       voterAddress: request.voterAddress,
       voteType: request.voteType,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     await this.db.query(
       'INSERT INTO forum_votes (id, post_id, voter_address, vote_type, timestamp) VALUES ($1, $2, $3, $4, $5)',
-      [vote.id, vote.postId, vote.voterAddress, vote.voteType, new Date(vote.timestamp)]
+      [vote.id, vote.postId, vote.voterAddress, vote.voteType, new Date(vote.timestamp)],
     );
 
     // Update post vote counts
     const updateColumn = request.voteType === 'upvote' ? 'upvotes' : 'downvotes';
     await this.db.query(
       `UPDATE forum_posts SET ${updateColumn} = ${updateColumn} + 1 WHERE id = $1`,
-      [request.postId]
+      [request.postId],
     );
 
     // Process vote through consensus for quality evaluation
@@ -348,7 +374,7 @@ export class P2PForumService {
 
   /**
    * Searches forum content
-   * 
+   *
    * @param options - Search options
    * @returns Search results with threads and posts
    */
@@ -357,7 +383,7 @@ export class P2PForumService {
       threads: [],
       posts: [],
       totalCount: 0,
-      hasMore: false
+      hasMore: false,
     };
 
     // Build search query
@@ -368,14 +394,14 @@ export class P2PForumService {
     if (options.postsOnly !== true) {
       const threadQuery = this.buildThreadSearchQuery(options);
       const threadResults = await this.db.query(threadQuery.sql, threadQuery.params);
-      results.threads = threadResults.rows.map((row) => this.mapThreadRow(row as QueryResult));
+      results.threads = threadResults.rows.map(row => this.mapThreadRow(row as QueryResult));
     }
 
     // Search posts
     if (options.threadsOnly !== true) {
       const postQuery = this.buildPostSearchQuery(options);
       const postResults = await this.db.query(postQuery.sql, postQuery.params);
-      results.posts = postResults.rows.map((row) => this.mapPostRow(row as QueryResult));
+      results.posts = postResults.rows.map(row => this.mapPostRow(row as QueryResult));
     }
 
     // Calculate total count
@@ -387,32 +413,28 @@ export class P2PForumService {
 
   /**
    * Gets a thread by ID
-   * 
+   *
    * @param threadId - Thread ID
    * @returns Thread if found, null otherwise
    */
   async getThread(threadId: string): Promise<ForumThread | null> {
-    const result = await this.db.query(
-      'SELECT * FROM forum_threads WHERE id = $1',
-      [threadId]
-    );
+    const result = await this.db.query('SELECT * FROM forum_threads WHERE id = $1', [threadId]);
 
     if (result.rows.length === 0) {
       return null;
     }
 
     // Increment view count
-    await this.db.query(
-      'UPDATE forum_threads SET view_count = view_count + 1 WHERE id = $1',
-      [threadId]
-    );
+    await this.db.query('UPDATE forum_threads SET view_count = view_count + 1 WHERE id = $1', [
+      threadId,
+    ]);
 
-    return this.mapThreadRow(result.rows[0] as unknown as QueryResult);
+    return this.mapThreadRow(result.rows[0] as QueryResult);
   }
 
   /**
    * Gets posts for a thread
-   * 
+   *
    * @param threadId - Thread ID
    * @param limit - Maximum posts to return
    * @param offset - Pagination offset
@@ -421,22 +443,22 @@ export class P2PForumService {
   async getThreadPosts(
     threadId: string,
     limit: number = 50,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<ForumPost[]> {
     const result = await this.db.query(
       `SELECT * FROM forum_posts 
        WHERE thread_id = $1 AND is_deleted = false 
        ORDER BY created_at ASC 
        LIMIT $2 OFFSET $3`,
-      [threadId, limit, offset]
+      [threadId, limit, offset],
     );
 
-    return result.rows.map((row) => this.mapPostRow(row as QueryResult));
+    return result.rows.map(row => this.mapPostRow(row as QueryResult));
   }
 
   /**
    * Gets forum statistics
-   * 
+   *
    * @returns Overall forum statistics
    */
   async getStats(): Promise<ForumStats> {
@@ -462,26 +484,26 @@ export class P2PForumService {
       threads_today: string | number;
       posts_today: string | number;
     }
-    
+
     interface CategoryStatsRow {
       category: string;
       count: string | number;
     }
-    
+
     const statsRow = stats.rows[0] as StatsRow;
-    
+
     return {
       totalThreads: parseInt(String(statsRow.total_threads), 10),
       totalPosts: parseInt(String(statsRow.total_posts), 10),
       activeUsers: parseInt(String(statsRow.active_users), 10),
       threadsToday: parseInt(String(statsRow.threads_today), 10),
       postsToday: parseInt(String(statsRow.posts_today), 10),
-      categoryBreakdown: categoryStats.rows.reduce((acc, row) => {
+      categoryBreakdown: categoryStats.rows.reduce<Record<string, number>>((acc, row) => {
         const catRow = row as CategoryStatsRow;
         const category = String(catRow.category);
         acc[category] = parseInt(String(catRow.count), 10);
         return acc;
-      }, {} as Record<string, number>)
+      }, {}),
     };
   }
 
@@ -491,7 +513,12 @@ export class P2PForumService {
    * @private
    */
   private validateThreadRequest(request: CreateThreadRequest): void {
-    if (request.title === undefined || request.title === null || request.title === '' || request.title.length > this.config.maxTitleLength) {
+    if (
+      request.title === undefined ||
+      request.title === null ||
+      request.title === '' ||
+      request.title.length > this.config.maxTitleLength
+    ) {
       throw new Error(`Title must be between 1 and ${this.config.maxTitleLength} characters`);
     }
 
@@ -499,7 +526,11 @@ export class P2PForumService {
       throw new Error('Invalid category');
     }
 
-    if (request.authorAddress === undefined || request.authorAddress === null || request.authorAddress.match(/^0x[a-fA-F0-9]{40}$/) === null) {
+    if (
+      request.authorAddress === undefined ||
+      request.authorAddress === null ||
+      request.authorAddress.match(/^0x[a-fA-F0-9]{40}$/) === null
+    ) {
       throw new Error('Invalid author address');
     }
   }
@@ -510,15 +541,27 @@ export class P2PForumService {
    * @private
    */
   private validatePostRequest(request: CreatePostRequest): void {
-    if (request.content === undefined || request.content === null || request.content === '' || request.content.length > this.config.maxContentLength) {
+    if (
+      request.content === undefined ||
+      request.content === null ||
+      request.content === '' ||
+      request.content.length > this.config.maxContentLength
+    ) {
       throw new Error(`Content must be between 1 and ${this.config.maxContentLength} characters`);
     }
 
-    if (request.authorAddress === undefined || request.authorAddress === null || request.authorAddress.match(/^0x[a-fA-F0-9]{40}$/) === null) {
+    if (
+      request.authorAddress === undefined ||
+      request.authorAddress === null ||
+      request.authorAddress.match(/^0x[a-fA-F0-9]{40}$/) === null
+    ) {
       throw new Error('Invalid author address');
     }
 
-    if (request.attachments !== undefined && request.attachments.length > this.config.maxAttachments) {
+    if (
+      request.attachments !== undefined &&
+      request.attachments.length > this.config.maxAttachments
+    ) {
       throw new Error(`Maximum ${this.config.maxAttachments} attachments allowed`);
     }
   }
@@ -529,14 +572,17 @@ export class P2PForumService {
    * @private
    */
   private async updateThreadStats(threadId: string): Promise<void> {
-    await this.db.query(`
+    await this.db.query(
+      `
       UPDATE forum_threads 
       SET 
         reply_count = (SELECT COUNT(*) FROM forum_posts WHERE thread_id = $1),
         last_reply_at = NOW(),
         updated_at = NOW()
       WHERE id = $1
-    `, [threadId]);
+    `,
+      [threadId],
+    );
   }
 
   /**
@@ -591,7 +637,8 @@ export class P2PForumService {
    * @private
    */
   private buildPostSearchQuery(options: ForumSearchOptions): { sql: string; params: unknown[] } {
-    let sql = 'SELECT p.*, t.title as thread_title FROM forum_posts p JOIN forum_threads t ON p.thread_id = t.id WHERE p.is_deleted = false';
+    let sql =
+      'SELECT p.*, t.title as thread_title FROM forum_posts p JOIN forum_threads t ON p.thread_id = t.id WHERE p.is_deleted = false';
     const params: unknown[] = [];
     let paramIndex = 1;
 
@@ -644,7 +691,11 @@ export class P2PForumService {
       } catch {
         metadata = {};
       }
-    } else if (row.metadata !== null && row.metadata !== undefined && typeof row.metadata === 'object') {
+    } else if (
+      row.metadata !== null &&
+      row.metadata !== undefined &&
+      typeof row.metadata === 'object'
+    ) {
       metadata = row.metadata;
     }
 
@@ -655,13 +706,17 @@ export class P2PForumService {
       authorAddress: row.author_address,
       createdAt: new Date(row.created_at).getTime(),
       updatedAt: new Date(row.updated_at ?? row.created_at).getTime(),
-      viewCount: typeof row.view_count === 'string' ? parseInt(row.view_count, 10) : (row.view_count ?? 0),
-      replyCount: typeof row.reply_count === 'string' ? parseInt(row.reply_count, 10) : (row.reply_count ?? 0),
+      viewCount:
+        typeof row.view_count === 'string' ? parseInt(row.view_count, 10) : (row.view_count ?? 0),
+      replyCount:
+        typeof row.reply_count === 'string'
+          ? parseInt(row.reply_count, 10)
+          : (row.reply_count ?? 0),
       lastReplyAt: new Date(row.last_reply_at ?? row.created_at).getTime(),
       isPinned: row.is_pinned ?? false,
       isLocked: row.is_locked ?? false,
       tags,
-      metadata
+      metadata,
     };
   }
 
@@ -695,25 +750,38 @@ export class P2PForumService {
       } catch {
         metadata = {};
       }
-    } else if (row.metadata !== null && row.metadata !== undefined && typeof row.metadata === 'object') {
+    } else if (
+      row.metadata !== null &&
+      row.metadata !== undefined &&
+      typeof row.metadata === 'object'
+    ) {
       metadata = row.metadata;
     }
 
-    return {
+    const mappedPost: ForumPost = {
       id: row.id,
       threadId: row.thread_id ?? '',
-      parentId: row.parent_id === null ? undefined : row.parent_id,
       authorAddress: row.author_address,
       content: row.content ?? '',
       createdAt: new Date(row.created_at).getTime(),
-      editedAt: row.edited_at !== null && row.edited_at !== undefined ? new Date(row.edited_at).getTime() : null,
+      editedAt:
+        row.edited_at !== null && row.edited_at !== undefined
+          ? new Date(row.edited_at).getTime()
+          : null,
       upvotes: typeof row.upvotes === 'string' ? parseInt(row.upvotes, 10) : (row.upvotes ?? 0),
-      downvotes: typeof row.downvotes === 'string' ? parseInt(row.downvotes, 10) : (row.downvotes ?? 0),
+      downvotes:
+        typeof row.downvotes === 'string' ? parseInt(row.downvotes, 10) : (row.downvotes ?? 0),
       isAcceptedAnswer: row.is_accepted_answer ?? false,
       isDeleted: row.is_deleted ?? false,
       attachments,
-      metadata
+      metadata,
     };
+
+    if (row.parent_id !== null && row.parent_id !== undefined) {
+      mappedPost.parentId = row.parent_id;
+    }
+
+    return mappedPost;
   }
 
   /**

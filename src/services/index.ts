@@ -1,8 +1,8 @@
 /**
  * Documents Module Services
- * 
+ *
  * Central export point for all services in the Documents module
- * 
+ *
  * @module Services
  */
 
@@ -159,18 +159,18 @@ export interface DocumentServices {
 
 /**
  * Initializes all core services for the Documents module
- * 
+ *
  * @param config - Configuration object
  * @param config.database - Database configuration
  * @param config.cache - Cache configuration
  * @param config.cache.size - Cache size limit
  * @param config.cache.ttl - Cache time-to-live in seconds
  * @returns Initialized services
- * 
+ *
  * @example
  * ```typescript
  * const services = await initializeDocumentServices({
- *   database: { 
+ *   database: {
  *     host: 'localhost',
  *     port: 5432,
  *     database: 'documents',
@@ -182,7 +182,7 @@ export interface DocumentServices {
  * ```
  */
 export async function initializeDocumentServices(
-  config: DocumentServicesConfig
+  config: DocumentServicesConfig,
 ): Promise<DocumentServices> {
   // Dynamically import constructors to avoid circular dependencies
   const { Database } = await import('./database/Database');
@@ -192,7 +192,7 @@ export async function initializeDocumentServices(
   const { ParticipationScoreService } = await import('./participation/ParticipationScoreService');
   const { SearchEngine } = await import('./search/SearchEngine');
   const { ValidationService } = await import('./validation/ValidationService');
-  
+
   // Initialize database
   const db: Database = new Database(config.database);
 
@@ -207,7 +207,7 @@ export async function initializeDocumentServices(
     db,
     search,
     participation,
-    validation
+    validation,
   );
 
   // Initialize forum service
@@ -225,7 +225,7 @@ export async function initializeDocumentServices(
     support,
     search,
     participation,
-    validation
+    validation,
   };
 }
 
@@ -265,14 +265,14 @@ export interface ServicesToCheck {
 
 /**
  * Service health check
- * 
+ *
  * @param services - Services to check
  * @param services.db - Database service instance
  * @param services.documentation - Documentation service instance
  * @param services.forum - Forum service instance
  * @param services.support - Support service instance
  * @returns Health status for all services
- * 
+ *
  * @example
  * ```typescript
  * const health = await checkServicesHealth({
@@ -283,7 +283,7 @@ export interface ServicesToCheck {
  * ```
  */
 export async function checkServicesHealth(
-  services: ServicesToCheck
+  services: ServicesToCheck,
 ): Promise<ServicesHealthResult> {
   const healthChecks: Record<string, ServiceHealthStatus> = {};
 
@@ -293,9 +293,9 @@ export async function checkServicesHealth(
       await services.db.query<{ result: number }>('SELECT 1');
       healthChecks.database = { healthy: true };
     } catch (error) {
-      healthChecks.database = { 
-        healthy: false, 
-        message: error instanceof Error ? error.message : String(error) 
+      healthChecks.database = {
+        healthy: false,
+        message: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -304,18 +304,18 @@ export async function checkServicesHealth(
   if (services.documentation !== undefined) {
     try {
       // Documentation service doesn't have getStats, so we'll use search to check health
-      await services.documentation.searchDocuments({ 
-        query: '', 
-        limit: 1 
+      await services.documentation.searchDocuments({
+        query: '',
+        pageSize: 1,
       });
-      healthChecks.documentation = { 
-        healthy: true, 
-        message: 'Service operational' 
+      healthChecks.documentation = {
+        healthy: true,
+        message: 'Service operational',
       };
     } catch (error) {
-      healthChecks.documentation = { 
-        healthy: false, 
-        message: error instanceof Error ? error.message : String(error) 
+      healthChecks.documentation = {
+        healthy: false,
+        message: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -324,14 +324,14 @@ export async function checkServicesHealth(
   if (services.forum !== undefined) {
     try {
       const stats = await services.forum.getStats();
-      healthChecks.forum = { 
-        healthy: true, 
-        message: `${stats.totalThreads} threads, ${stats.totalPosts} posts` 
+      healthChecks.forum = {
+        healthy: true,
+        message: `${stats.totalThreads} threads, ${stats.totalPosts} posts`,
       };
     } catch (error) {
-      healthChecks.forum = { 
-        healthy: false, 
-        message: error instanceof Error ? error.message : String(error) 
+      healthChecks.forum = {
+        healthy: false,
+        message: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -340,14 +340,14 @@ export async function checkServicesHealth(
   if (services.support !== undefined) {
     try {
       const stats = await services.support.getSystemStats();
-      healthChecks.support = { 
-        healthy: true, 
-        message: `${stats.activeVolunteers} volunteers, ${stats.activeSessions} active sessions` 
+      healthChecks.support = {
+        healthy: true,
+        message: `${stats.activeVolunteers} volunteers, ${stats.activeSessions} active sessions`,
       };
     } catch (error) {
-      healthChecks.support = { 
-        healthy: false, 
-        message: error instanceof Error ? error.message : String(error) 
+      healthChecks.support = {
+        healthy: false,
+        message: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -356,7 +356,7 @@ export async function checkServicesHealth(
 
   return {
     healthy: allHealthy,
-    services: healthChecks
+    services: healthChecks,
   };
 }
 
@@ -421,20 +421,20 @@ export const MODULE_CAPABILITIES: ModuleCapabilities = {
     versioning: true,
     consensus: true,
     search: true,
-    ipfsIntegration: true
+    ipfsIntegration: true,
   },
   forum: {
     threading: true,
     voting: true,
     moderation: true,
     spam_detection: true,
-    pop_integration: true
+    pop_integration: true,
   },
   support: {
-    volunteer_chat: true,  // Now implemented!
+    volunteer_chat: true, // Now implemented!
     routing: true,
     quality_metrics: true,
     pop_rewards: true,
-    ai_assistance: false   // Future feature
-  }
+    ai_assistance: false, // Future feature
+  },
 };

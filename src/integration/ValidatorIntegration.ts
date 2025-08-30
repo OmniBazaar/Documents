@@ -1,26 +1,28 @@
 /**
  * Validator Integration Service
- * 
+ *
  * Provides a unified interface for the Validator module to interact with
  * Documentation, Forum, and Support services. Handles all cross-module
  * communication and data synchronization.
- * 
+ *
  * @module ValidatorIntegration
  */
 
 import { EventEmitter } from 'events';
 import { logger } from '../utils/logger';
-import { 
+import {
   DocumentationService,
   P2PForumService,
   VolunteerSupportService,
-  initializeDocumentServices
+  initializeDocumentServices,
 } from '../services';
 import { DatabaseConfig } from '../services/database/Database';
-import type { Document, DocumentSearchParams } from '../services/documentation/DocumentationService';
+import type {
+  Document,
+  DocumentSearchParams,
+} from '../services/documentation/DocumentationService';
 import type { ForumThread, ForumPost, ForumSearchOptions } from '../services/forum/ForumTypes';
 import type { SupportRequest, SupportVolunteer } from '../services/support/SupportTypes';
-
 
 /**
  * Integration configuration
@@ -121,21 +123,21 @@ export interface IntegrationEvents {
 
 /**
  * Validator Integration Service
- * 
+ *
  * @example
  * ```typescript
  * const integration = new ValidatorIntegration({
  *   database: { host, port, database, user, password },
  *   validatorEndpoint: 'http://localhost:8080'
  * });
- * 
+ *
  * await integration.start();
- * 
+ *
  * // Listen for events
  * integration.on('document:created', (doc) => {
  *   console.log('New document:', doc);
  * });
- * 
+ *
  * // Get services
  * const { documentation, forum, support } = integration.getServices();
  * ```
@@ -147,12 +149,12 @@ export class ValidatorIntegration extends EventEmitter {
     forum: P2PForumService;
     support: VolunteerSupportService;
   };
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval: NodeJS.Timeout | undefined;
   private isRunning = false;
 
   /**
    * Creates a new Validator Integration instance
-   * 
+   *
    * @param config - Integration configuration
    */
   constructor(config: IntegrationConfig) {
@@ -162,7 +164,7 @@ export class ValidatorIntegration extends EventEmitter {
 
   /**
    * Starts the integration service
-   * 
+   *
    * @returns Promise that resolves when service is started
    */
   async start(): Promise<void> {
@@ -176,14 +178,14 @@ export class ValidatorIntegration extends EventEmitter {
 
       // Initialize services
       const allServices = await initializeDocumentServices({
-        database: this.config.database
+        database: this.config.database,
       });
 
       // Type-safe service assignment
       this.services = {
         documentation: allServices.documentation,
         forum: allServices.forum,
-        support: allServices.support
+        support: allServices.support,
       };
 
       // Set up event handlers
@@ -203,7 +205,6 @@ export class ValidatorIntegration extends EventEmitter {
 
       this.isRunning = true;
       logger.info('Validator integration service started successfully');
-
     } catch (error) {
       logger.error('Failed to start Validator integration:', error);
       throw error;
@@ -212,7 +213,7 @@ export class ValidatorIntegration extends EventEmitter {
 
   /**
    * Stops the integration service
-   * 
+   *
    * @returns Promise that resolves when service is stopped
    */
   stop(): void {
@@ -237,7 +238,7 @@ export class ValidatorIntegration extends EventEmitter {
 
   /**
    * Gets the initialized services
-   * 
+   *
    * @returns Services object
    * @throws {Error} If services not initialized
    */
@@ -254,7 +255,7 @@ export class ValidatorIntegration extends EventEmitter {
 
   /**
    * Gets current health status of all services
-   * 
+   *
    * @returns Promise resolving to health status
    */
   async getHealth(): Promise<HealthStatus> {
@@ -264,15 +265,15 @@ export class ValidatorIntegration extends EventEmitter {
         services: {
           documentation: { healthy: false, error: 'Services not initialized' },
           forum: { healthy: false, error: 'Services not initialized' },
-          support: { healthy: false, error: 'Services not initialized' }
-        }
+          support: { healthy: false, error: 'Services not initialized' },
+        },
       };
     }
 
     try {
       // Get forum stats
       const forumStats = await this.services.forum.getStats();
-      
+
       // Get support stats
       const supportStats = await this.services.support.getSystemStats();
 
@@ -282,21 +283,20 @@ export class ValidatorIntegration extends EventEmitter {
           documentation: {
             healthy: true,
             // Documentation service doesn't have getStats method yet
-            stats: { available: true }
+            stats: { available: true },
           },
           forum: {
             healthy: true,
-            stats: forumStats as unknown as Record<string, unknown>
+            stats: forumStats as unknown as Record<string, unknown>,
           },
           support: {
             healthy: true,
-            stats: supportStats as unknown as Record<string, unknown>
-          }
-        }
+            stats: supportStats as unknown as Record<string, unknown>,
+          },
+        },
       };
 
       return health;
-
     } catch (error) {
       logger.error('Health check failed:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -305,8 +305,8 @@ export class ValidatorIntegration extends EventEmitter {
         services: {
           documentation: { healthy: false, error: errorMessage },
           forum: { healthy: false, error: errorMessage },
-          support: { healthy: false, error: errorMessage }
-        }
+          support: { healthy: false, error: errorMessage },
+        },
       };
     }
   }
@@ -321,7 +321,7 @@ export class ValidatorIntegration extends EventEmitter {
     documentation: {
       /**
        * Creates a new document
-       * 
+       *
        * @param document - Document to create
        * @returns Promise resolving to created document
        */
@@ -332,7 +332,7 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Gets a document by ID
-       * 
+       *
        * @param id - Document ID
        * @returns Promise resolving to document
        */
@@ -343,7 +343,7 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Searches documents
-       * 
+       *
        * @param query - Search query
        * @param options - Search options
        * @returns Promise resolving to search results
@@ -352,10 +352,10 @@ export class ValidatorIntegration extends EventEmitter {
         if (this.services === undefined) throw new Error('Services not initialized');
         const searchParams: DocumentSearchParams = {
           query,
-          ...options
+          ...options,
         };
         return await this.services.documentation.searchDocuments(searchParams);
-      }
+      },
     },
 
     /**
@@ -364,7 +364,7 @@ export class ValidatorIntegration extends EventEmitter {
     forum: {
       /**
        * Creates a new thread
-       * 
+       *
        * @param thread - Thread to create
        * @returns Promise resolving to created thread
        */
@@ -375,7 +375,7 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Creates a new post
-       * 
+       *
        * @param post - Post to create
        * @returns Promise resolving to created post
        */
@@ -386,7 +386,7 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Searches forum threads
-       * 
+       *
        * @param options - Search options
        * @returns Promise resolving to search results
        */
@@ -395,7 +395,7 @@ export class ValidatorIntegration extends EventEmitter {
         const searchOptions = options as ForumSearchOptions | undefined;
         const result = await this.services.forum.search(searchOptions ?? {});
         return result as unknown;
-      }
+      },
     },
 
     /**
@@ -404,7 +404,7 @@ export class ValidatorIntegration extends EventEmitter {
     support: {
       /**
        * Requests support
-       * 
+       *
        * @param request - Support request
        * @returns Promise resolving to support session
        */
@@ -416,7 +416,7 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Registers a volunteer
-       * 
+       *
        * @param volunteer - Volunteer registration data
        * @returns Promise resolving to registration result
        */
@@ -427,14 +427,14 @@ export class ValidatorIntegration extends EventEmitter {
 
       /**
        * Gets system stats
-       * 
+       *
        * @returns Promise resolving to system statistics
        */
       getStats: async () => {
         if (this.services === undefined) throw new Error('Services not initialized');
         return await this.services.support.getSystemStats();
-      }
-    }
+      },
+    },
   };
 
   /**
@@ -483,12 +483,12 @@ export class ValidatorIntegration extends EventEmitter {
     const checkHealth = async (): Promise<void> => {
       const health = await this.getHealth();
       this.emit('health:changed', health);
-      
+
       if (health.healthy === false) {
         logger.warn('Service health check failed', health);
       }
     };
-    
+
     this.healthCheckInterval = setInterval(() => {
       void checkHealth();
     }, 30 * 1000);
@@ -503,7 +503,7 @@ export class ValidatorIntegration extends EventEmitter {
     // In production, this would start an Express server
     // For now, just log that we would start it
     logger.info(`Would start HTTP server on port ${port}`);
-    
+
     // Example Express setup:
     // const app = express();
     // app.use('/api/docs', documentationRouter);
@@ -521,7 +521,7 @@ export class ValidatorIntegration extends EventEmitter {
     // In production, this would start a WebSocket server
     // For now, just log that we would start it
     logger.info(`Would start WebSocket server on port ${port}`);
-    
+
     // Example WebSocket setup:
     // const wss = new WebSocket.Server({ port });
     // wss.on('connection', (ws) => {
@@ -531,7 +531,7 @@ export class ValidatorIntegration extends EventEmitter {
 
   /**
    * Handles incoming messages from Validator
-   * 
+   *
    * @param message - Message from validator
    * @returns Promise resolving to response to send back
    */
@@ -540,16 +540,16 @@ export class ValidatorIntegration extends EventEmitter {
       switch (message.type) {
         case 'documentation':
           return await this.handleDocumentationMessage(message.action, message.data);
-        
+
         case 'forum':
           return await this.handleForumMessage(message.action, message.data);
-        
+
         case 'support':
           return await this.handleSupportMessage(message.action, message.data);
-        
+
         case 'health':
           return { success: true, data: await this.getHealth() };
-        
+
         default:
           throw new Error(`Unknown message type: ${message.type}`);
       }
@@ -557,7 +557,7 @@ export class ValidatorIntegration extends EventEmitter {
       logger.error('Error handling validator message:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -569,7 +569,10 @@ export class ValidatorIntegration extends EventEmitter {
    * @param data - Message data
    * @returns Promise resolving to action result
    */
-  private async handleDocumentationMessage(action: string, data: Record<string, unknown>): Promise<ValidatorResponse> {
+  private async handleDocumentationMessage(
+    action: string,
+    data: Record<string, unknown>,
+  ): Promise<ValidatorResponse> {
     switch (action) {
       case 'create': {
         const document = data as unknown as Document;
@@ -599,7 +602,10 @@ export class ValidatorIntegration extends EventEmitter {
    * @param data - Message data
    * @returns Promise resolving to action result
    */
-  private async handleForumMessage(action: string, data: Record<string, unknown>): Promise<ValidatorResponse> {
+  private async handleForumMessage(
+    action: string,
+    data: Record<string, unknown>,
+  ): Promise<ValidatorResponse> {
     switch (action) {
       case 'createThread': {
         const thread = data as unknown as ForumThread;
@@ -612,7 +618,7 @@ export class ValidatorIntegration extends EventEmitter {
         return { success: true, data: result };
       }
       case 'search': {
-        const options = Object.keys(data).length > 0 ? data as unknown as ForumSearchOptions : {};
+        const options = Object.keys(data).length > 0 ? (data as unknown as ForumSearchOptions) : {};
         const result = await this.api.forum.search(options as Record<string, unknown>);
         return { success: true, data: result };
       }
@@ -628,7 +634,10 @@ export class ValidatorIntegration extends EventEmitter {
    * @param data - Message data
    * @returns Promise resolving to action result
    */
-  private async handleSupportMessage(action: string, data: Record<string, unknown>): Promise<ValidatorResponse> {
+  private async handleSupportMessage(
+    action: string,
+    data: Record<string, unknown>,
+  ): Promise<ValidatorResponse> {
     switch (action) {
       case 'requestSupport': {
         const request = data as unknown as SupportRequest;

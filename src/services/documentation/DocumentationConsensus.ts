@@ -1,10 +1,10 @@
 /**
  * Documentation Consensus Service
- * 
+ *
  * Manages validator consensus for official documentation updates.
  * Ensures that critical documentation changes are approved by a majority
  * of validators before being marked as official.
- * 
+ *
  * @module DocumentationConsensus
  */
 
@@ -82,24 +82,24 @@ const DEFAULT_CONFIG: ConsensusConfig = {
   approvalThreshold: 0.66, // 2/3 majority
   votingPeriodMs: 24 * 60 * 60 * 1000, // 24 hours
   minStakeToVote: 1000, // 1000 XOM
-  gracePeriodMs: 2 * 60 * 60 * 1000 // 2 hours
+  gracePeriodMs: 2 * 60 * 60 * 1000, // 2 hours
 };
 
 /**
  * Documentation Consensus Service
- * 
+ *
  * @example
  * ```typescript
  * const consensus = new DocumentationConsensus(db);
  * await consensus.initialize();
- * 
+ *
  * // Submit proposal for official doc update
  * const proposal = await consensus.submitProposal({
  *   documentId: 'doc_123',
  *   newContent: updatedContent,
  *   proposerAddress: validatorAddress
  * });
- * 
+ *
  * // Cast vote
  * await consensus.vote(proposal.proposalId, validatorAddress, 'yes');
  * ```
@@ -107,13 +107,13 @@ const DEFAULT_CONFIG: ConsensusConfig = {
 export class DocumentationConsensus {
   /**
    * Creates a new Documentation Consensus instance
-   * 
+   *
    * @param db - Database instance
    * @param config - Consensus configuration
    */
   constructor(
     private db: Database,
-    private config: ConsensusConfig = DEFAULT_CONFIG
+    private config: ConsensusConfig = DEFAULT_CONFIG,
   ) {}
 
   /**
@@ -126,13 +126,13 @@ export class DocumentationConsensus {
 
   /**
    * Submits a proposal for official documentation update
-   * 
+   *
    * @param proposal - Update proposal details
    * @returns Created proposal with ID
    * @throws {Error} If proposer lacks permission
    */
   async submitProposal(
-    proposal: Omit<DocumentUpdateProposal, 'proposalId' | 'votes'>
+    proposal: Omit<DocumentUpdateProposal, 'proposalId' | 'votes'>,
   ): Promise<DocumentUpdateProposal> {
     try {
       // Validate proposer is a validator
@@ -156,8 +156,8 @@ export class DocumentationConsensus {
           proposal.newContent,
           JSON.stringify(proposal.newMetadata),
           proposal.proposerAddress,
-          votingEndsAt
-        ]
+          votingEndsAt,
+        ],
       );
 
       logger.info(`Documentation proposal created: ${proposalId}`);
@@ -165,7 +165,10 @@ export class DocumentationConsensus {
       return {
         ...proposal,
         proposalId,
-        votes: { yes: 0, no: 0, abstain: 0 }
+        status: 'pending' as const,
+        createdAt: new Date(),
+        expiresAt: votingEndsAt,
+        votes: { yes: 0, no: 0, abstain: 0 },
       };
     } catch (error) {
       logger.error('Failed to submit documentation proposal:', error);
@@ -175,7 +178,7 @@ export class DocumentationConsensus {
 
   /**
    * Casts a vote on a documentation proposal
-   * 
+   *
    * @param proposalId - Proposal to vote on
    * @param validatorAddress - Voting validator
    * @param vote - Vote decision
@@ -186,7 +189,7 @@ export class DocumentationConsensus {
     proposalId: string,
     validatorAddress: string,
     vote: 'yes' | 'no' | 'abstain',
-    reason?: string
+    reason?: string,
   ): Promise<void> {
     try {
       // Validate validator
@@ -204,7 +207,7 @@ export class DocumentationConsensus {
       // Check if already voted
       const existingVote = await this.db.query(
         'SELECT * FROM documentation_votes WHERE proposal_id = $1 AND validator_address = $2',
-        [proposalId, validatorAddress]
+        [proposalId, validatorAddress],
       );
 
       if (existingVote.rows.length > 0) {
@@ -216,7 +219,7 @@ export class DocumentationConsensus {
         `INSERT INTO documentation_votes (
           proposal_id, validator_address, vote, reason, stake_weight, timestamp
         ) VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [proposalId, validatorAddress, vote, reason, validatorInfo.stake]
+        [proposalId, validatorAddress, vote, reason, validatorInfo.stake],
       );
 
       // Check if voting period has ended
@@ -231,17 +234,21 @@ export class DocumentationConsensus {
 
   /**
    * Checks if a proposal has reached consensus
-   * 
+   *
    * @param proposalId - Proposal to check
    * @returns Consensus result
    */
   async checkConsensus(proposalId: string): Promise<ConsensusResult> {
     try {
       // Get all votes
-      const votes = await this.db.query(
-        'SELECT * FROM documentation_votes WHERE proposal_id = $1',
-        [proposalId]
-      );
+      const votes = await this.db.query<{
+        proposal_id: string;
+        validator_address: string;
+        vote: 'yes' | 'no' | 'abstain';
+        reason?: string;
+        stake_weight: number;
+        timestamp: Date;
+      }>('SELECT * FROM documentation_votes WHERE proposal_id = $1', [proposalId]);
 
       // Calculate vote tallies
       let totalVotes = 0;
@@ -271,10 +278,10 @@ export class DocumentationConsensus {
 
       // Check quorum
       const hasQuorum = totalVotes >= this.config.minValidators;
-      
+
       // Calculate approval percentage (stake-weighted)
       const approvalPercentage = totalStake > 0 ? yesStake / totalStake : 0;
-      
+
       // Determine decision
       let decision: ConsensusResult['decision'] = 'no_quorum';
       if (hasQuorum) {
@@ -291,7 +298,7 @@ export class DocumentationConsensus {
         abstainVotes,
         totalStake,
         yesStake,
-        approvalPercentage
+        approvalPercentage,
       };
 
       // If approved, schedule execution
@@ -308,7 +315,7 @@ export class DocumentationConsensus {
 
   /**
    * Executes an approved proposal
-   * 
+   *
    * @param proposalId - Proposal to execute
    * @returns Updated document
    */
@@ -329,7 +336,7 @@ export class DocumentationConsensus {
       // Update proposal status
       await this.db.query(
         'UPDATE documentation_proposals SET status = $1, executed_at = NOW() WHERE proposal_id = $2',
-        ['executed', proposalId]
+        ['executed', proposalId],
       );
 
       // The actual document update will be handled by DocumentationService
@@ -345,12 +352,24 @@ export class DocumentationConsensus {
 
   /**
    * Gets active proposals
-   * 
+   *
    * @returns List of active proposals
    */
   async getActiveProposals(): Promise<DocumentUpdateProposal[]> {
     try {
-      const proposals = await this.db.query(
+      const proposals = await this.db.query<{
+        proposal_id: string;
+        document_id: string;
+        new_content: string;
+        new_metadata: Record<string, unknown>;
+        proposer_address: string;
+        created_at: Date;
+        voting_ends_at: Date;
+        status: string;
+        yes_votes: string;
+        no_votes: string;
+        abstain_votes: string;
+      }>(
         `SELECT p.*, 
           COUNT(CASE WHEN v.vote = 'yes' THEN 1 END) as yes_votes,
           COUNT(CASE WHEN v.vote = 'no' THEN 1 END) as no_votes,
@@ -359,20 +378,23 @@ export class DocumentationConsensus {
          LEFT JOIN documentation_votes v ON p.proposal_id = v.proposal_id
          WHERE p.status = 'voting' AND p.voting_ends_at > NOW()
          GROUP BY p.proposal_id
-         ORDER BY p.created_at DESC`
+         ORDER BY p.created_at DESC`,
       );
 
       return proposals.rows.map(row => ({
-        proposalId: row.proposal_id as string,
-        documentId: row.document_id as string,
-        newContent: row.new_content as string,
-        newMetadata: row.new_metadata as Record<string, unknown>,
-        proposerAddress: row.proposer_address as string,
+        proposalId: row.proposal_id,
+        documentId: row.document_id,
+        newContent: row.new_content,
+        newMetadata: row.new_metadata,
+        proposerAddress: row.proposer_address,
+        status: 'pending' as const,
+        createdAt: row.created_at,
+        expiresAt: row.voting_ends_at,
         votes: {
-          yes: parseInt(row.yes_votes as string),
-          no: parseInt(row.no_votes as string),
-          abstain: parseInt(row.abstain_votes as string)
-        }
+          yes: parseInt(row.yes_votes),
+          no: parseInt(row.no_votes),
+          abstain: parseInt(row.abstain_votes),
+        },
       }));
     } catch (error) {
       logger.error('Failed to get active proposals:', error);
@@ -388,16 +410,20 @@ export class DocumentationConsensus {
   private async checkVotingComplete(proposalId: string): Promise<void> {
     const proposal = await this.db.query(
       'SELECT * FROM documentation_proposals WHERE proposal_id = $1 AND voting_ends_at < NOW() AND status = $2',
-      [proposalId, 'voting']
+      [proposalId, 'voting'],
     );
 
     if (proposal.rows.length > 0) {
       // Voting period ended, finalize
       const consensus = await this.checkConsensus(proposalId);
-      
+
       await this.db.query(
         'UPDATE documentation_proposals SET status = $1, consensus_result = $2 WHERE proposal_id = $3',
-        [consensus.decision === 'approved' ? 'approved' : 'rejected', JSON.stringify(consensus), proposalId]
+        [
+          consensus.decision === 'approved' ? 'approved' : 'rejected',
+          JSON.stringify(consensus),
+          proposalId,
+        ],
       );
 
       logger.info(`Proposal ${proposalId} finalized with decision: ${consensus.decision}`);
@@ -420,11 +446,22 @@ export class DocumentationConsensus {
     voting_ends_at: Date;
     created_at: Date;
   } | null> {
-    const result = await this.db.query(
-      'SELECT * FROM documentation_proposals WHERE proposal_id = $1',
-      [proposalId]
-    );
-    return result.rows.length > 0 ? result.rows[0] : null;
+    const result = await this.db.query<{
+      proposal_id: string;
+      document_id: string;
+      new_content: string;
+      new_metadata: Record<string, unknown>;
+      proposer_address: string;
+      status: string;
+      voting_ends_at: Date;
+      created_at: Date;
+    }>('SELECT * FROM documentation_proposals WHERE proposal_id = $1', [proposalId]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return row ?? null;
   }
 
   /**
@@ -438,7 +475,7 @@ export class DocumentationConsensus {
     // For now, simulate with a simple check
     const result = await this.db.query(
       'SELECT * FROM validators WHERE address = $1 AND is_active = true',
-      [address]
+      [address],
     );
     return result.rows.length > 0;
   }

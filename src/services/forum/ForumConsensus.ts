@@ -1,18 +1,15 @@
 /**
  * Forum Consensus Service
- * 
+ *
  * Manages vote aggregation, spam detection, and content moderation consensus
  * using a decentralized approach inspired by Retroshare and IPFS-Boards.
- * 
+ *
  * @module ForumConsensus
  */
 
-import { Database } from '../../../../Validator/src/database/Database';
-import { 
-  ForumVote, 
-  ForumPost,
-  ModerationRequest 
-} from './ForumTypes';
+import { Database } from '../database/Database';
+import { ForumVote, ForumPost, ModerationRequest, ForumAttachment } from './ForumTypes';
+import { logger } from '../../utils/logger';
 
 /**
  * Spam detection thresholds
@@ -82,20 +79,20 @@ const DEFAULT_SPAM_THRESHOLDS: SpamThresholds = {
   maxDuplicateRatio: 0.8,
   minAccountAge: 1,
   downvoteRatioThreshold: 0.7,
-  minVotesForRatio: 5
+  minVotesForRatio: 5,
 };
 
 /**
  * Forum Consensus Service
- * 
+ *
  * @example
  * ```typescript
  * const consensus = new ForumConsensus(db);
  * await consensus.initialize();
- * 
+ *
  * // Process a vote
  * await consensus.processVote(vote);
- * 
+ *
  * // Check for spam
  * const isSpam = await consensus.detectSpam(post);
  * ```
@@ -105,13 +102,13 @@ export class ForumConsensus {
 
   /**
    * Creates a new Forum Consensus instance
-   * 
+   *
    * @param db - Database instance
    * @param thresholds - Optional spam detection thresholds
    */
   constructor(
     private db: Database,
-    thresholds: Partial<SpamThresholds> = {}
+    thresholds: Partial<SpamThresholds> = {},
   ) {
     this.spamThresholds = { ...DEFAULT_SPAM_THRESHOLDS, ...thresholds };
   }
@@ -127,7 +124,7 @@ export class ForumConsensus {
 
   /**
    * Processes a vote and updates content quality metrics
-   * 
+   *
    * @param vote - The vote to process
    * @throws {Error} If vote processing fails
    */
@@ -144,19 +141,19 @@ export class ForumConsensus {
 
       // Update post visibility based on votes
       await this.updatePostVisibility(vote.postId, metrics);
-
     } catch (error) {
       // Log error for monitoring
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Error processing vote:', error);
-      }
+      logger.error('Error processing vote', {
+        vote,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new Error(`Vote processing failed: ${String(error)}`);
     }
   }
 
   /**
    * Detects spam in a post
-   * 
+   *
    * @param post - Post to check
    * @returns Spam detection result with confidence score
    */
@@ -206,13 +203,13 @@ export class ForumConsensus {
     return {
       isSpam: spamScore >= 0.6,
       confidence: Math.min(spamScore, 1.0),
-      reasons
+      reasons,
     };
   }
 
   /**
    * Processes a moderation request through consensus
-   * 
+   *
    * @param request - Moderation request
    * @returns Consensus result
    */
@@ -242,7 +239,7 @@ export class ForumConsensus {
 
   /**
    * Calculates quality metrics for a post
-   * 
+   *
    * @param postId - Post ID to analyze
    * @returns Quality metrics
    */
@@ -254,7 +251,7 @@ export class ForumConsensus {
        FROM forum_posts p
        JOIN forum_threads t ON p.thread_id = t.id
        WHERE p.id = $1`,
-      [postId]
+      [postId],
     );
 
     if (postData.rows.length === 0) {
@@ -263,14 +260,19 @@ export class ForumConsensus {
 
     const post = postData.rows[0] as {
       id: string;
-      upvotes: number;
-      downvotes: number;
-      view_count: number;
-      reply_count: number;
+      thread_id: string;
+      author_address: string;
       content: string;
       created_at: Date;
-      authorAddress: string;
-      threadId: string;
+      edited_at: Date | null;
+      upvotes: number;
+      downvotes: number;
+      is_accepted_answer: boolean;
+      is_deleted: boolean;
+      attachments: ForumAttachment[] | null;
+      metadata: Record<string, unknown> | null;
+      view_count: number;
+      reply_count: number;
     };
     const totalVotes = post.upvotes + post.downvotes;
 
@@ -287,7 +289,7 @@ export class ForumConsensus {
     // Engagement factor
     const viewToVoteRatio = totalVotes / Math.max(post.view_count, 1);
     const replyRate = post.reply_count / Math.max(post.view_count, 1);
-    
+
     qualityScore += viewToVoteRatio * 10; // Reward high engagement
     qualityScore += replyRate * 100; // Reward discussion generation
 
@@ -299,19 +301,41 @@ export class ForumConsensus {
     // Ensure score is between 0-100
     qualityScore = Math.max(0, Math.min(100, qualityScore));
 
+    // Convert to ForumPost type for spam detection
+    const forumPost: ForumPost = {
+      id: post.id,
+      threadId: post.thread_id,
+      authorAddress: post.author_address,
+      content: post.content,
+      createdAt: new Date(post.created_at).getTime(),
+      editedAt:
+        post.edited_at !== null && post.edited_at !== undefined
+          ? new Date(post.edited_at).getTime()
+          : null,
+      upvotes: post.upvotes,
+      downvotes: post.downvotes,
+      isAcceptedAnswer: post.is_accepted_answer,
+      isDeleted: post.is_deleted,
+      attachments: post.attachments !== null ? post.attachments : [],
+      metadata: post.metadata !== null ? post.metadata : {},
+    };
+
     // Calculate spam probability based on various factors
-    const spamResult = await this.detectSpam(post as ForumPost);
-    
+    const spamResult = await this.detectSpam(forumPost);
+
     return {
       postId,
       qualityScore,
       spamProbability: spamResult.confidence,
-      relevanceScore: this.calculateRelevanceScore(post),
+      relevanceScore: this.calculateRelevanceScore({
+        created_at: post.created_at,
+        reply_count: post.reply_count,
+      }),
       engagement: {
         viewToVoteRatio,
         replyRate,
-        avgReadTime: this.estimateReadTime(post.content)
-      }
+        avgReadTime: this.estimateReadTime(post.content),
+      },
     };
   }
 
@@ -327,7 +351,7 @@ export class ForumConsensus {
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (post_id, voter_address) 
        DO UPDATE SET vote_type = $3, timestamp = $4`,
-      [vote.postId, vote.voterAddress, vote.voteType, new Date(vote.timestamp)]
+      [vote.postId, vote.voterAddress, vote.voteType, new Date(vote.timestamp)],
     );
 
     // Update aggregated stats
@@ -343,7 +367,7 @@ export class ForumConsensus {
            WHERE post_id = $1
          ),
          last_vote_at = $3`,
-      [vote.postId, vote.voteType === 'upvote' ? 1 : 0, new Date(vote.timestamp)]
+      [vote.postId, vote.voteType === 'upvote' ? 1 : 0, new Date(vote.timestamp)],
     );
   }
 
@@ -353,28 +377,22 @@ export class ForumConsensus {
    * @param metrics - The quality metrics for the post
    * @private
    */
-  private async checkAutoModeration(
-    postId: string, 
-    metrics: ContentQualityMetrics
-  ): Promise<void> {
-    const post = await this.db.query(
-      'SELECT * FROM forum_posts WHERE id = $1',
-      [postId]
-    );
+  private async checkAutoModeration(postId: string, metrics: ContentQualityMetrics): Promise<void> {
+    const post = await this.db.query('SELECT * FROM forum_posts WHERE id = $1', [postId]);
 
     if (post.rows.length === 0) return;
 
     const postRecord = post.rows[0] as { upvotes: number; downvotes: number };
     const totalVotes = postRecord.upvotes + postRecord.downvotes;
-    
+
     // Auto-hide if heavily downvoted
     if (totalVotes >= this.spamThresholds.minVotesForRatio) {
       const downvoteRatio = postRecord.downvotes / totalVotes;
-      
+
       if (downvoteRatio > this.spamThresholds.downvoteRatioThreshold) {
         await this.db.query(
           'UPDATE forum_posts SET is_hidden = true, hide_reason = $1 WHERE id = $2',
-          ['auto_hidden_low_quality', postId]
+          ['auto_hidden_low_quality', postId],
         );
 
         // Log moderation action
@@ -383,7 +401,7 @@ export class ForumConsensus {
           targetId: postId,
           targetType: 'post',
           reason: `Downvote ratio ${(downvoteRatio * 100).toFixed(1)}% exceeds threshold`,
-          automated: true
+          automated: true,
         });
       }
     }
@@ -394,7 +412,7 @@ export class ForumConsensus {
         `INSERT INTO forum_review_queue (post_id, reason, priority, created_at)
          VALUES ($1, $2, $3, NOW())
          ON CONFLICT DO NOTHING`,
-        [postId, 'high_spam_probability', 'high']
+        [postId, 'high_spam_probability', 'high'],
       );
     }
   }
@@ -407,20 +425,20 @@ export class ForumConsensus {
    */
   private async updatePostVisibility(
     postId: string,
-    metrics: ContentQualityMetrics
+    metrics: ContentQualityMetrics,
   ): Promise<void> {
     // Calculate visibility score
     let visibilityScore = metrics.qualityScore;
-    
+
     // Reduce visibility for potential spam
-    visibilityScore *= (1 - metrics.spamProbability);
-    
+    visibilityScore *= 1 - metrics.spamProbability;
+
     // Update post visibility score for ranking
     await this.db.query(
       `UPDATE forum_posts 
        SET visibility_score = $1, quality_score = $2
        WHERE id = $3`,
-      [visibilityScore, metrics.qualityScore, postId]
+      [visibilityScore, metrics.qualityScore, postId],
     );
   }
 
@@ -439,14 +457,15 @@ export class ForumConsensus {
        FROM forum_posts 
        WHERE author_address = $1 
        AND created_at > NOW() - INTERVAL '1 hour'`,
-      [authorAddress]
+      [authorAddress],
     );
 
-    const postsInLastHour = parseInt(String(result.rows[0]?.count ?? '0'));
-    
+    const row = result.rows[0] as { count: string | number } | undefined;
+    const postsInLastHour = parseInt(String(row?.count ?? '0'));
+
     return {
       postsInLastHour,
-      exceedsLimit: postsInLastHour > this.spamThresholds.maxPostsPerHour
+      exceedsLimit: postsInLastHour > this.spamThresholds.maxPostsPerHour,
     };
   }
 
@@ -464,7 +483,7 @@ export class ForumConsensus {
        WHERE author_address = $1 
        AND created_at > NOW() - INTERVAL '24 hours'
        AND id != $2`,
-      [post.authorAddress, post.id]
+      [post.authorAddress, post.id],
     );
 
     if (similar.rows.length === 0) return 0;
@@ -472,7 +491,8 @@ export class ForumConsensus {
     // Calculate similarity ratio
     let duplicateCount = 0;
     for (const row of similar.rows) {
-      const similarity = this.calculateStringSimilarity(post.content, String(row.content));
+      const postRow = row as { content: string };
+      const similarity = this.calculateStringSimilarity(post.content, String(postRow.content));
       if (similarity > 0.8) duplicateCount++;
     }
 
@@ -490,12 +510,13 @@ export class ForumConsensus {
       `SELECT MIN(created_at) as first_post
        FROM forum_posts
        WHERE author_address = $1`,
-      [address]
+      [address],
     );
 
-    if (result.rows[0]?.first_post === null || result.rows[0]?.first_post === undefined) return 0;
+    const row = result.rows[0] as { first_post: string | Date | null } | undefined;
+    if (row?.first_post === null || row?.first_post === undefined) return 0;
 
-    const ageMs = Date.now() - new Date(String(result.rows[0].first_post)).getTime();
+    const ageMs = Date.now() - new Date(String(row.first_post)).getTime();
     return ageMs / (1000 * 60 * 60 * 24); // Convert to days
   }
 
@@ -529,10 +550,15 @@ export class ForumConsensus {
 
     // Check for common spam phrases
     const spamPhrases = [
-      'click here', 'buy now', 'limited time', 'act now',
-      'make money', 'work from home', 'congratulations'
+      'click here',
+      'buy now',
+      'limited time',
+      'act now',
+      'make money',
+      'work from home',
+      'congratulations',
     ];
-    
+
     const lowerContent = content.toLowerCase();
     for (const phrase of spamPhrases) {
       if (lowerContent.includes(phrase)) {
@@ -544,7 +570,7 @@ export class ForumConsensus {
     return {
       suspicious: score > 0,
       score: Math.min(score, 1.0),
-      reasons
+      reasons,
     };
   }
 
@@ -562,11 +588,11 @@ export class ForumConsensus {
     const urlRegex = /https?:\/\/[^\s]+/g;
     const urlMatches = content.match(urlRegex);
     const urls = urlMatches ?? [];
-    
+
     // Check against known spam domains (in production, use a proper blocklist)
     const suspiciousDomains = ['bit.ly', 'tinyurl.com', 'shorturl.at'];
     let suspicious = false;
-    
+
     for (const url of urls) {
       for (const domain of suspiciousDomains) {
         if (url.includes(domain)) {
@@ -581,7 +607,7 @@ export class ForumConsensus {
 
     return {
       suspicious,
-      count: urls.length
+      count: urls.length,
     };
   }
 
@@ -593,10 +619,7 @@ export class ForumConsensus {
    * @param post.reply_count - The number of replies to the post
    * @returns Relevance score (0-100)
    */
-  private calculateRelevanceScore(post: {
-    created_at: Date;
-    reply_count: number;
-  }): number {
+  private calculateRelevanceScore(post: { created_at: Date; reply_count: number }): number {
     // Simple relevance calculation based on thread activity
     let relevanceScore = 50;
 
@@ -636,10 +659,14 @@ export class ForumConsensus {
   private calculateStringSimilarity(str1: string, str2: string): number {
     const set1 = new Set(str1.toLowerCase().split(/\s+/));
     const set2 = new Set(str2.toLowerCase().split(/\s+/));
-    
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
-    const union = new Set([...set1, ...set2]);
-    
+
+    // Convert Sets to Arrays for ES5 compatibility
+    const arr1 = Array.from(set1);
+    const arr2 = Array.from(set2);
+
+    const intersection = new Set(arr1.filter(x => set2.has(x)));
+    const union = new Set(arr1.concat(arr2));
+
     return intersection.size / union.size;
   }
 
@@ -651,16 +678,21 @@ export class ForumConsensus {
    */
   private async recordModerationRequest(request: ModerationRequest): Promise<string> {
     const moderationId = `mod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     await this.db.query(
       `INSERT INTO forum_moderation_requests (
         id, action, target_id, target_type, moderator_address,
         reason, details, created_at, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), 'pending')`,
       [
-        moderationId, request.action, request.targetId, request.targetType,
-        request.moderatorAddress, request.reason, JSON.stringify(request.details)
-      ]
+        moderationId,
+        request.action,
+        request.targetId,
+        request.targetType,
+        request.moderatorAddress,
+        request.reason,
+        JSON.stringify(request.details),
+      ],
     );
 
     return moderationId;
@@ -678,25 +710,25 @@ export class ForumConsensus {
     return [
       '0x1234567890123456789012345678901234567890',
       '0x2345678901234567890123456789012345678901',
-      '0x3456789012345678901234567890123456789012'
+      '0x3456789012345678901234567890123456789012',
     ];
   }
 
   /**
    * Collects votes from validators
    * @private
-   * @param moderationId - ID of the moderation request
+   * @param _moderationId - ID of the moderation request (unused in mock implementation)
    * @param validators - List of validator addresses
    * @returns Vote results mapped by validator address
    */
   private collectValidatorVotes(
-    moderationId: string,
-    validators: string[]
+    _moderationId: string,
+    validators: string[],
   ): Record<string, boolean> {
     // In production, this would be an async process with timeouts
     // For now, simulate votes
     const votes: Record<string, boolean> = {};
-    
+
     for (const validator of validators) {
       // Simulate 70% approval rate
       votes[validator] = Math.random() > 0.3;
@@ -715,14 +747,14 @@ export class ForumConsensus {
     const validators = Object.keys(votes);
     const approvals = Object.values(votes).filter(v => v).length;
     const agreementPercentage = approvals / validators.length;
-    
+
     return {
       consensusReached: agreementPercentage >= 0.66, // 2/3 majority
       agreementPercentage,
       decision: agreementPercentage >= 0.66 ? 'approve' : 'reject',
       validators,
       votes,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -734,58 +766,50 @@ export class ForumConsensus {
   private async executeModerationAction(request: ModerationRequest): Promise<void> {
     switch (request.action) {
       case 'lock':
-        await this.db.query(
-          'UPDATE forum_threads SET is_locked = true WHERE id = $1',
-          [request.targetId]
-        );
+        await this.db.query('UPDATE forum_threads SET is_locked = true WHERE id = $1', [
+          request.targetId,
+        ]);
         break;
-        
+
       case 'unlock':
-        await this.db.query(
-          'UPDATE forum_threads SET is_locked = false WHERE id = $1',
-          [request.targetId]
-        );
+        await this.db.query('UPDATE forum_threads SET is_locked = false WHERE id = $1', [
+          request.targetId,
+        ]);
         break;
-        
+
       case 'pin':
-        await this.db.query(
-          'UPDATE forum_threads SET is_pinned = true WHERE id = $1',
-          [request.targetId]
-        );
+        await this.db.query('UPDATE forum_threads SET is_pinned = true WHERE id = $1', [
+          request.targetId,
+        ]);
         break;
-        
+
       case 'unpin':
-        await this.db.query(
-          'UPDATE forum_threads SET is_pinned = false WHERE id = $1',
-          [request.targetId]
-        );
+        await this.db.query('UPDATE forum_threads SET is_pinned = false WHERE id = $1', [
+          request.targetId,
+        ]);
         break;
-        
+
       case 'delete':
         if (request.targetType === 'post') {
-          await this.db.query(
-            'UPDATE forum_posts SET is_deleted = true WHERE id = $1',
-            [request.targetId]
-          );
+          await this.db.query('UPDATE forum_posts SET is_deleted = true WHERE id = $1', [
+            request.targetId,
+          ]);
         } else {
-          await this.db.query(
-            'UPDATE forum_threads SET is_deleted = true WHERE id = $1',
-            [request.targetId]
-          );
+          await this.db.query('UPDATE forum_threads SET is_deleted = true WHERE id = $1', [
+            request.targetId,
+          ]);
         }
         break;
-        
+
       case 'restore':
         if (request.targetType === 'post') {
-          await this.db.query(
-            'UPDATE forum_posts SET is_deleted = false WHERE id = $1',
-            [request.targetId]
-          );
+          await this.db.query('UPDATE forum_posts SET is_deleted = false WHERE id = $1', [
+            request.targetId,
+          ]);
         } else {
-          await this.db.query(
-            'UPDATE forum_threads SET is_deleted = false WHERE id = $1',
-            [request.targetId]
-          );
+          await this.db.query('UPDATE forum_threads SET is_deleted = false WHERE id = $1', [
+            request.targetId,
+          ]);
         }
         break;
     }
@@ -797,7 +821,7 @@ export class ForumConsensus {
       targetType: request.targetType,
       moderatorAddress: request.moderatorAddress,
       reason: request.reason,
-      automated: false
+      automated: false,
     });
   }
 
@@ -809,13 +833,13 @@ export class ForumConsensus {
    */
   private async recordConsensusResult(
     moderationId: string,
-    result: ConsensusResult
+    result: ConsensusResult,
   ): Promise<void> {
     await this.db.query(
       `UPDATE forum_moderation_requests
        SET status = $1, consensus_result = $2, completed_at = NOW()
        WHERE id = $3`,
-      [result.decision, JSON.stringify(result), moderationId]
+      [result.decision, JSON.stringify(result), moderationId],
     );
   }
 
@@ -844,10 +868,13 @@ export class ForumConsensus {
         reason, automated, timestamp
       ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
       [
-        action.action, action.targetId, action.targetType,
-        action.moderatorAddress ?? 'system', action.reason,
-        action.automated
-      ]
+        action.action,
+        action.targetId,
+        action.targetType,
+        action.moderatorAddress ?? 'system',
+        action.reason,
+        action.automated,
+      ],
     );
   }
 

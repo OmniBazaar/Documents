@@ -1,9 +1,9 @@
 /**
  * Database Service
- * 
+ *
  * Provides database connectivity and query execution for the Documents module.
  * Wraps the YugabyteDB PostgreSQL client with proper type safety and error handling.
- * 
+ *
  * @module Database
  */
 
@@ -46,24 +46,21 @@ export interface TypedQueryResult<T = unknown> extends QueryResult {
 export class Database {
   /** Connection pool instance */
   private pool: Pool;
-  /** Database configuration */
-  private config: DatabaseConfig;
 
   /**
    * Creates a new Database instance
    * @param config - Database configuration
    */
   constructor(config: DatabaseConfig) {
-    this.config = config;
     this.pool = new Pool({
       ...config,
       max: config.max ?? 20,
       connectionTimeoutMillis: config.connectionTimeoutMillis ?? 30000,
-      idleTimeoutMillis: config.idleTimeoutMillis ?? 30000
+      idleTimeoutMillis: config.idleTimeoutMillis ?? 30000,
     });
 
     // Handle pool errors
-    this.pool.on('error', (err) => {
+    this.pool.on('error', err => {
       logger.error('Database pool error:', err);
     });
   }
@@ -75,22 +72,19 @@ export class Database {
    * @returns Query result
    * @throws {Error} If query fails
    */
-  async query<T = unknown>(
-    text: string,
-    params?: unknown[]
-  ): Promise<TypedQueryResult<T>> {
+  async query<T = unknown>(text: string, params?: unknown[]): Promise<TypedQueryResult<T>> {
     const start = Date.now();
     let client: PoolClient | undefined;
 
     try {
       client = await this.pool.connect();
-      const result = await client.query<T>(text, params);
+      const result = (await client.query(text, params)) as TypedQueryResult<T>;
       const duration = Date.now() - start;
 
       logger.debug('Database query executed', {
         text: text.substring(0, 100),
         duration,
-        rows: result.rowCount
+        rows: result.rowCount,
       });
 
       return result;
@@ -99,7 +93,7 @@ export class Database {
       logger.error('Database query failed', {
         text: text.substring(0, 100),
         duration,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     } finally {
@@ -148,9 +142,7 @@ export class Database {
    * @param fn - Transaction function
    * @returns Transaction result
    */
-  async transaction<T>(
-    fn: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  async transaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.beginTransaction();
 
     try {
@@ -188,7 +180,7 @@ export class Database {
     return {
       totalConnections: this.pool.totalCount,
       idleConnections: this.pool.idleCount,
-      waitingConnections: this.pool.waitingCount
+      waitingConnections: this.pool.waitingCount,
     };
   }
 

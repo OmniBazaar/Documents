@@ -1,9 +1,9 @@
 /**
  * Forum Service
- * 
+ *
  * Manages forum functionality including posts, replies, and discussions
  * through the validator network's distributed storage.
- * 
+ *
  * @module ForumService
  */
 
@@ -86,7 +86,7 @@ export enum ForumCategory {
   /** User support */
   SUPPORT = 'support',
   /** Official announcements */
-  ANNOUNCEMENTS = 'announcements'
+  ANNOUNCEMENTS = 'announcements',
 }
 
 /**
@@ -153,10 +153,7 @@ export class ForumService {
    * @param db - Database connection
    * @param participationService - Participation scoring service
    */
-  constructor(
-    db: Database,
-    participationService: ParticipationScoreService
-  ) {
+  constructor(db: Database, participationService: ParticipationScoreService) {
     this.db = db;
     this.participationService = participationService;
   }
@@ -170,10 +167,10 @@ export class ForumService {
   async createPost(params: CreatePostParams): Promise<ForumPost> {
     try {
       this.validatePost(params.title, params.content);
-      
+
       const postId = this.generatePostId();
       const now = new Date();
-      
+
       const post: ForumPost = {
         postId,
         authorAddress: params.authorAddress,
@@ -187,7 +184,7 @@ export class ForumService {
         viewCount: 0,
         isPinned: false,
         isLocked: false,
-        tags: params.tags ?? []
+        tags: params.tags ?? [],
       };
 
       await this.db.query(
@@ -203,12 +200,13 @@ export class ForumService {
           post.category,
           post.createdAt,
           post.updatedAt,
-          JSON.stringify(post.tags)
-        ]
+          JSON.stringify(post.tags),
+        ],
       );
 
       // Award participation points
-      await this.participationService.updateForumActivity(params.authorAddress, 'post_created');
+      // Award 2 points for creating a post
+      await this.participationService.updateForumActivity(params.authorAddress, 2);
 
       logger.info(`Forum post created: ${postId}`);
       return post;
@@ -227,7 +225,7 @@ export class ForumService {
   async createReply(params: CreateReplyParams): Promise<ForumReply> {
     try {
       this.validateReply(params.content);
-      
+
       // Check if post exists and is not locked
       const post = await this.getPost(params.postId);
       if (post === null) {
@@ -239,7 +237,7 @@ export class ForumService {
 
       const replyId = this.generateReplyId();
       const now = new Date();
-      
+
       const reply: ForumReply = {
         replyId,
         postId: params.postId,
@@ -248,11 +246,11 @@ export class ForumService {
         createdAt: now,
         updatedAt: now,
         likeCount: 0,
-        replyTo: params.replyTo,
-        isEdited: false
+        isEdited: false,
+        ...(params.replyTo !== undefined && { replyTo: params.replyTo }),
       };
 
-      await this.db.transaction(async (client) => {
+      await this.db.transaction(async client => {
         // Insert reply
         await client.query(
           `INSERT INTO forum_replies (
@@ -266,8 +264,8 @@ export class ForumService {
             reply.content,
             reply.createdAt,
             reply.updatedAt,
-            reply.replyTo
-          ]
+            reply.replyTo,
+          ],
         );
 
         // Update post reply count and last activity
@@ -276,12 +274,13 @@ export class ForumService {
            SET reply_count = reply_count + 1,
                updated_at = $2
            WHERE post_id = $1`,
-          [params.postId, now]
+          [params.postId, now],
         );
       });
 
       // Award participation points
-      await this.participationService.updateForumActivity(params.authorAddress, 'reply_created');
+      // Award 1 point for creating a reply
+      await this.participationService.updateForumActivity(params.authorAddress, 1);
 
       logger.info(`Forum reply created: ${replyId}`);
       return reply;
@@ -314,17 +313,17 @@ export class ForumService {
         is_locked: boolean;
         tags: string;
         ipfs_hash?: string;
-      }>(
-        'SELECT * FROM forum_posts WHERE post_id = $1',
-        [postId]
-      );
+      }>('SELECT * FROM forum_posts WHERE post_id = $1', [postId]);
 
       if (result.rows.length === 0) {
         return null;
       }
 
       const row = result.rows[0];
-      
+      if (row === undefined) {
+        return null;
+      }
+
       if (incrementViews) {
         void this.incrementViewCount(postId);
       }
@@ -343,7 +342,7 @@ export class ForumService {
         isPinned: row.is_pinned,
         isLocked: row.is_locked,
         tags: JSON.parse(row.tags) as string[],
-        ipfsHash: row.ipfs_hash
+        ...(row.ipfs_hash !== null && row.ipfs_hash !== undefined && { ipfsHash: row.ipfs_hash }),
       };
     } catch (error) {
       logger.error(`Failed to get forum post ${postId}:`, error);
@@ -358,14 +357,10 @@ export class ForumService {
    * @param pageSize - Results per page
    * @returns Array of forum replies
    */
-  async getReplies(
-    postId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<ForumReply[]> {
+  async getReplies(postId: string, page = 1, pageSize = 20): Promise<ForumReply[]> {
     try {
       const offset = (page - 1) * pageSize;
-      
+
       const result = await this.db.query<{
         reply_id: string;
         post_id: string;
@@ -382,7 +377,7 @@ export class ForumService {
          WHERE post_id = $1
          ORDER BY created_at ASC
          LIMIT $2 OFFSET $3`,
-        [postId, pageSize, offset]
+        [postId, pageSize, offset],
       );
 
       return result.rows.map(row => ({
@@ -393,9 +388,9 @@ export class ForumService {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         likeCount: row.like_count,
-        replyTo: row.reply_to,
         isEdited: row.is_edited,
-        ipfsHash: row.ipfs_hash
+        ...(row.reply_to !== null && row.reply_to !== undefined && { replyTo: row.reply_to }),
+        ...(row.ipfs_hash !== null && row.ipfs_hash !== undefined && { ipfsHash: row.ipfs_hash }),
       }));
     } catch (error) {
       logger.error(`Failed to get replies for post ${postId}:`, error);
@@ -422,7 +417,7 @@ export class ForumService {
         tags = [],
         sortBy = 'recent',
         page = 1,
-        pageSize = 20
+        pageSize = 20,
       } = params;
 
       const whereConditions: string[] = ['1=1'];
@@ -454,14 +449,14 @@ export class ForumService {
       // Get total count
       const countResult = await this.db.query<{ count: string }>(
         `SELECT COUNT(*) FROM forum_posts WHERE ${whereConditions.join(' AND ')}`,
-        queryParams
+        queryParams,
       );
-      const total = parseInt(countResult.rows[0].count, 10);
+      const total = parseInt(countResult.rows[0]?.count ?? '0', 10);
 
       // Get posts with sorting
       const orderBy = this.getOrderByClause(sortBy);
       const offset = (page - 1) * pageSize;
-      
+
       const result = await this.db.query<{
         post_id: string;
         author_address: string;
@@ -482,7 +477,7 @@ export class ForumService {
          WHERE ${whereConditions.join(' AND ')}
          ORDER BY is_pinned DESC, ${orderBy}
          LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`,
-        [...queryParams, pageSize, offset]
+        [...queryParams, pageSize, offset],
       );
 
       const posts = result.rows.map(row => ({
@@ -499,14 +494,14 @@ export class ForumService {
         isPinned: row.is_pinned,
         isLocked: row.is_locked,
         tags: JSON.parse(row.tags) as string[],
-        ipfsHash: row.ipfs_hash
+        ...(row.ipfs_hash !== null && row.ipfs_hash !== undefined && { ipfsHash: row.ipfs_hash }),
       }));
 
       return {
         posts,
         total,
         page,
-        pageSize
+        pageSize,
       };
     } catch (error) {
       logger.error('Failed to search forum posts:', error);
@@ -522,44 +517,44 @@ export class ForumService {
    */
   async togglePostLike(postId: string, userAddress: string): Promise<number> {
     try {
-      return await this.db.transaction(async (client) => {
+      return await this.db.transaction(async client => {
         // Check if already liked
         const existing = await client.query(
           'SELECT * FROM forum_likes WHERE post_id = $1 AND user_address = $2',
-          [postId, userAddress]
+          [postId, userAddress],
         );
 
         if (existing.rows.length > 0) {
           // Unlike
-          await client.query(
-            'DELETE FROM forum_likes WHERE post_id = $1 AND user_address = $2',
-            [postId, userAddress]
-          );
-          
+          await client.query('DELETE FROM forum_likes WHERE post_id = $1 AND user_address = $2', [
+            postId,
+            userAddress,
+          ]);
+
           await client.query(
             'UPDATE forum_posts SET like_count = like_count - 1 WHERE post_id = $1',
-            [postId]
+            [postId],
           );
         } else {
           // Like
-          await client.query(
-            'INSERT INTO forum_likes (post_id, user_address) VALUES ($1, $2)',
-            [postId, userAddress]
-          );
-          
+          await client.query('INSERT INTO forum_likes (post_id, user_address) VALUES ($1, $2)', [
+            postId,
+            userAddress,
+          ]);
+
           await client.query(
             'UPDATE forum_posts SET like_count = like_count + 1 WHERE post_id = $1',
-            [postId]
+            [postId],
           );
         }
 
         // Get updated count
         const result = await client.query<{ like_count: number }>(
           'SELECT like_count FROM forum_posts WHERE post_id = $1',
-          [postId]
+          [postId],
         );
 
-        return result.rows[0].like_count;
+        return result.rows[0]?.like_count ?? 0;
       });
     } catch (error) {
       logger.error(`Failed to toggle like for post ${postId}:`, error);
@@ -611,10 +606,9 @@ export class ForumService {
    */
   private async incrementViewCount(postId: string): Promise<void> {
     try {
-      await this.db.query(
-        'UPDATE forum_posts SET view_count = view_count + 1 WHERE post_id = $1',
-        [postId]
-      );
+      await this.db.query('UPDATE forum_posts SET view_count = view_count + 1 WHERE post_id = $1', [
+        postId,
+      ]);
     } catch (error) {
       logger.error(`Failed to increment view count for ${postId}:`, error);
     }

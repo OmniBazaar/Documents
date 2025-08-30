@@ -1,17 +1,17 @@
 /**
  * Documents Service - Document and Forum Hosting
- * 
+ *
  * Manages distributed document storage and forum functionality
  * through the Avalanche validator's GraphQL API and IPFS.
- * 
+ *
  * Migrated from KYC/src/services/ValidatorDocuments.ts
  */
 
-import { 
-  OmniValidatorClient, 
+import {
+  OmniValidatorClient,
   createOmniValidatorClient,
-  type OmniValidatorClientConfig
-} from '../../../Validator/src/client';
+  type OmniValidatorClientConfig,
+} from '../types/ValidatorTypes';
 import { logger } from '../utils/logger';
 
 /**
@@ -179,7 +179,7 @@ export class DocumentsService {
   private isInitialized = false;
   private documentCache: Map<string, Document> = new Map();
   private postCache: Map<string, ForumPost> = new Map();
-  
+
   /**
    * Creates an instance of DocumentsService
    * @param {DocumentsServiceConfig} config - Service configuration
@@ -188,13 +188,13 @@ export class DocumentsService {
     this.config = config;
     this.client = createOmniValidatorClient({
       validatorEndpoint: config.validatorEndpoint,
-      wsEndpoint: config.wsEndpoint,
-      apiKey: config.apiKey,
-      timeout: config.timeout,
-      retryAttempts: config.retryAttempts
+      ...(config.wsEndpoint !== undefined && { wsEndpoint: config.wsEndpoint }),
+      ...(config.apiKey !== undefined && { apiKey: config.apiKey }),
+      ...(config.timeout !== undefined && { timeout: config.timeout }),
+      ...(config.retryAttempts !== undefined && { retryAttempts: config.retryAttempts }),
     });
   }
-  
+
   /**
    * Initialize documents service
    */
@@ -202,16 +202,16 @@ export class DocumentsService {
     try {
       // Check validator health
       const health = await this.client.getHealth();
-      if (!health.services.storage) {
+      if (health.services.storage !== true) {
         throw new Error('Validator storage service is not available');
       }
-      
+
       // Load document index
       await this.loadDocumentIndex();
-      
+
       // Load forum categories
       await this.loadForumCategories();
-      
+
       this.isInitialized = true;
       logger.info('Documents Service initialized successfully');
     } catch (error) {
@@ -219,7 +219,7 @@ export class DocumentsService {
       throw error;
     }
   }
-  
+
   /**
    * Create a new document
    * @param title - Document title
@@ -238,25 +238,25 @@ export class DocumentsService {
     category: string,
     type: Document['type'],
     tags: string[] = [],
-    permissions?: Document['permissions']
+    permissions?: Document['permissions'],
   ): Promise<Document> {
     this.ensureInitialized();
-    
+
     try {
       // Validate document
       this.validateDocument(title, content, category);
-      
+
       // Generate document ID
       const documentId = this.generateDocumentId();
-      
+
       // Store document content
       const ipfsHash = await this.client.storeData(content, {
         type: 'document_content',
         documentId,
         title,
-        author
+        author,
       });
-      
+
       // Create document object
       const document: Document = {
         documentId,
@@ -274,29 +274,29 @@ export class DocumentsService {
           fileSize: Buffer.byteLength(content, 'utf8'),
           mimeType: 'text/plain',
           language: 'en',
-          readTime: Math.ceil(content.split(' ').length / 200) // Assuming 200 words per minute
+          readTime: Math.ceil(content.split(' ').length / 200), // Assuming 200 words per minute
         },
         permissions: permissions ?? {
           public: true,
           editors: [author],
-          viewers: []
-        }
+          viewers: [],
+        },
       };
-      
+
       // Store document metadata
       await this.client.storeDocument(JSON.stringify(document), {
         type: 'document_metadata',
         documentId,
         category,
-        author
+        author,
       });
-      
+
       // Update cache
       this.documentCache.set(documentId, document);
-      
+
       // Index document for search
       this.indexDocument(document);
-      
+
       logger.info(`Document created: ${documentId}`);
       return document;
     } catch (error) {
@@ -304,7 +304,7 @@ export class DocumentsService {
       throw error;
     }
   }
-  
+
   /**
    * Retrieve a document
    * @param documentId - Document ID to retrieve
@@ -312,41 +312,45 @@ export class DocumentsService {
    */
   async getDocument(documentId: string): Promise<Document | null> {
     this.ensureInitialized();
-    
+
     try {
       // Check cache first
       if (this.documentCache.has(documentId)) {
         // Safe because we checked has() above
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.documentCache.get(documentId)!
+        return this.documentCache.get(documentId)!;
       }
-      
+
       // Load from validator
       const doc = await this.client.retrieveDocument(documentId);
       if (doc === null || doc === undefined || doc.content === undefined || doc.content === '') {
         return null;
       }
-      
+
       const document = JSON.parse(doc.content) as Document;
-      
+
       // Load content from IPFS if not included
-      if ((document.content === undefined || document.content === '') && document.ipfsHash !== undefined && document.ipfsHash !== '') {
+      if (
+        (document.content === undefined || document.content === '') &&
+        document.ipfsHash !== undefined &&
+        document.ipfsHash !== ''
+      ) {
         const content = await this.client.retrieveData(document.ipfsHash);
         if (content !== null && content !== undefined) {
           document.content = content;
         }
       }
-      
+
       // Update cache
       this.documentCache.set(documentId, document);
-      
+
       return document;
     } catch (error) {
       logger.error('Error retrieving document:', error);
       return null;
     }
   }
-  
+
   /**
    * Update a document
    * @param documentId - Document ID to update
@@ -366,31 +370,35 @@ export class DocumentsService {
       category?: string;
       tags?: string[];
     },
-    editor: string
+    editor: string,
   ): Promise<Document> {
     this.ensureInitialized();
-    
+
     try {
       const document = await this.getDocument(documentId);
       if (document === null || document === undefined) {
         throw new Error('Document not found');
       }
-      
+
       // Check permissions
       if (!this.canEdit(document, editor)) {
         throw new Error('Unauthorized: cannot edit this document');
       }
-      
+
       // Update content if changed
       let newIpfsHash = document.ipfsHash;
-      if (updates.content !== undefined && updates.content !== '' && updates.content !== document.content) {
+      if (
+        updates.content !== undefined &&
+        updates.content !== '' &&
+        updates.content !== document.content
+      ) {
         newIpfsHash = await this.client.storeData(updates.content, {
           type: 'document_content',
           documentId,
-          version: document.version + 1
+          version: document.version + 1,
         });
       }
-      
+
       // Create updated document
       const updatedDocument: Document = {
         ...document,
@@ -400,29 +408,28 @@ export class DocumentsService {
         lastModified: Date.now(),
         metadata: {
           ...document.metadata,
-          fileSize: updates.content !== undefined && updates.content !== '' ? 
-            Buffer.byteLength(updates.content, 'utf8') : 
-            document.metadata.fileSize,
-          readTime: updates.content !== undefined && updates.content !== '' ? 
-            Math.ceil(updates.content.split(' ').length / 200) : 
-            document.metadata.readTime
-        }
+          ...(updates.content !== undefined &&
+            updates.content !== '' && {
+              fileSize: Buffer.byteLength(updates.content, 'utf8'),
+              readTime: Math.ceil(updates.content.split(' ').length / 200),
+            }),
+        },
       };
-      
+
       // Store updated metadata
       await this.client.storeDocument(JSON.stringify(updatedDocument), {
         type: 'document_metadata',
         documentId,
         category: updatedDocument.category,
-        version: updatedDocument.version
+        version: updatedDocument.version,
       });
-      
+
       // Update cache
       this.documentCache.set(documentId, updatedDocument);
-      
+
       // Re-index for search
       this.indexDocument(updatedDocument);
-      
+
       logger.info(`Document updated: ${documentId} (v${updatedDocument.version}`);
       return updatedDocument;
     } catch (error) {
@@ -430,7 +437,7 @@ export class DocumentsService {
       throw error;
     }
   }
-  
+
   /**
    * Delete a document
    * @param documentId - Document ID to delete
@@ -439,18 +446,18 @@ export class DocumentsService {
    */
   async deleteDocument(documentId: string, author: string): Promise<boolean> {
     this.ensureInitialized();
-    
+
     try {
       const document = await this.getDocument(documentId);
       if (document === null || document === undefined) {
         throw new Error('Document not found');
       }
-      
+
       // Check permissions
       if (document.author !== author) {
         throw new Error('Unauthorized: only the author can delete this document');
       }
-      
+
       // Mark as deleted (soft delete)
       const deletedDocument = {
         ...document,
@@ -458,19 +465,19 @@ export class DocumentsService {
           ...document.metadata,
           deleted: true,
           deletedAt: Date.now(),
-          deletedBy: author
-        }
+          deletedBy: author,
+        },
       };
-      
+
       await this.client.storeDocument(JSON.stringify(deletedDocument), {
         type: 'document_metadata',
         documentId,
-        deleted: true
+        deleted: true,
       });
-      
+
       // Remove from cache
       this.documentCache.delete(documentId);
-      
+
       logger.info(`Document deleted: ${documentId}`);
       return true;
     } catch (error) {
@@ -478,7 +485,7 @@ export class DocumentsService {
       throw error;
     }
   }
-  
+
   /**
    * Create a forum post
    * @param author - Author's address
@@ -493,30 +500,25 @@ export class DocumentsService {
     title: string,
     content: string,
     category: string,
-    tags: string[] = []
+    tags: string[] = [],
   ): Promise<ForumPost> {
     this.ensureInitialized();
-    
+
     try {
       // Validate forum post
       this.validateForumPost(title, content, category);
-      
+
       // Get author username
       const authorUsername = await this.getUsername(author);
-      
+
       // Create post via validator
-      const postId = await this.client.createForumPost(
-        author,
-        title,
-        content,
-        category
-      );
-      
+      const postId = await this.client.createForumPost(author, title, content, category);
+
       // Create post object
       const post: ForumPost = {
         postId,
         author,
-        authorUsername,
+        ...(authorUsername !== undefined && { authorUsername }),
         title,
         content,
         category,
@@ -528,12 +530,12 @@ export class DocumentsService {
         isPinned: false,
         isLocked: false,
         tags,
-        ipfsHash: '' // Will be set by validator
+        ipfsHash: '', // Will be set by validator
       };
-      
+
       // Update cache
       this.postCache.set(postId, post);
-      
+
       logger.info(`Forum post created: ${postId}`);
       return post;
     } catch (error) {
@@ -541,7 +543,7 @@ export class DocumentsService {
       throw error;
     }
   }
-  
+
   /**
    * Search documents and forum posts
    * @param query - Search query
@@ -561,25 +563,20 @@ export class DocumentsService {
       author?: string;
       limit?: number;
       offset?: number;
-    } = {}
+    } = {},
   ): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     try {
-      const {
-        type = 'all',
-        category,
-        author,
-        limit = 20,
-        offset = 0
-      } = options;
-      
+      const { type = 'all', category, author, limit = 20, offset = 0 } = options;
+
       const results: SearchResult[] = [];
       const normalizedQuery = query.toLowerCase();
-      
+
       // Search documents
       if (type === 'all' || type === 'documents') {
-        for (const doc of this.documentCache.values()) {
+        const documents = Array.from(this.documentCache.values());
+        for (const doc of documents) {
           if (this.matchesSearch(doc, normalizedQuery, category, author)) {
             results.push({
               type: 'document',
@@ -589,15 +586,16 @@ export class DocumentsService {
               author: doc.author,
               category: doc.category,
               timestamp: doc.timestamp,
-              relevance: this.calculateRelevance(doc, normalizedQuery)
+              relevance: this.calculateRelevance(doc, normalizedQuery),
             });
           }
         }
       }
-      
+
       // Search forum posts
       if (type === 'all' || type === 'posts') {
-        for (const post of this.postCache.values()) {
+        const posts = Array.from(this.postCache.values());
+        for (const post of posts) {
           if (this.matchesSearch(post, normalizedQuery, category, author)) {
             results.push({
               type: 'post',
@@ -607,22 +605,22 @@ export class DocumentsService {
               author: post.author,
               category: post.category,
               timestamp: post.timestamp,
-              relevance: this.calculateRelevance(post, normalizedQuery)
+              relevance: this.calculateRelevance(post, normalizedQuery),
             });
           }
         }
       }
-      
+
       // Sort by relevance and apply pagination
-      return results
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(offset, offset + limit);
+      return Promise.resolve(
+        results.sort((a, b) => b.relevance - a.relevance).slice(offset, offset + limit),
+      );
     } catch (error) {
       logger.error('Error searching:', error);
-      return [];
+      return Promise.resolve([]);
     }
   }
-  
+
   /**
    * Get document categories
    * @returns Array of document category names
@@ -630,7 +628,7 @@ export class DocumentsService {
   getDocumentCategories(): string[] {
     return ['guides', 'policies', 'announcements', 'technical', 'legal', 'support'];
   }
-  
+
   /**
    * Get forum categories
    * @returns Array of forum category names
@@ -638,7 +636,7 @@ export class DocumentsService {
   getForumCategories(): string[] {
     return this.config.forumCategories;
   }
-  
+
   /**
    * Disconnect service
    * @returns Promise resolving when disconnected
@@ -647,64 +645,63 @@ export class DocumentsService {
     try {
       // Save indexes
       await this.saveDocumentIndex();
-      
+
       // Close client
       // Client close method doesn't return a promise
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       (this.client as any).close?.();
-      
+
       this.isInitialized = false;
       logger.info('Documents Service disconnected');
     } catch (error) {
       logger.error('Error disconnecting documents service:', error);
     }
   }
-  
+
   // Private helper methods
   private ensureInitialized(): void {
     if (!this.isInitialized) {
       throw new Error('Documents service not initialized. Call initialize() first.');
     }
   }
-  
+
   private validateDocument(title: string, content: string, category: string): void {
     if (title === undefined || title === '' || title.length < 3) {
       throw new Error('Title must be at least 3 characters');
     }
-    
+
     if (content === undefined || content === '' || content.length < 10) {
       throw new Error('Content must be at least 10 characters');
     }
-    
+
     if (!this.getDocumentCategories().includes(category)) {
       throw new Error('Invalid document category');
     }
-    
+
     const size = Buffer.byteLength(content, 'utf8');
     if (size > this.config.maxDocumentSize) {
       throw new Error(`Document size exceeds limit of ${this.config.maxDocumentSize} bytes`);
     }
   }
-  
+
   private validateForumPost(title: string, content: string, category: string): void {
     if (title === undefined || title === '' || title.length < 5) {
       throw new Error('Title must be at least 5 characters');
     }
-    
+
     if (content === undefined || content === '' || content.length < 20) {
       throw new Error('Content must be at least 20 characters');
     }
-    
+
     if (!this.config.forumCategories.includes(category)) {
       throw new Error('Invalid forum category');
     }
   }
-  
+
   private canEdit(document: Document, editor: string): boolean {
-    return document.author === editor || 
-           document.permissions.editors.includes(editor);
+    return document.author === editor || document.permissions.editors.includes(editor);
   }
-  
+
   private async getUsername(address: string): Promise<string | undefined> {
     try {
       const username = await this.client.lookupAddress(address);
@@ -713,42 +710,42 @@ export class DocumentsService {
       return undefined;
     }
   }
-  
+
   private generateDocumentId(): string {
     return `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
-  
+
   private indexDocument(document: Document): void {
     // In a real implementation, this would update a search index
     logger.info(`Document indexed: ${document.documentId}`);
   }
-  
+
   private matchesSearch(
     item: Document | ForumPost,
     query: string,
     category?: string,
-    author?: string
+    author?: string,
   ): boolean {
     // Category filter
     if (category !== undefined && category !== '' && item.category !== category) {
       return false;
     }
-    
+
     // Author filter
     if (author !== undefined && author !== '' && item.author !== author) {
       return false;
     }
-    
+
     // Text search
     const searchableText = `${item.title} ${item.content} ${item.tags.join(' ')}`.toLowerCase();
     return searchableText.includes(query);
   }
-  
+
   private calculateRelevance(item: Document | ForumPost, query: string): number {
     let relevance = 0;
     const lowerTitle = item.title.toLowerCase();
     const lowerContent = item.content.toLowerCase();
-    
+
     // Title matches are more relevant
     if (lowerTitle.includes(query)) {
       relevance += 10;
@@ -756,16 +753,16 @@ export class DocumentsService {
         relevance += 20;
       }
     }
-    
+
     // Content matches
     const contentMatches = (lowerContent.match(new RegExp(query, 'g')) ?? []).length;
     relevance += Math.min(contentMatches * 2, 20);
-    
+
     // Tag matches
     if (item.tags.some(tag => tag.toLowerCase().includes(query))) {
       relevance += 5;
     }
-    
+
     // Recency bonus
     const daysSinceCreated = (Date.now() - item.timestamp) / (24 * 60 * 60 * 1000);
     if (daysSinceCreated < 7) {
@@ -773,59 +770,59 @@ export class DocumentsService {
     } else if (daysSinceCreated < 30) {
       relevance += 2;
     }
-    
+
     return relevance;
   }
-  
+
   private getExcerpt(content: string, query: string, maxLength: number = 200): string {
     const lowerContent = content.toLowerCase();
     const queryIndex = lowerContent.indexOf(query);
-    
+
     if (queryIndex === -1) {
       return content.substring(0, maxLength) + '...';
     }
-    
+
     // Try to show the query in context
     const start = Math.max(0, queryIndex - 50);
     const end = Math.min(content.length, queryIndex + query.length + 150);
     let excerpt = content.substring(start, end);
-    
+
     if (start > 0) excerpt = '...' + excerpt;
     if (end < content.length) excerpt = excerpt + '...';
-    
+
     return excerpt;
   }
-  
+
   private async loadDocumentIndex(): Promise<void> {
     try {
       const doc = await this.client.retrieveDocument('document_index');
       if (doc !== null && doc !== undefined && doc.content !== undefined && doc.content !== '') {
         const documentIds = JSON.parse(doc.content) as string[];
-        
+
         // Load documents in parallel
         const loadPromises = documentIds.map(id => this.getDocument(id));
         await Promise.all(loadPromises);
-        
+
         logger.info(`Loaded ${this.documentCache.size} documents from index`);
       }
     } catch (error) {
       logger.error('Error loading document index:', error);
     }
   }
-  
+
   private async saveDocumentIndex(): Promise<void> {
     try {
       const documentIds = Array.from(this.documentCache.keys());
       await this.client.storeDocument(JSON.stringify(documentIds), {
         type: 'document_index',
         count: documentIds.length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       logger.error('Error saving document index:', error);
     }
   }
-  
+
   private async loadForumCategories(): Promise<void> {
     try {
       const doc = await this.client.retrieveDocument('forum_categories');
@@ -843,14 +840,14 @@ export class DocumentsService {
 export const documentsService = new DocumentsService({
   validatorEndpoint: process.env.VALIDATOR_ENDPOINT ?? 'http://localhost:4000',
   wsEndpoint: process.env.VALIDATOR_WS_ENDPOINT ?? 'ws://localhost:4000/graphql',
-  apiKey: process.env.VALIDATOR_API_KEY,
+  ...(process.env.VALIDATOR_API_KEY !== undefined && { apiKey: process.env.VALIDATOR_API_KEY }),
   networkId: process.env.NETWORK_ID ?? 'omnibazaar-mainnet',
   maxDocumentSize: 10 * 1024 * 1024, // 10MB
   allowedFileTypes: ['text/plain', 'text/markdown', 'text/html', 'application/pdf'],
   forumCategories: ['general', 'marketplace', 'technical', 'trading', 'support', 'announcements'],
   moderationEnabled: true,
   timeout: 30000,
-  retryAttempts: 3
+  retryAttempts: 3,
 });
 
 export default DocumentsService;

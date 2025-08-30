@@ -1,9 +1,9 @@
 /**
  * Documentation Search Service
- * 
+ *
  * Provides full-text search capabilities for documentation
  * using PostgreSQL's built-in search features.
- * 
+ *
  * @module DocumentationSearchService
  */
 
@@ -79,7 +79,7 @@ export class DocumentationSearchService {
       tags = [],
       limit = 20,
       offset = 0,
-      sortBy = 'relevance'
+      sortBy = 'relevance',
     } = options;
 
     try {
@@ -122,22 +122,21 @@ export class DocumentationSearchService {
       }
 
       // Build query
-      const whereClause = conditions.length > 0 
-        ? `WHERE ${conditions.join(' AND ')}`
-        : '';
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      const orderByClause = sortBy === 'date' 
-        ? 'ORDER BY d.updated_at DESC'
-        : sortBy === 'rating'
-        ? 'ORDER BY avg_rating DESC NULLS LAST'
-        : query !== ''
-        ? `ORDER BY ts_rank(
+      const orderByClause =
+        sortBy === 'date'
+          ? 'ORDER BY d.updated_at DESC'
+          : sortBy === 'rating'
+            ? 'ORDER BY avg_rating DESC NULLS LAST'
+            : query !== ''
+              ? `ORDER BY ts_rank(
             setweight(to_tsvector('english', d.title), 'A') ||
             setweight(to_tsvector('english', d.content), 'B') ||
             setweight(to_tsvector('english', array_to_string(d.tags, ' ')), 'C'),
             plainto_tsquery('english', '${query}')
           ) DESC`
-        : 'ORDER BY d.created_at DESC';
+              : 'ORDER BY d.created_at DESC';
 
       const sql = `
         SELECT 
@@ -149,12 +148,16 @@ export class DocumentationSearchService {
           d.tags,
           d.author,
           COALESCE(AVG(r.rating), 0) as avg_rating,
-          ${query !== '' ? `ts_rank(
+          ${
+            query !== ''
+              ? `ts_rank(
             setweight(to_tsvector('english', d.title), 'A') ||
             setweight(to_tsvector('english', d.content), 'B') ||
             setweight(to_tsvector('english', array_to_string(d.tags, ' ')), 'C'),
             plainto_tsquery('english', '${query}')
-          )` : '1'} as relevance,
+          )`
+              : '1'
+          } as relevance,
           d.updated_at
         FROM documentation_pages d
         LEFT JOIN documentation_ratings r ON d.id = r.page_id
@@ -166,21 +169,31 @@ export class DocumentationSearchService {
 
       params.push(limit, offset);
 
-      const result = await this.db.query(sql, params);
+      const result = await this.db.query<{
+        id: string;
+        title: string;
+        snippet: string;
+        category: string;
+        language: string;
+        tags: string[];
+        author: string;
+        avg_rating: string;
+        relevance: string;
+        updated_at: Date;
+      }>(sql, params);
 
       return result.rows.map(row => ({
-        id: row.id as string,
-        title: row.title as string,
-        snippet: row.snippet as string,
-        category: row.category as string,
-        language: row.language as string,
-        tags: row.tags as string[],
-        author: row.author as string,
-        rating: parseFloat(row.avg_rating as string),
-        relevance: parseFloat(row.relevance as string),
-        lastUpdated: row.updated_at as Date
+        id: row.id,
+        title: row.title,
+        snippet: row.snippet,
+        category: row.category,
+        language: row.language,
+        tags: row.tags,
+        author: row.author,
+        rating: parseFloat(row.avg_rating),
+        relevance: parseFloat(row.relevance),
+        lastUpdated: row.updated_at,
       }));
-
     } catch (error) {
       logger.error('Documentation search failed:', error);
       throw error;
@@ -202,22 +215,27 @@ export class DocumentationSearchService {
    * @param {number} limit - Maximum number of terms
    * @returns {Promise<Array<{term: string, count: number}>>} Popular search terms
    */
-  async getPopularSearches(limit = 10): Promise<Array<{term: string, count: number}>> {
+  async getPopularSearches(limit = 10): Promise<Array<{ term: string; count: number }>> {
     try {
-      const result = await this.db.query(`
+      const result = await this.db.query<{
+        search_term: string;
+        count: string;
+      }>(
+        `
         SELECT search_term, COUNT(*) as count
         FROM search_history
         WHERE created_at > NOW() - INTERVAL '7 days'
         GROUP BY search_term
         ORDER BY count DESC
         LIMIT $1
-      `, [limit]);
+      `,
+        [limit],
+      );
 
       return result.rows.map(row => ({
-        term: row.search_term as string,
-        count: parseInt(row.count as string)
+        term: row.search_term,
+        count: parseInt(row.count),
       }));
-
     } catch (error) {
       logger.error('Failed to get popular searches:', error);
       return [];
@@ -232,10 +250,13 @@ export class DocumentationSearchService {
    */
   async recordSearch(query: string, userId: string, resultCount: number): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO search_history (search_term, user_id, result_count)
         VALUES ($1, $2, $3)
-      `, [query, userId, resultCount]);
+      `,
+        [query, userId, resultCount],
+      );
     } catch (error) {
       logger.error('Failed to record search:', error);
     }

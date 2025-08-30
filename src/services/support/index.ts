@@ -1,8 +1,8 @@
 /**
  * Support Chat Module Exports
- * 
+ *
  * Central export point for all volunteer support chat system components.
- * 
+ *
  * @module Support
  */
 
@@ -21,16 +21,17 @@ export type {
   ChatMessage,
   VolunteerMetrics,
   SupportSystemStats,
-  SupportServiceConfig,
-  RoutingConfig
+  RoutingConfig,
 } from './SupportTypes';
+
+export type { SupportServiceConfig } from './VolunteerSupportService';
 
 /**
  * Helper function to format support category for display
- * 
+ *
  * @param category - Support category ID
  * @returns Formatted category name
- * 
+ *
  * @example
  * ```typescript
  * formatCategory('wallet_setup') // "Wallet Setup"
@@ -45,7 +46,7 @@ export function formatCategory(category: string): string {
 
 /**
  * Helper function to get category icon
- * 
+ *
  * @param category - Support category ID
  * @returns Category icon
  */
@@ -58,14 +59,14 @@ export function getCategoryIcon(category: string): string {
     technical_issue: '🔧',
     account_recovery: '🔑',
     security: '🔒',
-    general: '❓'
+    general: '❓',
   };
   return icons[category] ?? '❓';
 }
 
 /**
  * Helper function to format volunteer status
- * 
+ *
  * @param status - Volunteer status
  * @returns Status with icon
  */
@@ -74,14 +75,14 @@ export function formatVolunteerStatus(status: string): string {
     offline: '⚫ Offline',
     available: '🟢 Available',
     busy: '🔴 Busy',
-    away: '🟡 Away'
+    away: '🟡 Away',
   };
   return statusMap[status] ?? status;
 }
 
 /**
  * Helper function to calculate estimated wait time
- * 
+ *
  * @param queuePosition - Position in queue
  * @param avgResolutionTime - Average resolution time in minutes
  * @returns Estimated wait time in minutes
@@ -93,7 +94,7 @@ export function estimateWaitTime(queuePosition: number, avgResolutionTime: numbe
 
 /**
  * Helper function to format wait time for display
- * 
+ *
  * @param minutes - Wait time in minutes
  * @returns Formatted wait time
  */
@@ -116,7 +117,7 @@ export function formatWaitTime(minutes: number): string {
 
 /**
  * Helper function to get priority color
- * 
+ *
  * @param priority - Support priority
  * @returns CSS color class
  */
@@ -125,49 +126,52 @@ export function getPriorityColor(priority: string): string {
     low: 'text-gray-500',
     medium: 'text-blue-500',
     high: 'text-orange-500',
-    urgent: 'text-red-500'
+    urgent: 'text-red-500',
   };
   return colors[priority] ?? 'text-gray-500';
 }
 
 /**
  * Helper function to validate message content
- * 
+ *
  * @param content - Message content
  * @param maxLength - Maximum allowed length
  * @returns Validation result
  */
-export function validateMessage(content: string, maxLength: number = 2000): {
+export function validateMessage(
+  content: string,
+  maxLength: number = 2000,
+): {
   valid: boolean;
   error?: string;
 } {
   if (content === undefined || content === '' || content.trim().length === 0) {
     return { valid: false, error: 'Message cannot be empty' };
   }
-  
+
   if (content.length > maxLength) {
     return { valid: false, error: `Message exceeds maximum length of ${maxLength} characters` };
   }
-  
+
   // Check for spam patterns
   const spamPatterns = [
     /(.)\1{10,}/g, // Repeated characters
     /\b(BUY|SELL|CLICK)\b.*\b(NOW|HERE|FAST)\b/gi, // Spam phrases
-    /(https?:\/\/[^\s]+){5,}/g // Too many links
+    /(https?:\/\/[^\s]+){5,}/g, // Too many links
   ];
-  
+
   for (const pattern of spamPatterns) {
     if (pattern.test(content)) {
       return { valid: false, error: 'Message appears to contain spam' };
     }
   }
-  
+
   return { valid: true };
 }
 
 /**
  * Helper function to sanitize user input for display
- * 
+ *
  * @param input - User input
  * @returns Sanitized input
  */

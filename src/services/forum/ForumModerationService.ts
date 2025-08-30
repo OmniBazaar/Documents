@@ -1,24 +1,21 @@
 /**
  * Forum Moderation Service
- * 
+ *
  * Handles community-driven moderation with validator consensus,
  * inspired by decentralized moderation models from Retroshare and IPFS-Boards.
- * 
+ *
  * @module ForumModerationService
  */
 
-import { Database } from '../../../../Validator/src/database/Database';
-import { ParticipationScoreService } from '../../../../Validator/src/services/ParticipationScoreService';
+import { Database } from '../database/Database';
+import {
+  ParticipationScoreService,
+  UserParticipationData,
+} from '../participation/ParticipationScoreService';
 import { ForumConsensus } from './ForumConsensus';
 import { ForumIncentives } from './ForumIncentives';
 import { logger } from '../../utils/logger';
-import type { UserParticipationData } from '../../../../Validator/src/services/ParticipationScoreService';
-import {
-  ModerationRequest,
-  ForumReputation,
-  ForumPost,
-  ForumAttachment
-} from './ForumTypes';
+import { ModerationRequest, ForumReputation, ForumPost, ForumAttachment } from './ForumTypes';
 
 /**
  * Moderation configuration
@@ -89,17 +86,17 @@ const DEFAULT_CONFIG: ModerationConfig = {
   flagsForAutoReview: 3,
   flagCooldownMs: 300000, // 5 minutes
   maxFlagsPerDay: 10,
-  consensusThreshold: 0.66 // 2/3 majority
+  consensusThreshold: 0.66, // 2/3 majority
 };
 
 /**
  * Forum Moderation Service
- * 
+ *
  * @example
  * ```typescript
  * const moderation = new ForumModerationService(db, consensus, incentives);
  * await moderation.initialize();
- * 
+ *
  * // Flag inappropriate content
  * await moderation.flagContent({
  *   contentId: postId,
@@ -113,7 +110,7 @@ const DEFAULT_CONFIG: ModerationConfig = {
 export class ForumModerationService {
   /**
    * Creates a new moderation service instance
-   * 
+   *
    * @param db - Database instance
    * @param consensus - Forum consensus service
    * @param incentives - Forum incentives service
@@ -125,7 +122,7 @@ export class ForumModerationService {
     private consensus: ForumConsensus,
     private incentives: ForumIncentives,
     private participationService: ParticipationScoreService,
-    private config: ModerationConfig = DEFAULT_CONFIG
+    private config: ModerationConfig = DEFAULT_CONFIG,
   ) {}
 
   /**
@@ -139,7 +136,7 @@ export class ForumModerationService {
 
   /**
    * Flags content for review
-   * 
+   *
    * @param report - Flag report details
    * @throws {Error} If user cannot flag or cooldown active
    */
@@ -156,7 +153,7 @@ export class ForumModerationService {
       ...report,
       id: flagId,
       timestamp: Date.now(),
-      status: 'pending'
+      status: 'pending',
     };
 
     // Store flag
@@ -166,10 +163,15 @@ export class ForumModerationService {
         details, timestamp, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
-        flagReport.id, flagReport.contentId, flagReport.contentType,
-        flagReport.reporterAddress, flagReport.reason, flagReport.details,
-        new Date(flagReport.timestamp), flagReport.status
-      ]
+        flagReport.id,
+        flagReport.contentId,
+        flagReport.contentType,
+        flagReport.reporterAddress,
+        flagReport.reason,
+        flagReport.details,
+        new Date(flagReport.timestamp),
+        flagReport.status,
+      ],
     );
 
     // Check if content needs auto-review
@@ -181,14 +183,14 @@ export class ForumModerationService {
 
   /**
    * Reviews flagged content
-   * 
+   *
    * @param contentId - Content to review
    * @param reviewerAddress - Reviewer's address
    * @returns Review decision
    */
   async reviewFlaggedContent(
     contentId: string,
-    reviewerAddress: string
+    reviewerAddress: string,
   ): Promise<{
     shouldRemove: boolean;
     shouldWarn: boolean;
@@ -202,13 +204,13 @@ export class ForumModerationService {
 
     // Get all flags for this content
     const flags = await this.getContentFlags(contentId);
-    
+
     // Analyze content with consensus
     const spamAnalysis = await this.analyzeContent(contentId);
-    
+
     // Get moderator votes
     const votes = await this.getModerationVotes(contentId);
-    
+
     // Calculate decision
     const decision = this.calculateModerationDecision(flags, spamAnalysis, votes);
 
@@ -225,15 +227,12 @@ export class ForumModerationService {
 
   /**
    * Promotes user to moderator
-   * 
+   *
    * @param address - User address to promote
    * @param promoterAddress - Address of user doing the promotion
    * @throws {Error} If promotion requirements not met
    */
-  async promoteToModerator(
-    address: string,
-    promoterAddress: string
-  ): Promise<void> {
+  async promoteToModerator(address: string, promoterAddress: string): Promise<void> {
     // Check if promoter is admin or existing moderator with enough reputation
     const canPromote = await this.canPromoteModerators(promoterAddress);
     if (!canPromote) {
@@ -243,7 +242,9 @@ export class ForumModerationService {
     // Check if user meets requirements
     const userRep = await this.getUserReputation(address);
     if (userRep.reputationScore < this.config.minReputationForModerator) {
-      throw new Error(`User needs ${this.config.minReputationForModerator} reputation to become a moderator`);
+      throw new Error(
+        `User needs ${this.config.minReputationForModerator} reputation to become a moderator`,
+      );
     }
 
     // Promote to moderator
@@ -251,7 +252,7 @@ export class ForumModerationService {
       `UPDATE forum_user_stats 
        SET is_moderator = true, moderator_since = NOW()
        WHERE address = $1`,
-      [address]
+      [address],
     );
 
     // Log promotion
@@ -259,13 +260,13 @@ export class ForumModerationService {
       moderatorAddress: promoterAddress,
       action: 'promote_moderator',
       targetId: address,
-      reason: 'Met reputation requirements'
+      reason: 'Met reputation requirements',
     });
   }
 
   /**
    * Gets moderation statistics
-   * 
+   *
    * @returns Moderation statistics
    */
   async getModerationStats(): Promise<{
@@ -287,43 +288,56 @@ export class ForumModerationService {
          FROM forum_flag_reports) as false_positive_rate
     `);
 
-    const row = stats.rows[0];
+    const row = stats.rows[0] as
+      | {
+          total_flags: string | number;
+          pending_reviews: string | number;
+          resolved_today: string | number;
+          active_moderators: string | number;
+          false_positive_rate: string | number | null;
+        }
+      | undefined;
+
     return {
       totalFlags: parseInt(String(row?.total_flags ?? 0)),
       pendingReviews: parseInt(String(row?.pending_reviews ?? 0)),
       resolvedToday: parseInt(String(row?.resolved_today ?? 0)),
       activeModerators: parseInt(String(row?.active_moderators ?? 0)),
-      falsePositiveRate: row?.false_positive_rate !== null && row?.false_positive_rate !== undefined 
-        ? parseFloat(String(row.false_positive_rate)) 
-        : 0
+      falsePositiveRate:
+        row?.false_positive_rate !== null && row?.false_positive_rate !== undefined
+          ? parseFloat(String(row.false_positive_rate))
+          : 0,
     };
   }
 
   /**
    * Gets pending moderation queue
-   * 
+   *
    * @param moderatorAddress - Moderator requesting the queue
    * @param limit - Maximum items to return
    * @returns Pending moderation items
    */
   async getModerationQueue(
     moderatorAddress: string,
-    limit: number = 20
-  ): Promise<Array<{
-    contentId: string;
-    contentType: string;
-    flagCount: number;
-    firstFlaggedAt: number;
-    reasons: string[];
-    priority: 'low' | 'medium' | 'high';
-  }>> {
+    limit: number = 20,
+  ): Promise<
+    Array<{
+      contentId: string;
+      contentType: string;
+      flagCount: number;
+      firstFlaggedAt: number;
+      reasons: string[];
+      priority: 'low' | 'medium' | 'high';
+    }>
+  > {
     // Validate moderator
     const isMod = await this.isModerator(moderatorAddress);
     if (!isMod) {
       throw new Error('Only moderators can access the moderation queue');
     }
 
-    const queue = await this.db.query(`
+    const queue = await this.db.query(
+      `
       SELECT 
         content_id,
         content_type,
@@ -340,16 +354,29 @@ export class ForumModerationService {
       GROUP BY content_id, content_type
       ORDER BY priority DESC, flag_count DESC, first_flagged_at ASC
       LIMIT $1
-    `, [limit]);
+    `,
+      [limit],
+    );
 
-    return queue.rows.map(row => ({
-      contentId: String(row.content_id),
-      contentType: String(row.content_type),
-      flagCount: parseInt(String(row.flag_count)),
-      firstFlaggedAt: new Date(String(row.first_flagged_at)).getTime(),
-      reasons: Array.isArray(row.reasons) ? row.reasons.map(String) : [],
-      priority: row.priority as 'low' | 'medium' | 'high'
-    }));
+    return queue.rows.map(row => {
+      const typedRow = row as {
+        content_id: string;
+        content_type: string;
+        flag_count: string | number;
+        first_flagged_at: string | Date;
+        reasons: string[] | null;
+        priority: 'low' | 'medium' | 'high';
+      };
+
+      return {
+        contentId: String(typedRow.content_id),
+        contentType: String(typedRow.content_type),
+        flagCount: parseInt(String(typedRow.flag_count)),
+        firstFlaggedAt: new Date(String(typedRow.first_flagged_at)).getTime(),
+        reasons: Array.isArray(typedRow.reasons) ? typedRow.reasons.map(String) : [],
+        priority: typedRow.priority,
+      };
+    });
   }
 
   /**
@@ -360,12 +387,18 @@ export class ForumModerationService {
   private async validateReporter(reporterAddress: string): Promise<void> {
     // Type assertion for ParticipationScoreService method
     const getScore = (address: string): Promise<UserParticipationData | null> => {
-      return (this.participationService.getScore as (addr: string) => Promise<UserParticipationData | null>)(address);
+      return (
+        this.participationService.getScore as (
+          addr: string,
+        ) => Promise<UserParticipationData | null>
+      )(address);
     };
     const userScore = await getScore(reporterAddress);
-    
+
     if (userScore === null || userScore.totalScore < this.config.minReputationToFlag) {
-      throw new Error(`Minimum ${this.config.minReputationToFlag} reputation required to flag content`);
+      throw new Error(
+        `Minimum ${this.config.minReputationToFlag} reputation required to flag content`,
+      );
     }
 
     // Check daily flag limit
@@ -374,11 +407,14 @@ export class ForumModerationService {
        FROM forum_flag_reports 
        WHERE reporter_address = $1 
        AND timestamp > NOW() - INTERVAL '24 hours'`,
-      [reporterAddress]
+      [reporterAddress],
     );
 
-    const flagCount = flagsToday.rows[0]?.count as string | number | undefined;
-    if (flagCount !== undefined && parseInt(String(flagCount)) >= this.config.maxFlagsPerDay) {
+    const flagRow = flagsToday.rows[0] as { count: string | number } | undefined;
+    if (
+      flagRow?.count !== undefined &&
+      parseInt(String(flagRow.count)) >= this.config.maxFlagsPerDay
+    ) {
       throw new Error('Daily flag limit exceeded');
     }
   }
@@ -393,12 +429,12 @@ export class ForumModerationService {
       `SELECT MAX(timestamp) as last_flag 
        FROM forum_flag_reports 
        WHERE reporter_address = $1`,
-      [reporterAddress]
+      [reporterAddress],
     );
 
-    const lastFlagTime = lastFlag.rows[0]?.last_flag as string | Date | undefined;
-    if (lastFlagTime !== undefined) {
-      const timeSinceLastFlag = Date.now() - new Date(String(lastFlagTime)).getTime();
+    const lastFlagRow = lastFlag.rows[0] as { last_flag: string | Date | null } | undefined;
+    if (lastFlagRow?.last_flag !== null && lastFlagRow?.last_flag !== undefined) {
+      const timeSinceLastFlag = Date.now() - new Date(String(lastFlagRow.last_flag)).getTime();
       if (timeSinceLastFlag < this.config.flagCooldownMs) {
         const remainingTime = Math.ceil((this.config.flagCooldownMs - timeSinceLastFlag) / 1000);
         throw new Error(`Please wait ${remainingTime} seconds before flagging again`);
@@ -416,18 +452,21 @@ export class ForumModerationService {
       `SELECT COUNT(*) as count 
        FROM forum_flag_reports 
        WHERE content_id = $1 AND status = 'pending'`,
-      [contentId]
+      [contentId],
     );
 
-    const count = flagCount.rows[0]?.count as string | number | undefined;
-    if (count !== undefined && parseInt(String(count)) >= this.config.flagsForAutoReview) {
+    const countRow = flagCount.rows[0] as { count: string | number } | undefined;
+    if (
+      countRow?.count !== undefined &&
+      parseInt(String(countRow.count)) >= this.config.flagsForAutoReview
+    ) {
       // Trigger auto-review through consensus
       const request: ModerationRequest = {
         action: 'delete',
         targetId: contentId,
         targetType: 'post', // Would need to determine actual type
         moderatorAddress: 'system',
-        reason: 'Multiple flags received - pending review'
+        reason: 'Multiple flags received - pending review',
       };
 
       await this.consensus.processModerationRequest(request);
@@ -443,10 +482,11 @@ export class ForumModerationService {
   private async isModerator(address: string): Promise<boolean> {
     const result = await this.db.query(
       'SELECT is_moderator FROM forum_user_stats WHERE address = $1',
-      [address]
+      [address],
     );
 
-    return result.rows.length > 0 && result.rows[0]?.is_moderator === true;
+    const modRow = result.rows[0] as { is_moderator: boolean } | undefined;
+    return result.rows.length > 0 && modRow?.is_moderator === true;
   }
 
   /**
@@ -460,19 +500,32 @@ export class ForumModerationService {
       `SELECT * FROM forum_flag_reports 
        WHERE content_id = $1 AND status = 'pending'
        ORDER BY timestamp ASC`,
-      [contentId]
+      [contentId],
     );
 
-    return flags.rows.map(row => ({
-      id: String(row.id),
-      contentId: String(row.content_id),
-      contentType: row.content_type as 'thread' | 'post',
-      reporterAddress: String(row.reporter_address),
-      reason: row.reason as 'spam' | 'offensive' | 'misinformation' | 'off_topic' | 'other',
-      details: String(row.details ?? ''),
-      timestamp: new Date(String(row.timestamp)).getTime(),
-      status: row.status as 'pending' | 'reviewing' | 'resolved' | 'dismissed'
-    }));
+    return flags.rows.map(row => {
+      const typedRow = row as {
+        id: string;
+        content_id: string;
+        content_type: 'thread' | 'post';
+        reporter_address: string;
+        reason: 'spam' | 'offensive' | 'misinformation' | 'off_topic' | 'other';
+        details: string | null;
+        timestamp: string | Date;
+        status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+      };
+
+      return {
+        id: String(typedRow.id),
+        contentId: String(typedRow.content_id),
+        contentType: typedRow.content_type,
+        reporterAddress: String(typedRow.reporter_address),
+        reason: typedRow.reason,
+        details: String(typedRow.details ?? ''),
+        timestamp: new Date(String(typedRow.timestamp)).getTime(),
+        status: typedRow.status,
+      };
+    });
   }
 
   /**
@@ -487,44 +540,59 @@ export class ForumModerationService {
     violations: string[];
   }> {
     // Get the actual content
-    const content = await this.db.query(
-      'SELECT * FROM forum_posts WHERE id = $1',
-      [contentId]
-    );
+    const content = await this.db.query('SELECT * FROM forum_posts WHERE id = $1', [contentId]);
 
     if (content.rows.length === 0) {
       return { isSpam: false, confidence: 0, violations: [] };
     }
 
     // Convert database row to ForumPost type
-    const row = content.rows[0];
+    const row = content.rows[0] as {
+      id: string;
+      thread_id: string;
+      author_address: string;
+      content: string;
+      created_at: string | Date;
+      edited_at: string | Date | null;
+      upvotes: string | number;
+      downvotes: string | number;
+      is_accepted_answer: boolean;
+      is_deleted: boolean;
+      attachments: ForumAttachment[] | null;
+      metadata: Record<string, unknown> | null;
+    };
+
     const forumPost: ForumPost = {
       id: String(row.id),
       threadId: String(row.thread_id),
       authorAddress: String(row.author_address),
       content: String(row.content),
       createdAt: new Date(String(row.created_at)).getTime(),
-      editedAt: row.edited_at !== null && row.edited_at !== undefined ? new Date(String(row.edited_at)).getTime() : undefined,
+      editedAt:
+        row.edited_at !== null && row.edited_at !== undefined
+          ? new Date(String(row.edited_at)).getTime()
+          : null,
       upvotes: parseInt(String(row.upvotes ?? 0)),
       downvotes: parseInt(String(row.downvotes ?? 0)),
       isAcceptedAnswer: Boolean(row.is_accepted_answer),
       isDeleted: Boolean(row.is_deleted),
-      attachments: Array.isArray(row.attachments) ? (row.attachments as ForumAttachment[]) : []
+      attachments: Array.isArray(row.attachments) ? row.attachments : [],
+      metadata: row.metadata ?? {},
     };
-    
+
     // Use consensus service for spam detection
     const spamResult = await this.consensus.detectSpam(forumPost);
-    
+
     // Check for other violations
     const violations: string[] = [];
     if (spamResult.isSpam) violations.push('spam');
-    
+
     // Add more violation checks here (offensive content, etc.)
-    
+
     return {
       isSpam: spamResult.isSpam,
       confidence: spamResult.confidence,
-      violations
+      violations,
     };
   }
 
@@ -539,13 +607,14 @@ export class ForumModerationService {
       `SELECT moderator_address, vote 
        FROM forum_moderation_votes 
        WHERE content_id = $1`,
-      [contentId]
+      [contentId],
     );
 
     const voteMap: Record<string, boolean> = {};
     votes.rows.forEach(row => {
-      const address = String(row.moderator_address);
-      voteMap[address] = Boolean(row.vote);
+      const typedRow = row as { moderator_address: string; vote: boolean };
+      const address = String(typedRow.moderator_address);
+      voteMap[address] = Boolean(typedRow.vote);
     });
 
     return voteMap;
@@ -565,7 +634,7 @@ export class ForumModerationService {
   private calculateModerationDecision(
     flags: FlagReport[],
     spamAnalysis: { isSpam: boolean; confidence: number; violations: string[] },
-    votes: Record<string, boolean>
+    votes: Record<string, boolean>,
   ): {
     shouldRemove: boolean;
     shouldWarn: boolean;
@@ -576,7 +645,7 @@ export class ForumModerationService {
       return {
         shouldRemove: true,
         shouldWarn: false,
-        consensusReached: true
+        consensusReached: true,
       };
     }
 
@@ -586,15 +655,15 @@ export class ForumModerationService {
     const consensusRatio = totalVotes > 0 ? removeVotes / totalVotes : 0;
 
     // Multiple serious flags + moderator agreement
-    const seriousFlags = flags.filter(f => 
-      ['spam', 'offensive', 'misinformation'].includes(f.reason)
+    const seriousFlags = flags.filter(f =>
+      ['spam', 'offensive', 'misinformation'].includes(f.reason),
     ).length;
 
     if (totalVotes >= 3 && consensusRatio >= this.config.consensusThreshold) {
       return {
         shouldRemove: true,
         shouldWarn: false,
-        consensusReached: true
+        consensusReached: true,
       };
     }
 
@@ -603,14 +672,14 @@ export class ForumModerationService {
       return {
         shouldRemove: false,
         shouldWarn: true,
-        consensusReached: totalVotes >= 3
+        consensusReached: totalVotes >= 3,
       };
     }
 
     return {
       shouldRemove: false,
       shouldWarn: false,
-      consensusReached: false
+      consensusReached: false,
     };
   }
 
@@ -627,13 +696,13 @@ export class ForumModerationService {
   private async executeModerationDecision(
     contentId: string,
     decision: { shouldRemove: boolean; shouldWarn: boolean; consensusReached: boolean },
-    moderatorAddress: string
+    moderatorAddress: string,
   ): Promise<void> {
     if (decision.shouldRemove) {
       // Soft delete the content
       await this.db.query(
         'UPDATE forum_posts SET is_deleted = true, deleted_by = $1, deleted_at = NOW() WHERE id = $2',
-        [moderatorAddress, contentId]
+        [moderatorAddress, contentId],
       );
 
       // Update flag reports
@@ -641,7 +710,7 @@ export class ForumModerationService {
         `UPDATE forum_flag_reports 
          SET status = 'resolved', resolved_at = NOW(), resolved_by = $1
          WHERE content_id = $2 AND status = 'pending'`,
-        [moderatorAddress, contentId]
+        [moderatorAddress, contentId],
       );
 
       // Reward correct flaggers
@@ -649,14 +718,13 @@ export class ForumModerationService {
       for (const flag of flags) {
         await this.incentives.rewardModeration(flag.reporterAddress, 'flag_spam', true);
       }
-
     } else if (decision.shouldWarn) {
       // Add warning to content
       await this.db.query(
         `UPDATE forum_posts 
          SET has_warning = true, warning_reason = 'Community flagged content'
          WHERE id = $1`,
-        [contentId]
+        [contentId],
       );
     }
 
@@ -665,7 +733,7 @@ export class ForumModerationService {
       moderatorAddress,
       action: decision.shouldRemove ? 'remove_content' : 'warn_content',
       targetId: contentId,
-      reason: 'Community consensus'
+      reason: 'Community consensus',
     });
   }
 
@@ -677,7 +745,7 @@ export class ForumModerationService {
    */
   private async getUserReputation(address: string): Promise<ForumReputation> {
     const stats = await this.incentives.getUserContributionStats(address);
-    
+
     return {
       address,
       totalPosts: stats.postsMade,
@@ -687,7 +755,7 @@ export class ForumModerationService {
       acceptedAnswers: stats.acceptedAnswers,
       reputationScore: this.calculateReputationScore(stats),
       isModerator: false, // Will be set from DB
-      badges: []
+      badges: [],
     };
   }
 
@@ -733,15 +801,16 @@ export class ForumModerationService {
       `SELECT is_moderator, moderator_level 
        FROM forum_user_stats 
        WHERE address = $1`,
-      [address]
+      [address],
     );
 
     if (result.rows.length === 0) return false;
 
-    const row = result.rows[0];
-    return Boolean(row?.is_moderator) && 
-           (row?.moderator_level === 'senior' || 
-            row?.moderator_level === 'admin');
+    const row = result.rows[0] as { is_moderator: boolean; moderator_level: string } | undefined;
+    return (
+      Boolean(row?.is_moderator) &&
+      (row?.moderator_level === 'senior' || row?.moderator_level === 'admin')
+    );
   }
 
   /**
@@ -749,7 +818,9 @@ export class ForumModerationService {
    * @param action - Action details to log
    * @private
    */
-  private async logModeratorAction(action: Omit<ModeratorAction, 'id' | 'timestamp' | 'reversed'>): Promise<void> {
+  private async logModeratorAction(
+    action: Omit<ModeratorAction, 'id' | 'timestamp' | 'reversed'>,
+  ): Promise<void> {
     await this.db.query(
       `INSERT INTO forum_moderator_actions (
         id, moderator_address, action, target_id, reason, timestamp
@@ -759,8 +830,8 @@ export class ForumModerationService {
         action.moderatorAddress,
         action.action,
         action.targetId,
-        action.reason
-      ]
+        action.reason,
+      ],
     );
   }
 

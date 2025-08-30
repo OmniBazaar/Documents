@@ -25,7 +25,7 @@
     "dev:api": "nodemon --exec ts-node src/api/index.ts",
     "dev:frontend": "webpack serve --config webpack.dev.js",
     "build": "npm run build:api && npm run build:frontend",
-    "build:api": "tsc -p tsconfig.json",
+    "build:api": "tsc -p tsconfig.build.json",
     "build:frontend": "webpack --config webpack.prod.js",
     "test": "jest",
     "test:unit": "jest tests/unit",

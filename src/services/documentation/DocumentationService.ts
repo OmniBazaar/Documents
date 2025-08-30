@@ -1,10 +1,10 @@
 /**
  * Documentation Service
- * 
+ *
  * Manages decentralized documentation storage and retrieval using YugabyteDB.
  * Provides version control, multi-language support, and search functionality.
  * Integrates with the validator consensus system for official documentation updates.
- * 
+ *
  * @module DocumentationService
  */
 
@@ -23,7 +23,7 @@ export const SUPPORTED_LANGUAGES = ['en', 'es', 'zh', 'fr', 'de', 'ja', 'ko', 'r
 /**
  * Documentation language type
  */
-export type DocumentLanguage = typeof SUPPORTED_LANGUAGES[number];
+export type DocumentLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 /**
  * Documentation categories for organization
@@ -44,7 +44,7 @@ export enum DocumentCategory {
   /** Governance and DAO documentation */
   GOVERNANCE = 'governance',
   /** Security best practices */
-  SECURITY = 'security'
+  SECURITY = 'security',
 }
 
 /**
@@ -235,7 +235,7 @@ export class DocumentationService extends EventEmitter {
     db: Database,
     searchEngine: SearchEngine,
     participationService: ParticipationScoreService,
-    validationService: ValidationService
+    validationService: ValidationService,
   ) {
     super();
     this.db = db;
@@ -243,7 +243,7 @@ export class DocumentationService extends EventEmitter {
     this.participationService = participationService;
     this.validationService = validationService;
     this.documentCache = new Map();
-    
+
     // Clear cache periodically
     setInterval(() => this.clearExpiredCache(), this.CACHE_TTL);
   }
@@ -254,11 +254,13 @@ export class DocumentationService extends EventEmitter {
    * @returns Created document with ID
    * @throws {Error} If document creation fails
    */
-  async createDocument(document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'rating'>): Promise<Document> {
+  async createDocument(
+    document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'rating'>,
+  ): Promise<Document> {
     try {
       const id = this.generateDocumentId();
       const now = new Date();
-      
+
       const newDocument: Document = {
         ...document,
         id,
@@ -266,7 +268,7 @@ export class DocumentationService extends EventEmitter {
         updatedAt: now,
         viewCount: 0,
         rating: 0,
-        version: 1
+        version: 1,
       };
 
       // Store in database
@@ -286,8 +288,8 @@ export class DocumentationService extends EventEmitter {
           newDocument.authorAddress,
           JSON.stringify(newDocument.tags),
           newDocument.isOfficial,
-          `${newDocument.title} ${newDocument.description} ${newDocument.content}`
-        ]
+          `${newDocument.title} ${newDocument.description} ${newDocument.content}`,
+        ],
       );
 
       // Index in search engine
@@ -299,8 +301,8 @@ export class DocumentationService extends EventEmitter {
         metadata: {
           category: newDocument.category,
           language: newDocument.language,
-          tags: newDocument.tags
-        }
+          tags: newDocument.tags,
+        },
       });
 
       // Award PoP points for contribution
@@ -308,7 +310,7 @@ export class DocumentationService extends EventEmitter {
 
       this.emit('documentCreated', newDocument);
       logger.info(`Document created: ${newDocument.id}`);
-      
+
       return newDocument;
     } catch (error) {
       logger.error('Failed to create document:', error);
@@ -333,17 +335,16 @@ export class DocumentationService extends EventEmitter {
         return cached;
       }
 
-      const result = await this.db.query<DocumentRow>(
-        `SELECT * FROM documents WHERE id = $1`,
-        [documentId]
-      );
+      const result = await this.db.query<DocumentRow>(`SELECT * FROM documents WHERE id = $1`, [
+        documentId,
+      ]);
 
       if (result.rows.length === 0) {
         return null;
       }
 
       const document = this.mapRowToDocument(result.rows[0]);
-      
+
       // Cache the document
       this.documentCache.set(documentId, document);
 
@@ -380,7 +381,7 @@ export class DocumentationService extends EventEmitter {
         page = 1,
         pageSize = 20,
         sortBy = 'relevance',
-        sortDirection = 'desc'
+        sortDirection = 'desc',
       } = params;
 
       // Use search engine for text search
@@ -393,12 +394,12 @@ export class DocumentationService extends EventEmitter {
             language,
             tags: tags.length > 0 ? tags : undefined,
             isOfficial: officialOnly || undefined,
-            minRating
+            minRating,
           },
           page,
           pageSize,
           sortBy,
-          sortDirection
+          sortDirection,
         });
 
         const documentIds = searchResults.results.map(r => r.id);
@@ -408,7 +409,7 @@ export class DocumentationService extends EventEmitter {
           documents,
           total: searchResults.total,
           page: searchResults.page,
-          pageSize: searchResults.pageSize
+          pageSize: searchResults.pageSize,
         };
       }
 
@@ -441,11 +442,11 @@ export class DocumentationService extends EventEmitter {
       }
 
       const offset = (page - 1) * pageSize;
-      
+
       // Get total count
       const countResult = await this.db.query<{ count: string }>(
         `SELECT COUNT(*) FROM documents WHERE ${whereConditions.join(' AND ')}`,
-        queryParams
+        queryParams,
       );
       const total = parseInt(countResult.rows[0].count, 10);
 
@@ -456,7 +457,7 @@ export class DocumentationService extends EventEmitter {
          WHERE ${whereConditions.join(' AND ')}
          ORDER BY ${orderBy}
          LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`,
-        [...queryParams, pageSize, offset]
+        [...queryParams, pageSize, offset],
       );
 
       const documents = result.rows.map(row => this.mapRowToDocument(row));
@@ -465,7 +466,7 @@ export class DocumentationService extends EventEmitter {
         documents,
         total,
         page,
-        pageSize
+        pageSize,
       };
     } catch (error) {
       logger.error('Failed to search documents:', error);
@@ -484,7 +485,7 @@ export class DocumentationService extends EventEmitter {
   async updateDocument(
     documentId: string,
     updates: Partial<Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'version'>>,
-    updaterAddress: string
+    updaterAddress: string,
   ): Promise<Document> {
     try {
       const existing = await this.getDocument(documentId, false);
@@ -507,7 +508,7 @@ export class DocumentationService extends EventEmitter {
         ...existing,
         ...updates,
         version: existing.version + 1,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       // Update in database
@@ -533,8 +534,8 @@ export class DocumentationService extends EventEmitter {
           updatedDocument.version,
           JSON.stringify(updatedDocument.tags),
           updatedDocument.updatedAt,
-          `${updatedDocument.title} ${updatedDocument.description} ${updatedDocument.content}`
-        ]
+          `${updatedDocument.title} ${updatedDocument.description} ${updatedDocument.content}`,
+        ],
       );
 
       // Update search index
@@ -546,8 +547,8 @@ export class DocumentationService extends EventEmitter {
         metadata: {
           category: updatedDocument.category,
           language: updatedDocument.language,
-          tags: updatedDocument.tags
-        }
+          tags: updatedDocument.tags,
+        },
       });
 
       // Clear cache
@@ -579,37 +580,43 @@ export class DocumentationService extends EventEmitter {
 
     try {
       // Check if user has already rated
-      const existingRating = await this.db.query<{ document_id: string; user_address: string; rating: number }>(
-        'SELECT * FROM document_ratings WHERE document_id = $1 AND user_address = $2',
-        [documentId, userAddress]
-      );
+      const existingRating = await this.db.query<{
+        document_id: string;
+        user_address: string;
+        rating: number;
+      }>('SELECT * FROM document_ratings WHERE document_id = $1 AND user_address = $2', [
+        documentId,
+        userAddress,
+      ]);
 
       if (existingRating.rows.length > 0) {
         // Update existing rating
         await this.db.query(
           'UPDATE document_ratings SET rating = $3, updated_at = CURRENT_TIMESTAMP WHERE document_id = $1 AND user_address = $2',
-          [documentId, userAddress, rating]
+          [documentId, userAddress, rating],
         );
       } else {
         // Create new rating
         await this.db.query(
           'INSERT INTO document_ratings (document_id, user_address, rating) VALUES ($1, $2, $3)',
-          [documentId, userAddress, rating]
+          [documentId, userAddress, rating],
         );
       }
 
       // Update average rating on document
       const avgResult = await this.db.query<{ avg_rating: string }>(
         'SELECT AVG(rating) as avg_rating FROM document_ratings WHERE document_id = $1',
-        [documentId]
+        [documentId],
       );
 
-      const avgRating = avgResult.rows[0].avg_rating != null ? parseFloat(avgResult.rows[0].avg_rating) : 0;
+      const avgRow = avgResult.rows[0];
+      const avgRating =
+        avgRow !== undefined && avgRow.avg_rating != null ? parseFloat(avgRow.avg_rating) : 0;
 
-      await this.db.query(
-        'UPDATE documents SET rating = $2 WHERE id = $1',
-        [documentId, avgRating]
-      );
+      await this.db.query('UPDATE documents SET rating = $2 WHERE id = $1', [
+        documentId,
+        avgRating,
+      ]);
 
       // Clear cache
       this.documentCache.delete(documentId);
@@ -629,7 +636,7 @@ export class DocumentationService extends EventEmitter {
    */
   async getDocumentsByCategory(
     category: DocumentCategory,
-    language?: DocumentLanguage
+    language?: DocumentLanguage,
   ): Promise<Document[]> {
     try {
       let query = 'SELECT * FROM documents WHERE category = $1';
@@ -663,7 +670,7 @@ export class DocumentationService extends EventEmitter {
          WHERE updated_at > CURRENT_TIMESTAMP - INTERVAL '${timeframe} days'
          ORDER BY view_count DESC, rating DESC
          LIMIT $1`,
-        [limit]
+        [limit],
       );
 
       return result.rows.map(row => this.mapRowToDocument(row));
@@ -696,8 +703,8 @@ export class DocumentationService extends EventEmitter {
           contribution.language,
           JSON.stringify(contribution.tags),
           contribution.contributorAddress,
-          contribution.changeDescription
-        ]
+          contribution.changeDescription,
+        ],
       );
 
       this.emit('contributionSubmitted', { contributionId, contribution });
@@ -729,7 +736,7 @@ export class DocumentationService extends EventEmitter {
   private async proposeOfficialUpdate(
     documentId: string,
     updates: Partial<Document>,
-    proposerAddress: string
+    proposerAddress: string,
   ): Promise<Document> {
     const proposalId = this.generateProposalId();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -743,7 +750,7 @@ export class DocumentationService extends EventEmitter {
       votes: { yes: 0, no: 0, abstain: 0 },
       status: 'pending',
       createdAt: new Date(),
-      expiresAt
+      expiresAt,
     };
 
     await this.db.query(
@@ -757,8 +764,8 @@ export class DocumentationService extends EventEmitter {
         proposal.newContent,
         JSON.stringify(proposal.newMetadata),
         proposal.proposerAddress,
-        proposal.expiresAt
-      ]
+        proposal.expiresAt,
+      ],
     );
 
     // Request validator consensus
@@ -780,7 +787,7 @@ export class DocumentationService extends EventEmitter {
   private async awardContributionPoints(
     userAddress: string,
     action: 'create' | 'update',
-    document: Document
+    document: Document,
   ): Promise<void> {
     try {
       let points = 0;
@@ -816,10 +823,9 @@ export class DocumentationService extends EventEmitter {
    */
   private async incrementViewCount(documentId: string): Promise<void> {
     try {
-      await this.db.query(
-        'UPDATE documents SET view_count = view_count + 1 WHERE id = $1',
-        [documentId]
-      );
+      await this.db.query('UPDATE documents SET view_count = view_count + 1 WHERE id = $1', [
+        documentId,
+      ]);
     } catch (error) {
       logger.error(`Failed to increment view count for ${documentId}:`, error);
     }
@@ -840,7 +846,7 @@ export class DocumentationService extends EventEmitter {
       const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
       const result = await this.db.query<DocumentRow>(
         `SELECT * FROM documents WHERE id IN (${placeholders})`,
-        ids
+        ids,
       );
 
       return result.rows.map(row => this.mapRowToDocument(row));
@@ -871,8 +877,14 @@ export class DocumentationService extends EventEmitter {
       tags: JSON.parse(row.tags ?? '[]') as string[],
       isOfficial: row.is_official,
       viewCount: row.view_count,
-      rating: typeof row.rating === 'number' ? row.rating : (row.rating != null ? parseFloat(String(row.rating)) : 0),
-      attachments: row.attachments != null ? JSON.parse(row.attachments) as DocumentAttachment[] : []
+      rating:
+        typeof row.rating === 'number'
+          ? row.rating
+          : row.rating != null
+            ? parseFloat(String(row.rating))
+            : 0,
+      attachments:
+        row.attachments != null ? (JSON.parse(row.attachments) as DocumentAttachment[]) : [],
     };
   }
 
@@ -885,10 +897,10 @@ export class DocumentationService extends EventEmitter {
    */
   private getOrderByClause(
     sortBy: 'relevance' | 'date' | 'rating' | 'views',
-    sortDirection: 'asc' | 'desc'
+    sortDirection: 'asc' | 'desc',
   ): string {
     const direction = sortDirection.toUpperCase();
-    
+
     switch (sortBy) {
       case 'date':
         return `updated_at ${direction}`;
@@ -947,8 +959,9 @@ export class DocumentationService extends EventEmitter {
   private notifyValidatorsForReview(contributionId: string): void {
     try {
       this.validationService.requestReview('documentContribution', {
-        contributionId,
-        type: 'official_doc_update'
+        itemId: contributionId,
+        type: 'documentContribution',
+        context: { isOfficialUpdate: true },
       });
     } catch (error) {
       logger.error('Failed to notify validators:', error);

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false
+  },
+  "references": [],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "scripts/**/*.js",
+    "tools/**/*.js",
+    "config/**/*.js",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "../Validator/**/*"
+  ]
+}

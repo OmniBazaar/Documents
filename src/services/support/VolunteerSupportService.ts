@@ -1,9 +1,9 @@
 /**
  * Volunteer Support Service
- * 
+ *
  * Main service for managing human volunteer support system.
  * Handles support sessions, messaging, quality ratings, and PoP rewards.
- * 
+ *
  * @module VolunteerSupportService
  */
 
@@ -20,7 +20,7 @@ import {
   SupportSystemStats,
   SupportSessionStatus,
   SupportCategory,
-  VolunteerStatus
+  VolunteerStatus,
 } from './SupportTypes';
 
 /**
@@ -53,27 +53,27 @@ const DEFAULT_CONFIG: SupportServiceConfig = {
   ratingMultiplier: 0.5,
   sessionTimeout: 30 * 60 * 1000, // 30 minutes
   maxMessageLength: 2000,
-  maxFileSize: 10 * 1024 * 1024 // 10MB
+  maxFileSize: 10 * 1024 * 1024, // 10MB
 };
 
 /**
  * Volunteer Support Service
- * 
+ *
  * @example
  * ```typescript
  * const supportService = new VolunteerSupportService(db, participationService);
  * await supportService.initialize();
- * 
+ *
  * // User requests support
  * const session = await supportService.requestSupport({
  *   userAddress,
  *   category: 'wallet_setup',
  *   initialMessage: 'Need help setting up wallet'
  * });
- * 
+ *
  * // Send messages
  * await supportService.sendMessage(session.sessionId, userAddress, 'More details...');
- * 
+ *
  * // Rate session
  * await supportService.rateSession(session.sessionId, 5, 'Very helpful!');
  * ```
@@ -85,7 +85,7 @@ export class VolunteerSupportService {
 
   /**
    * Creates a new Volunteer Support Service instance
-   * 
+   *
    * @param db - Database instance
    * @param participationService - Participation score service
    * @param config - Service configuration
@@ -93,7 +93,7 @@ export class VolunteerSupportService {
   constructor(
     private db: Database,
     private participationService: ParticipationScoreService,
-    private config: SupportServiceConfig = DEFAULT_CONFIG
+    private config: SupportServiceConfig = DEFAULT_CONFIG,
   ) {
     this.router = new SupportRouter(db);
   }
@@ -104,20 +104,22 @@ export class VolunteerSupportService {
   async initialize(): Promise<void> {
     await this.createTables();
     await this.router.initialize();
-    
+
     // Start background tasks
     this.startBackgroundTasks();
-    
+
     logger.info('Volunteer Support Service initialized');
   }
 
   /**
    * User requests support
-   * 
+   *
    * @param request - Support request details
    * @returns Created support session
    */
-  async requestSupport(request: Omit<SupportRequest, 'requestId' | 'timestamp'>): Promise<SupportSession> {
+  async requestSupport(
+    request: Omit<SupportRequest, 'requestId' | 'timestamp'>,
+  ): Promise<SupportSession> {
     try {
       // Validate request
       this.validateRequest(request);
@@ -130,7 +132,7 @@ export class VolunteerSupportService {
         ...request,
         requestId: this.generateRequestId(),
         userScore: userScore.total,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Save request
@@ -147,7 +149,6 @@ export class VolunteerSupportService {
 
       logger.info(`Support requested: ${session.sessionId} by ${request.userAddress}`);
       return session;
-
     } catch (error) {
       logger.error('Failed to request support:', error);
       throw error;
@@ -156,12 +157,23 @@ export class VolunteerSupportService {
 
   /**
    * Volunteer registers/updates profile
-   * 
+   *
    * @param volunteer - Volunteer profile
    */
-  async registerVolunteer(volunteer: Omit<SupportVolunteer, 'rating' | 'totalSessions' | 'avgResponseTime' | 'avgResolutionTime' | 'lastActive' | 'activeSessions'>): Promise<void> {
+  async registerVolunteer(
+    volunteer: Omit<
+      SupportVolunteer,
+      | 'rating'
+      | 'totalSessions'
+      | 'avgResponseTime'
+      | 'avgResolutionTime'
+      | 'lastActive'
+      | 'activeSessions'
+    >,
+  ): Promise<void> {
     try {
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO support_volunteers (
           address, display_name, status, languages, expertise_categories,
           participation_score, max_concurrent_sessions, is_active
@@ -174,15 +186,17 @@ export class VolunteerSupportService {
           participation_score = EXCLUDED.participation_score,
           max_concurrent_sessions = EXCLUDED.max_concurrent_sessions,
           last_active = NOW()
-      `, [
-        volunteer.address,
-        volunteer.displayName,
-        volunteer.status,
-        volunteer.languages,
-        volunteer.expertiseCategories,
-        volunteer.participationScore,
-        volunteer.maxConcurrentSessions
-      ]);
+      `,
+        [
+          volunteer.address,
+          volunteer.displayName,
+          volunteer.status,
+          volunteer.languages,
+          volunteer.expertiseCategories,
+          volunteer.participationScore,
+          volunteer.maxConcurrentSessions,
+        ],
+      );
 
       logger.info(`Volunteer registered/updated: ${volunteer.address}`);
     } catch (error) {
@@ -193,7 +207,7 @@ export class VolunteerSupportService {
 
   /**
    * Updates volunteer status
-   * 
+   *
    * @param address - Volunteer address
    * @param status - New status
    */
@@ -201,7 +215,7 @@ export class VolunteerSupportService {
     try {
       await this.db.query(
         'UPDATE support_volunteers SET status = $1, last_active = NOW() WHERE address = $2',
-        [status, address]
+        [status, address],
       );
 
       // If going offline, reassign active sessions
@@ -218,7 +232,7 @@ export class VolunteerSupportService {
 
   /**
    * Sends a message in a support session
-   * 
+   *
    * @param sessionId - Session ID
    * @param senderAddress - Sender's address
    * @param content - Message content
@@ -231,7 +245,7 @@ export class VolunteerSupportService {
     senderAddress: string,
     content: string,
     type: ChatMessage['type'] = 'text',
-    attachment?: ChatMessage['attachment']
+    attachment?: ChatMessage['attachment'],
   ): Promise<ChatMessage> {
     try {
       // Validate message
@@ -246,8 +260,10 @@ export class VolunteerSupportService {
       }
 
       // Validate sender
-      if (senderAddress !== session.request.userAddress && 
-          senderAddress !== session.volunteer?.address) {
+      if (
+        senderAddress !== session.request.userAddress &&
+        senderAddress !== session.volunteer?.address
+      ) {
         throw new Error('Sender not part of session');
       }
 
@@ -258,24 +274,27 @@ export class VolunteerSupportService {
         content,
         timestamp: new Date(),
         type,
-        attachment
+        attachment,
       };
 
       // Save message
-      await this.db.query(`
+      await this.db.query(
+        `
         INSERT INTO support_messages (
           message_id, session_id, sender_address, content, 
           type, attachment, timestamp
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [
-        message.messageId,
-        sessionId,
-        senderAddress,
-        content,
-        type,
-        attachment !== null && attachment !== undefined ? JSON.stringify(attachment) : null,
-        message.timestamp
-      ]);
+      `,
+        [
+          message.messageId,
+          sessionId,
+          senderAddress,
+          content,
+          type,
+          attachment !== null && attachment !== undefined ? JSON.stringify(attachment) : null,
+          message.timestamp,
+        ],
+      );
 
       // Update session
       if (session.status === 'assigned' && senderAddress === session.volunteer?.address) {
@@ -290,7 +309,6 @@ export class VolunteerSupportService {
 
       logger.debug(`Message sent in session ${sessionId}`);
       return message;
-
     } catch (error) {
       logger.error('Failed to send message:', error);
       throw error;
@@ -299,7 +317,7 @@ export class VolunteerSupportService {
 
   /**
    * Marks session as resolved
-   * 
+   *
    * @param sessionId - Session ID
    * @param volunteerAddress - Volunteer who resolved it
    * @param resolution - Resolution details
@@ -307,7 +325,7 @@ export class VolunteerSupportService {
   async resolveSession(
     sessionId: string,
     volunteerAddress: string,
-    resolution?: string
+    resolution?: string,
   ): Promise<void> {
     try {
       const session = await this.getSession(sessionId);
@@ -322,12 +340,15 @@ export class VolunteerSupportService {
       await this.updateSessionStatus(sessionId, 'resolved');
 
       // Save resolution
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE support_sessions 
         SET resolution_time = NOW(), 
             resolution_notes = $1
         WHERE session_id = $2
-      `, [resolution, sessionId]);
+      `,
+        [resolution, sessionId],
+      );
 
       // Clear timeout
       this.clearSessionTimeout(sessionId);
@@ -341,16 +362,12 @@ export class VolunteerSupportService {
 
   /**
    * User rates support session
-   * 
-   * @param sessionId - Session ID  
+   *
+   * @param sessionId - Session ID
    * @param rating - Rating (1-5)
    * @param feedback - Optional feedback
    */
-  async rateSession(
-    sessionId: string,
-    rating: number,
-    feedback?: string
-  ): Promise<void> {
+  async rateSession(sessionId: string, rating: number, feedback?: string): Promise<void> {
     try {
       if (rating < 1 || rating > 5) {
         throw new Error('Rating must be between 1 and 5');
@@ -366,12 +383,15 @@ export class VolunteerSupportService {
       }
 
       // Save rating
-      await this.db.query(`
+      await this.db.query(
+        `
         UPDATE support_sessions 
         SET user_rating = $1, 
             user_feedback = $2
         WHERE session_id = $3
-      `, [rating, feedback, sessionId]);
+      `,
+        [rating, feedback, sessionId],
+      );
 
       // Calculate and award PoP points
       if (session.volunteer !== null && session.volunteer !== undefined) {
@@ -388,20 +408,21 @@ export class VolunteerSupportService {
 
   /**
    * Gets volunteer performance metrics
-   * 
+   *
    * @param volunteerAddress - Volunteer address
    * @param period - Time period
    * @returns Performance metrics
    */
   async getVolunteerMetrics(
     volunteerAddress: string,
-    period: VolunteerMetrics['period'] = 'all_time'
+    period: VolunteerMetrics['period'] = 'all_time',
   ): Promise<VolunteerMetrics> {
     try {
       const timeClause = this.getTimeClause(period);
 
       // Base metrics
-      const metricsResult = await this.db.query(`
+      const metricsResult = await this.db.query(
+        `
         SELECT 
           COUNT(*) as sessions_handled,
           AVG(user_rating) as avg_rating,
@@ -413,18 +434,24 @@ export class VolunteerSupportService {
           SUM(pop_points_awarded) as pop_points_earned
         FROM support_sessions
         WHERE volunteer_address = $1 ${timeClause}
-      `, [volunteerAddress]);
+      `,
+        [volunteerAddress],
+      );
 
       // Sessions by category
-      const categoryResult = await this.db.query(`
+      const categoryResult = await this.db.query(
+        `
         SELECT category, COUNT(*) as count
         FROM support_sessions
         WHERE volunteer_address = $1 ${timeClause}
         GROUP BY category
-      `, [volunteerAddress]);
+      `,
+        [volunteerAddress],
+      );
 
       // Satisfaction scores
-      const satisfactionResult = await this.db.query(`
+      const satisfactionResult = await this.db.query(
+        `
         SELECT 
           COUNT(CASE WHEN user_rating = 5 THEN 1 END) as very_satisfied,
           COUNT(CASE WHEN user_rating = 4 THEN 1 END) as satisfied,
@@ -433,14 +460,19 @@ export class VolunteerSupportService {
           COUNT(CASE WHEN user_rating = 1 THEN 1 END) as very_dissatisfied
         FROM support_sessions
         WHERE volunteer_address = $1 AND user_rating IS NOT NULL ${timeClause}
-      `, [volunteerAddress]);
+      `,
+        [volunteerAddress],
+      );
 
       const metrics = metricsResult.rows[0] as Record<string, string | number>;
       const satisfaction = satisfactionResult.rows[0] as Record<string, string | number>;
 
       // Build category map
-      const sessionsByCategory: Record<SupportCategory, number> = {} as Record<SupportCategory, number>;
-      for (const row of categoryResult.rows as Array<{category: string, count: string}>) {
+      const sessionsByCategory: Record<SupportCategory, number> = {} as Record<
+        SupportCategory,
+        number
+      >;
+      for (const row of categoryResult.rows as Array<{ category: string; count: string }>) {
         sessionsByCategory[row.category as SupportCategory] = parseInt(row.count);
       }
 
@@ -454,12 +486,12 @@ export class VolunteerSupportService {
         responseMetrics: {
           avgFirstResponse: parseFloat(String(metrics['avg_first_response'] ?? 0)),
           medianResponse: parseFloat(String(metrics['avg_first_response'] ?? 0)), // Simplified
-          p90Response: parseFloat(String(metrics['avg_first_response'] ?? 0)) * 1.5 // Approximation
+          p90Response: parseFloat(String(metrics['avg_first_response'] ?? 0)) * 1.5, // Approximation
         },
         resolutionMetrics: {
           avgResolution: parseFloat(String(metrics['avg_resolution'] ?? 30)),
           resolutionRate: parseFloat(String(metrics['resolution_rate'] ?? 0)),
-          abandonmentRate: parseFloat(String(metrics['abandonment_rate'] ?? 0))
+          abandonmentRate: parseFloat(String(metrics['abandonment_rate'] ?? 0)),
         },
         popPointsEarned: parseFloat(String(metrics['pop_points_earned'] ?? 0)),
         satisfactionScores: {
@@ -467,8 +499,8 @@ export class VolunteerSupportService {
           satisfied: parseInt(String(satisfaction?.['satisfied'] ?? 0)),
           neutral: parseInt(String(satisfaction?.['neutral'] ?? 0)),
           dissatisfied: parseInt(String(satisfaction?.['dissatisfied'] ?? 0)),
-          veryDissatisfied: parseInt(String(satisfaction?.['very_dissatisfied'] ?? 0))
-        }
+          veryDissatisfied: parseInt(String(satisfaction?.['very_dissatisfied'] ?? 0)),
+        },
       };
     } catch (error) {
       logger.error('Failed to get volunteer metrics:', error);
@@ -478,7 +510,7 @@ export class VolunteerSupportService {
 
   /**
    * Gets support system statistics
-   * 
+   *
    * @returns System statistics
    */
   async getSystemStats(): Promise<SupportSystemStats> {
@@ -493,13 +525,13 @@ export class VolunteerSupportService {
       // Waiting requests
       const waitingResult = await this.db.query(
         'SELECT COUNT(*) as count FROM support_sessions WHERE status = $1',
-        ['waiting']
+        ['waiting'],
       );
 
       // Active sessions
       const activeResult = await this.db.query(
         'SELECT COUNT(*) as count FROM support_sessions WHERE status IN ($1, $2)',
-        ['assigned', 'active']
+        ['assigned', 'active'],
       );
 
       // Average wait time
@@ -512,7 +544,7 @@ export class VolunteerSupportService {
       // Sessions today
       const todayResult = await this.db.query(
         'SELECT COUNT(*) as count FROM support_sessions WHERE start_time > NOW() - INTERVAL $1',
-        ['24 hours']
+        ['24 hours'],
       );
 
       // Utilization rate
@@ -542,19 +574,31 @@ export class VolunteerSupportService {
       const health = healthResult.rows[0] as Record<string, string | number>;
 
       return {
-        activeVolunteers: parseInt(String((volunteersResult.rows[0] as { count?: string })?.count ?? '0')),
-        waitingRequests: parseInt(String((waitingResult.rows[0] as { count?: string })?.count ?? '0')),
-        activeSessions: parseInt(String((activeResult.rows[0] as { count?: string })?.count ?? '0')),
-        avgWaitTime: parseFloat(String((waitTimeResult.rows[0] as { avg_wait?: string })?.avg_wait ?? '0')),
+        activeVolunteers: parseInt(
+          String((volunteersResult.rows[0] as { count?: string })?.count ?? '0'),
+        ),
+        waitingRequests: parseInt(
+          String((waitingResult.rows[0] as { count?: string })?.count ?? '0'),
+        ),
+        activeSessions: parseInt(
+          String((activeResult.rows[0] as { count?: string })?.count ?? '0'),
+        ),
+        avgWaitTime: parseFloat(
+          String((waitTimeResult.rows[0] as { avg_wait?: string })?.avg_wait ?? '0'),
+        ),
         sessionsToday: parseInt(String((todayResult.rows[0] as { count?: string })?.count ?? '0')),
-        utilizationRate: (utilization.total_volunteers as number) > 0 
-          ? (utilization.active_volunteers as number) / (utilization.total_volunteers as number) 
-          : 0,
+        utilizationRate:
+          (utilization.total_volunteers as number) > 0
+            ? (utilization.active_volunteers as number) / (utilization.total_volunteers as number)
+            : 0,
         health: {
           responseTimeSLA: parseFloat((health?.response_time_sla ?? 0) as string),
           resolutionRate: parseFloat((health?.resolution_rate ?? 0) as string),
-          satisfactionRate: health?.avg_rating !== null && health?.avg_rating !== undefined ? (parseFloat(health.avg_rating as string) / 5) : 0
-        }
+          satisfactionRate:
+            health?.avg_rating !== null && health?.avg_rating !== undefined
+              ? parseFloat(health.avg_rating as string) / 5
+              : 0,
+        },
       };
     } catch (error) {
       logger.error('Failed to get system stats:', error);
@@ -572,11 +616,15 @@ export class VolunteerSupportService {
       throw new Error('User address required');
     }
 
-    if (request.category === undefined || request.category === '') {
+    if (request.category === undefined) {
       throw new Error('Category required');
     }
 
-    if (request.initialMessage === undefined || request.initialMessage === '' || request.initialMessage.trim().length === 0) {
+    if (
+      request.initialMessage === undefined ||
+      request.initialMessage === '' ||
+      request.initialMessage.trim().length === 0
+    ) {
       throw new Error('Initial message required');
     }
 
@@ -591,22 +639,27 @@ export class VolunteerSupportService {
    * @param {SupportRequest} request - Request to save
    */
   private async saveRequest(request: SupportRequest): Promise<void> {
-    await this.db.query(`
+    await this.db.query(
+      `
       INSERT INTO support_requests (
         request_id, user_address, category, priority,
         initial_message, language, user_score, metadata, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `, [
-      request.requestId,
-      request.userAddress,
-      request.category,
-      request.priority,
-      request.initialMessage,
-      request.language,
-      request.userScore,
-      request.metadata !== null && request.metadata !== undefined ? JSON.stringify(request.metadata) : null,
-      request.timestamp
-    ]);
+    `,
+      [
+        request.requestId,
+        request.userAddress,
+        request.category,
+        request.priority,
+        request.initialMessage,
+        request.language,
+        request.userScore,
+        request.metadata !== null && request.metadata !== undefined
+          ? JSON.stringify(request.metadata)
+          : null,
+        request.timestamp,
+      ],
+    );
   }
 
   /**
@@ -626,7 +679,8 @@ export class VolunteerSupportService {
     }
 
     // Load from database
-    const result = await this.db.query(`
+    const result = await this.db.query(
+      `
       SELECT s.*, r.*,
         array_agg(
           json_build_object(
@@ -643,7 +697,9 @@ export class VolunteerSupportService {
       LEFT JOIN support_messages m ON s.session_id = m.session_id
       WHERE s.session_id = $1
       GROUP BY s.session_id, r.request_id
-    `, [sessionId]);
+    `,
+      [sessionId],
+    );
 
     if (result.rows.length === 0) {
       return null;
@@ -677,26 +733,32 @@ export class VolunteerSupportService {
       request: {
         requestId: row.request_id,
         userAddress: row.user_address,
-        category: row.category,
+        category: row.category as SupportCategory,
         priority: row.priority,
         initialMessage: row.initial_message,
         language: row.language,
         userScore: row.user_score,
         timestamp: row.created_at,
-        metadata: row.metadata
+        metadata: row.metadata,
       },
-      volunteer: row.volunteer_address !== undefined && row.volunteer_address !== null ? {
-        address: row.volunteer_address,
-        // Other volunteer fields would be loaded separately
-      } as SupportVolunteer : undefined,
-      status: row.status,
+      volunteer:
+        row.volunteer_address !== undefined && row.volunteer_address !== null
+          ? ({
+              address: row.volunteer_address,
+              // Other volunteer fields would be loaded separately
+            } as SupportVolunteer)
+          : undefined,
+      status: row.status as SupportSessionStatus,
       startTime: row.start_time,
       assignmentTime: row.assignment_time,
       resolutionTime: row.resolution_time,
-      messages: row.messages !== undefined && row.messages !== null ? JSON.parse(row.messages) as ChatMessage[] : [],
+      messages:
+        row.messages !== undefined && row.messages !== null
+          ? (JSON.parse(row.messages) as ChatMessage[])
+          : [],
       userRating: row.user_rating,
       userFeedback: row.user_feedback,
-      popPointsAwarded: row.pop_points_awarded ?? 0
+      popPointsAwarded: row.pop_points_awarded ?? 0,
     };
 
     // Cache it
@@ -712,12 +774,12 @@ export class VolunteerSupportService {
    */
   private async updateSessionStatus(
     sessionId: string,
-    status: SupportSessionStatus
+    status: SupportSessionStatus,
   ): Promise<void> {
-    await this.db.query(
-      'UPDATE support_sessions SET status = $1 WHERE session_id = $2',
-      [status, sessionId]
-    );
+    await this.db.query('UPDATE support_sessions SET status = $1 WHERE session_id = $2', [
+      status,
+      sessionId,
+    ]);
 
     const session = this.activeSessions.get(sessionId);
     if (session !== null && session !== undefined) {
@@ -741,8 +803,14 @@ export class VolunteerSupportService {
     }
 
     // Resolution time bonus
-    if (session.resolutionTime !== null && session.resolutionTime !== undefined && session.assignmentTime !== null && session.assignmentTime !== undefined) {
-      const resolutionMinutes = (session.resolutionTime.getTime() - session.assignmentTime.getTime()) / 60000;
+    if (
+      session.resolutionTime !== null &&
+      session.resolutionTime !== undefined &&
+      session.assignmentTime !== null &&
+      session.assignmentTime !== undefined
+    ) {
+      const resolutionMinutes =
+        (session.resolutionTime.getTime() - session.assignmentTime.getTime()) / 60000;
       if (resolutionMinutes < 10) {
         points += 1; // Quick resolution bonus
       }
@@ -767,12 +835,12 @@ export class VolunteerSupportService {
   private async awardPopPoints(
     volunteerAddress: string,
     points: number,
-    sessionId: string
+    sessionId: string,
   ): Promise<void> {
     // Update session
     await this.db.query(
       'UPDATE support_sessions SET pop_points_awarded = $1 WHERE session_id = $2',
-      [points, sessionId]
+      [points, sessionId],
     );
 
     // Award points through participation service
@@ -847,12 +915,15 @@ export class VolunteerSupportService {
    * @param {string} volunteerAddress - Volunteer's address
    */
   private async reassignVolunteerSessions(volunteerAddress: string): Promise<void> {
-    const sessions = await this.db.query(`
+    const sessions = await this.db.query(
+      `
       SELECT session_id FROM support_sessions
       WHERE volunteer_address = $1 AND status IN ($2, $3)
-    `, [volunteerAddress, 'assigned', 'active']);
+    `,
+      [volunteerAddress, 'assigned', 'active'],
+    );
 
-    for (const row of sessions.rows as Array<{session_id: string}>) {
+    for (const row of sessions.rows as Array<{ session_id: string }>) {
       // Mark as waiting and let router reassign
       await this.updateSessionStatus(row.session_id, 'waiting');
     }
@@ -884,19 +955,22 @@ export class VolunteerSupportService {
   private startBackgroundTasks(): void {
     // Reassign abandoned sessions every minute
     setInterval(() => {
-      this.router.reassignAbandonedSessions().catch(error => 
-        logger.error('Failed to reassign abandoned sessions:', error)
-      );
+      this.router
+        .reassignAbandonedSessions()
+        .catch(error => logger.error('Failed to reassign abandoned sessions:', error));
     }, 60 * 1000);
 
     // Clean up old sessions every hour
-    setInterval(() => {
-      try {
-        this.cleanupOldSessions();
-      } catch (error) {
-        logger.error('Failed to cleanup old sessions:', error);
-      }
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        try {
+          this.cleanupOldSessions();
+        } catch (error) {
+          logger.error('Failed to cleanup old sessions:', error);
+        }
+      },
+      60 * 60 * 1000,
+    );
   }
 
   /**
@@ -906,9 +980,11 @@ export class VolunteerSupportService {
   private cleanupOldSessions(): void {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
 
-    for (const [sessionId, session] of this.activeSessions.entries()) {
-      if (session.startTime.getTime() < cutoff && 
-          (session.status === 'resolved' || session.status === 'abandoned')) {
+    for (const [sessionId, session] of Array.from(this.activeSessions.entries())) {
+      if (
+        session.startTime.getTime() < cutoff &&
+        (session.status === 'resolved' || session.status === 'abandoned')
+      ) {
         this.activeSessions.delete(sessionId);
         this.clearSessionTimeout(sessionId);
       }
