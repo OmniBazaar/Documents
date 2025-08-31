@@ -21,12 +21,10 @@
     "directory": "Documents"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
+    "dev": "npm run dev:api",
     "dev:api": "nodemon --exec ts-node src/api/index.ts",
-    "dev:frontend": "webpack serve --config webpack.dev.js",
-    "build": "npm run build:api && npm run build:frontend",
+    "build": "npm run build:api",
     "build:api": "tsc -p tsconfig.build.json",
-    "build:frontend": "webpack --config webpack.prod.js",
     "test": "jest",
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration",

@@ -46,23 +46,23 @@ export {
 /**
  * Create a fully configured forum service instance
  *
- * This function creates a forum service that integrates with the Validator module's
- * participation scoring system. Forum activity (posts, replies, moderation) feeds
- * directly into the user's overall participation score in the Validator module.
+ * This function creates a forum service that integrates with the participation
+ * scoring system. Forum activity (posts, replies, moderation) feeds directly
+ * into the user's overall participation score.
  *
- * @param db - YugabyteDB database instance from Validator module
- * @param participationService - ParticipationScoreService instance from Validator module for reputation tracking
+ * @param db - Database instance
+ * @param participationService - ParticipationScoreService instance for reputation tracking
  * @param config - Optional partial configuration to override defaults
  * @returns Promise resolving to initialized P2PForumService instance
  *
  * @example
  * ```typescript
  * import { createForumService } from '@omnibazaar/documents';
- * import { Database } from '@omnibazaar/validator';
- * import { ParticipationScoreService } from '@omnibazaar/validator';
+ * import { Database } from '@omnibazaar/documents/database';
+ * import { MockParticipationScoreService } from '@omnibazaar/documents/interfaces';
  *
  * const db = new Database(dbConfig);
- * const participationService = new ParticipationScoreService(db);
+ * const participationService = new MockParticipationScoreService();
  *
  * const forum = await createForumService(db, participationService, {
  *   maxTitleLength: 200,
@@ -71,102 +71,64 @@ export {
  * ```
  */
 export async function createForumService(
-  db: import('../../../../Validator/src/database/Database').Database,
-  participationService: import('../../../../Validator/src/services/ParticipationScoreService').ParticipationScoreService,
+  db: import('../database/Database').Database,
+  participationService: import('../../interfaces/ParticipationScoreService').IParticipationScoreService,
   config?: Partial<import('./P2PForumService').P2PForumConfig>,
 ): Promise<import('./P2PForumService').P2PForumService> {
   const { P2PForumService } = await import('./P2PForumService');
-  const { Database } = await import('../database/Database');
   const { ParticipationScoreService: LocalParticipationService } = await import(
     '../participation/ParticipationScoreService'
   );
 
-  // Create database adapter with default config
-  // In production, this would use the same connection pool as the Validator
-  const dbAdapter = new Database({
-    host: 'localhost',
-    port: 5433,
-    database: 'omnibazaar',
-    user: 'yugabyte',
-    password: 'yugabyte',
-  });
-
-  // Create participation service adapter that feeds into Validator's participation service
+  // Create local participation service that wraps the provided service
   const participationAdapter = new LocalParticipationService('http://localhost:3000');
 
-  // Override methods to use the real validator service
+  // Override methods to use the provided participation service
   participationAdapter.updateForumActivity = async (
     userAddress: string,
     points: number,
   ): Promise<void> => {
-    // Feed forum activity into the Validator's participation score
-    // The Validator expects metrics, so we create a simple metrics object
-    await participationService.updateForumActivity(userAddress, {
-      posts: points, // Use points as a proxy for posts
-      acceptedAnswers: 0,
-      lastActivity: Date.now(),
+    // Record forum activity using the standard interface
+    await participationService.recordActivity(userAddress, 'forum_activity', {
+      points,
+      timestamp: Date.now(),
     });
   };
 
   participationAdapter.getUserScore = async (
     userAddress: string,
   ): Promise<import('../participation/ParticipationScoreService').UserScoreBreakdown> => {
-    const data = await participationService.getUserData(userAddress);
-    const score = data?.totalScore ?? 0;
-    // Access components from the Validator's data structure
-    const components = (
-      data as {
-        totalScore: number;
-        components?: {
-          documentationActivity?: number;
-          forumActivity?: number;
-          supportParticipation?: number;
-        };
-      }
-    )?.components;
+    const score = await participationService.getScore(userAddress);
     return {
-      total: score,
-      documentation: components?.documentationActivity ?? 0,
-      forum: components?.forumActivity ?? 0,
-      support: components?.supportParticipation ?? 0,
+      total: score.overallScore,
+      documentation: score.components.documentationContribution,
+      forum: score.components.forumActivity,
+      support: score.components.supportVolunteering,
     };
   };
 
   participationAdapter.getUserData = async (
     userAddress: string,
   ): Promise<{ userId: string; totalScore: number }> => {
-    const data = await participationService.getUserData(userAddress);
+    const score = await participationService.getScore(userAddress);
     return {
       userId: userAddress,
-      totalScore: data?.totalScore ?? 0,
+      totalScore: score.overallScore,
     };
   };
 
   participationAdapter.getScore = async (
     userAddress: string,
   ): Promise<import('../participation/ParticipationScoreService').UserParticipationData | null> => {
-    const data = await participationService.getUserData(userAddress);
-    if (data === null || data === undefined) return null;
-
-    const components = (
-      data as {
-        totalScore: number;
-        components?: {
-          documentationActivity?: number;
-          forumActivity?: number;
-          supportParticipation?: number;
-        };
-      }
-    )?.components;
-
+    const score = await participationService.getScore(userAddress);
     return {
       userId: userAddress,
-      totalScore: data.totalScore,
+      totalScore: score.overallScore,
       breakdown: {
-        total: data.totalScore,
-        documentation: components?.documentationActivity ?? 0,
-        forum: components?.forumActivity ?? 0,
-        support: components?.supportParticipation ?? 0,
+        total: score.overallScore,
+        documentation: score.components.documentationContribution,
+        forum: score.components.forumActivity,
+        support: score.components.supportVolunteering,
       },
     };
   };
@@ -189,7 +151,7 @@ export async function createForumService(
     ...config,
   };
 
-  const forumService = new P2PForumService(dbAdapter, participationAdapter, finalConfig);
+  const forumService = new P2PForumService(db, participationAdapter, finalConfig);
   await forumService.initialize();
   return forumService;
 }

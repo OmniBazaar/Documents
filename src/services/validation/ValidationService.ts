@@ -1,9 +1,9 @@
 /**
  * Validation Service Interface
- * 
+ *
  * Interface for requesting validator consensus on documentation updates.
  * Communicates with the Validator module for decentralized decision making.
- * 
+ *
  * @module ValidationService
  */
 
@@ -77,12 +77,12 @@ export class ValidationService {
       // In production, this would submit to validator network
       logger.info('Consensus requested', {
         type,
-        endpoint: this.validatorEndpoint
+        endpoint: this.validatorEndpoint,
       });
     } catch (error) {
       logger.error('Failed to request consensus', {
         type,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -99,18 +99,18 @@ export class ValidationService {
       const fullRequest: ReviewRequest = {
         itemId: request.itemId ?? '',
         type,
-        context: request.context
+        ...(request.context !== undefined && { context: request.context }),
       };
 
       // In production, this would notify validators
       logger.info('Review requested', {
         type,
-        itemId: fullRequest.itemId
+        itemId: fullRequest.itemId,
       });
     } catch (error) {
       logger.error('Failed to request review', {
         type,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -129,12 +129,12 @@ export class ValidationService {
       // In production, query validator network
       return {
         status: 'pending',
-        votes: { yes: 0, no: 0, abstain: 0 }
+        votes: { yes: 0, no: 0, abstain: 0 },
       };
     } catch (error) {
       logger.error('Failed to get consensus status', {
         requestId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

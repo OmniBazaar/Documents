@@ -343,7 +343,11 @@ export class DocumentationService extends EventEmitter {
         return null;
       }
 
-      const document = this.mapRowToDocument(result.rows[0]);
+      const firstRow = result.rows[0];
+      if (firstRow === undefined) {
+        return null;
+      }
+      const document = this.mapRowToDocument(firstRow);
 
       // Cache the document
       this.documentCache.set(documentId, document);
@@ -448,7 +452,11 @@ export class DocumentationService extends EventEmitter {
         `SELECT COUNT(*) FROM documents WHERE ${whereConditions.join(' AND ')}`,
         queryParams,
       );
-      const total = parseInt(countResult.rows[0].count, 10);
+      const countRow = countResult.rows[0];
+      if (countRow === undefined) {
+        throw new Error('Count query returned no results');
+      }
+      const total = parseInt(countRow.count, 10);
 
       // Get documents
       const orderBy = this.getOrderByClause(sortBy, sortDirection);
@@ -611,7 +619,9 @@ export class DocumentationService extends EventEmitter {
 
       const avgRow = avgResult.rows[0];
       const avgRating =
-        avgRow !== undefined && avgRow.avg_rating != null ? parseFloat(avgRow.avg_rating) : 0;
+        avgRow !== undefined && avgRow.avg_rating != null
+          ? parseFloat(String(avgRow.avg_rating))
+          : 0;
 
       await this.db.query('UPDATE documents SET rating = $2 WHERE id = $1', [
         documentId,

@@ -274,7 +274,7 @@ export class VolunteerSupportService {
         content,
         timestamp: new Date(),
         type,
-        attachment,
+        ...(attachment !== undefined && { attachment }),
       };
 
       // Save message
@@ -728,37 +728,41 @@ export class VolunteerSupportService {
       pop_points_awarded?: number;
     }
     const row = result.rows[0] as SessionRow;
+    const requestMetadata = row.metadata as SupportRequest['metadata'];
+    const request: SupportRequest = {
+      requestId: row.request_id,
+      userAddress: row.user_address,
+      category: row.category as SupportCategory,
+      priority: row.priority,
+      initialMessage: row.initial_message,
+      language: row.language,
+      userScore: row.user_score,
+      timestamp: row.created_at,
+      ...(requestMetadata !== undefined && { metadata: requestMetadata }),
+    };
+    const volunteer =
+      row.volunteer_address !== undefined && row.volunteer_address !== null
+        ? ({
+            address: row.volunteer_address,
+            // Other volunteer fields would be loaded separately
+          } as SupportVolunteer)
+        : undefined;
+
     const session: SupportSession = {
       sessionId: row.session_id,
-      request: {
-        requestId: row.request_id,
-        userAddress: row.user_address,
-        category: row.category as SupportCategory,
-        priority: row.priority,
-        initialMessage: row.initial_message,
-        language: row.language,
-        userScore: row.user_score,
-        timestamp: row.created_at,
-        metadata: row.metadata,
-      },
-      volunteer:
-        row.volunteer_address !== undefined && row.volunteer_address !== null
-          ? ({
-              address: row.volunteer_address,
-              // Other volunteer fields would be loaded separately
-            } as SupportVolunteer)
-          : undefined,
+      request,
       status: row.status as SupportSessionStatus,
       startTime: row.start_time,
-      assignmentTime: row.assignment_time,
-      resolutionTime: row.resolution_time,
       messages:
         row.messages !== undefined && row.messages !== null
           ? (JSON.parse(row.messages) as ChatMessage[])
           : [],
-      userRating: row.user_rating,
-      userFeedback: row.user_feedback,
       popPointsAwarded: row.pop_points_awarded ?? 0,
+      ...(row.assignment_time !== undefined && { assignmentTime: row.assignment_time }),
+      ...(row.resolution_time !== undefined && { resolutionTime: row.resolution_time }),
+      ...(row.user_rating !== undefined && { userRating: row.user_rating }),
+      ...(row.user_feedback !== undefined && { userFeedback: row.user_feedback }),
+      ...(volunteer !== undefined && { volunteer }),
     };
 
     // Cache it

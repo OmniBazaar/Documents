@@ -1,9 +1,9 @@
 /**
  * Support Router Service
- * 
+ *
  * Intelligently routes support requests to the most suitable volunteer
  * based on language, expertise, availability, and performance metrics.
- * 
+ *
  * @module SupportRouter
  */
 
@@ -15,7 +15,7 @@ import {
   SupportSession,
   RoutingConfig,
   SupportCategory,
-  VolunteerStatus
+  VolunteerStatus,
 } from './SupportTypes';
 
 /**
@@ -86,20 +86,20 @@ const DEFAULT_ROUTING_CONFIG: RoutingConfig = {
   ratingWeight: 0.2,
   responseTimeWeight: 0.15,
   loadWeight: 0.1,
-  userScoreBoost: true
+  userScoreBoost: true,
 };
 
 /**
  * Support Router Service
- * 
+ *
  * @example
  * ```typescript
  * const router = new SupportRouter(db);
  * await router.initialize();
- * 
+ *
  * // Find best volunteer for request
  * const volunteer = await router.findBestVolunteer(request);
- * 
+ *
  * // Route request to volunteer
  * const session = await router.routeRequest(request, volunteer);
  * ```
@@ -111,13 +111,13 @@ export class SupportRouter {
 
   /**
    * Creates a new Support Router instance
-   * 
+   *
    * @param db - Database instance
    * @param config - Routing configuration
    */
   constructor(
     private db: Database,
-    private config: RoutingConfig = DEFAULT_ROUTING_CONFIG
+    private config: RoutingConfig = DEFAULT_ROUTING_CONFIG,
   ) {}
 
   /**
@@ -130,7 +130,7 @@ export class SupportRouter {
 
   /**
    * Routes a support request to the best available volunteer
-   * 
+   *
    * @param request - Support request to route
    * @returns Created support session
    * @throws {Error} If no volunteers available
@@ -139,7 +139,7 @@ export class SupportRouter {
     try {
       // Find best volunteer
       const volunteer = await this.findBestVolunteer(request);
-      
+
       if (volunteer === null) {
         // No volunteer available, put in queue
         return await this.queueRequest(request);
@@ -156,7 +156,6 @@ export class SupportRouter {
 
       logger.info(`Routed request ${request.requestId} to volunteer ${volunteer.address}`);
       return session;
-
     } catch (error) {
       logger.error('Failed to route request:', error);
       throw error;
@@ -165,7 +164,7 @@ export class SupportRouter {
 
   /**
    * Finds the best available volunteer for a request
-   * 
+   *
    * @param request - Support request
    * @returns Best matched volunteer or null if none available
    */
@@ -184,7 +183,7 @@ export class SupportRouter {
       // Score each volunteer
       const scores = availableVolunteers.map(volunteer => ({
         volunteer,
-        score: this.calculateVolunteerScore(volunteer, request)
+        score: this.calculateVolunteerScore(volunteer, request),
       }));
 
       // Sort by score (highest first)
@@ -192,7 +191,8 @@ export class SupportRouter {
 
       // Return best match if score is above threshold
       const bestMatch = scores[0];
-      if (bestMatch.score >= 0.3) { // Minimum acceptable score
+      if (bestMatch !== undefined && bestMatch.score >= 0.3) {
+        // Minimum acceptable score
         return bestMatch.volunteer;
       }
 
@@ -210,10 +210,7 @@ export class SupportRouter {
    * @param request - The support request to match against
    * @returns Matching score between 0 and 1
    */
-  private calculateVolunteerScore(
-    volunteer: SupportVolunteer, 
-    request: SupportRequest
-  ): number {
+  private calculateVolunteerScore(volunteer: SupportVolunteer, request: SupportRequest): number {
     let score = 0;
 
     // Language match (0-1)
@@ -230,11 +227,14 @@ export class SupportRouter {
 
     // Response time score (0-1, inverse)
     const maxResponseTime = 300; // 5 minutes
-    const responseScore = Math.max(0, 1 - (volunteer.avgResponseTime / maxResponseTime));
+    const responseScore = Math.max(0, 1 - volunteer.avgResponseTime / maxResponseTime);
     score += responseScore * this.config.responseTimeWeight;
 
     // Load score (0-1, inverse)
-    const loadScore = Math.max(0, 1 - (volunteer.activeSessions.length / volunteer.maxConcurrentSessions));
+    const loadScore = Math.max(
+      0,
+      1 - volunteer.activeSessions.length / volunteer.maxConcurrentSessions,
+    );
     score += loadScore * this.config.loadWeight;
 
     // Boost for high-value users
@@ -261,8 +261,10 @@ export class SupportRouter {
     const volunteers: SupportVolunteer[] = [];
 
     for (const volunteer of Array.from(this.volunteerCache.values())) {
-      if (volunteer.status === 'available' && 
-          volunteer.activeSessions.length < volunteer.maxConcurrentSessions) {
+      if (
+        volunteer.status === 'available' &&
+        volunteer.activeSessions.length < volunteer.maxConcurrentSessions
+      ) {
         volunteers.push(volunteer);
       }
     }
@@ -276,7 +278,7 @@ export class SupportRouter {
    */
   private async refreshVolunteerCache(): Promise<void> {
     const now = new Date();
-    
+
     // Check if cache is still valid
     if (now.getTime() - this.lastCacheUpdate.getTime() < this.CACHE_TTL) {
       return;
@@ -317,7 +319,7 @@ export class SupportRouter {
           participationScore: row.participation_score,
           lastActive: row.last_active,
           activeSessions: row.active_sessions.filter((id): id is string => id !== null),
-          maxConcurrentSessions: row.max_concurrent_sessions
+          maxConcurrentSessions: row.max_concurrent_sessions,
         };
 
         this.volunteerCache.set(volunteer.address, volunteer);
@@ -325,7 +327,6 @@ export class SupportRouter {
 
       this.lastCacheUpdate = now;
       logger.debug(`Refreshed volunteer cache with ${this.volunteerCache.size} volunteers`);
-
     } catch (error) {
       logger.error('Failed to refresh volunteer cache:', error);
     }
@@ -340,7 +341,7 @@ export class SupportRouter {
    */
   private async createSession(
     request: SupportRequest,
-    volunteer?: SupportVolunteer
+    volunteer?: SupportVolunteer,
   ): Promise<SupportSession> {
     const sessionId = this.generateSessionId();
     const now = new Date();
@@ -348,35 +349,38 @@ export class SupportRouter {
     const session: SupportSession = {
       sessionId,
       request,
-      volunteer,
       status: volunteer !== undefined ? 'assigned' : 'waiting',
       startTime: now,
-      assignmentTime: volunteer !== undefined ? now : undefined,
       messages: [],
-      popPointsAwarded: 0
+      popPointsAwarded: 0,
+      ...(volunteer !== undefined && { volunteer }),
+      ...(volunteer !== undefined && { assignmentTime: now }),
     };
 
     // Save to database
-    await this.db.query(`
+    await this.db.query(
+      `
       INSERT INTO support_sessions (
         session_id, request_id, user_address, volunteer_address,
         category, priority, status, start_time, assignment_time,
         initial_message, language, user_score
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-    `, [
-      sessionId,
-      request.requestId,
-      request.userAddress,
-      volunteer !== undefined ? volunteer.address : null,
-      request.category,
-      request.priority,
-      session.status,
-      now,
-      volunteer !== undefined ? now : null,
-      request.initialMessage,
-      request.language,
-      request.userScore
-    ]);
+    `,
+      [
+        sessionId,
+        request.requestId,
+        request.userAddress,
+        volunteer !== undefined ? volunteer.address : null,
+        request.category,
+        request.priority,
+        session.status,
+        now,
+        volunteer !== undefined ? now : null,
+        request.initialMessage,
+        request.language,
+        request.userScore,
+      ],
+    );
 
     return session;
   }
@@ -391,10 +395,13 @@ export class SupportRouter {
     const session = await this.createSession(request);
 
     // Add to waiting queue
-    await this.db.query(`
+    await this.db.query(
+      `
       INSERT INTO support_queue (session_id, priority, created_at)
       VALUES ($1, $2, NOW())
-    `, [session.sessionId, request.priority]);
+    `,
+      [session.sessionId, request.priority],
+    );
 
     logger.info(`Request ${request.requestId} added to queue`);
     return session;
@@ -418,10 +425,9 @@ export class SupportRouter {
     }
 
     // Update database
-    await this.db.query(
-      'UPDATE support_volunteers SET last_active = NOW() WHERE address = $1',
-      [address]
-    );
+    await this.db.query('UPDATE support_volunteers SET last_active = NOW() WHERE address = $1', [
+      address,
+    ]);
   }
 
   /**
@@ -430,14 +436,11 @@ export class SupportRouter {
    * @param volunteer - The volunteer to notify
    * @param session - The assigned session
    */
-  private notifyVolunteer(
-    volunteer: SupportVolunteer, 
-    session: SupportSession
-  ): void {
+  private notifyVolunteer(volunteer: SupportVolunteer, session: SupportSession): void {
     // In production, this would send real-time notification
     // For now, log the notification
     logger.info(`Notifying volunteer ${volunteer.address} of session ${session.sessionId}`);
-    
+
     // Could integrate with WebSocket, push notifications, etc.
   }
 
@@ -466,7 +469,7 @@ export class SupportRouter {
           initialMessage: session.initial_message,
           language: session.language,
           userScore: session.user_score,
-          timestamp: session.start_time
+          timestamp: session.start_time,
         };
 
         const volunteer = await this.findBestVolunteer(request);
@@ -486,17 +489,17 @@ export class SupportRouter {
    * @param sessionId - The session ID to assign
    * @param volunteer - The volunteer to assign
    */
-  private async assignVolunteer(
-    sessionId: string, 
-    volunteer: SupportVolunteer
-  ): Promise<void> {
-    await this.db.query(`
+  private async assignVolunteer(sessionId: string, volunteer: SupportVolunteer): Promise<void> {
+    await this.db.query(
+      `
       UPDATE support_sessions 
       SET volunteer_address = $1, 
           assignment_time = NOW(),
           status = 'assigned'
       WHERE session_id = $2
-    `, [volunteer.address, sessionId]);
+    `,
+      [volunteer.address, sessionId],
+    );
 
     await this.updateVolunteerLoad(volunteer.address, 1);
   }
@@ -519,7 +522,7 @@ export class SupportRouter {
       // Queued requests
       const queuedResult = await this.db.query<QueueStatsRow>(
         'SELECT COUNT(*) as count FROM support_sessions WHERE status = $1',
-        ['waiting']
+        ['waiting'],
       );
 
       // Average wait time
@@ -541,9 +544,18 @@ export class SupportRouter {
 
       return {
         availableVolunteers: availableVolunteers.length,
-        queuedRequests: queuedResult.rows[0] !== undefined ? parseInt(queuedResult.rows[0].count, 10) : 0,
-        averageWaitTime: waitTimeResult.rows[0]?.avg_wait !== null && waitTimeResult.rows[0]?.avg_wait !== undefined ? parseFloat(waitTimeResult.rows[0].avg_wait) : 0,
-        routingEfficiency: efficiencyResult.rows[0]?.efficiency !== null && efficiencyResult.rows[0]?.efficiency !== undefined ? parseFloat(efficiencyResult.rows[0].efficiency) : 0
+        queuedRequests:
+          queuedResult.rows[0] !== undefined ? parseInt(queuedResult.rows[0].count, 10) : 0,
+        averageWaitTime:
+          waitTimeResult.rows[0]?.avg_wait !== null &&
+          waitTimeResult.rows[0]?.avg_wait !== undefined
+            ? parseFloat(waitTimeResult.rows[0].avg_wait)
+            : 0,
+        routingEfficiency:
+          efficiencyResult.rows[0]?.efficiency !== null &&
+          efficiencyResult.rows[0]?.efficiency !== undefined
+            ? parseFloat(efficiencyResult.rows[0].efficiency)
+            : 0,
       };
     } catch (error) {
       logger.error('Failed to get routing stats:', error);
@@ -551,7 +563,7 @@ export class SupportRouter {
         availableVolunteers: 0,
         queuedRequests: 0,
         averageWaitTime: 0,
-        routingEfficiency: 0
+        routingEfficiency: 0,
       };
     }
   }

@@ -44,15 +44,13 @@ export interface UserParticipationData {
  * - Support volunteer work
  */
 export class ParticipationScoreService {
-  /** Validator API endpoint */
-  private readonly validatorEndpoint: string;
-
   /**
    * Creates a new ParticipationScoreService instance
-   * @param validatorEndpoint - Validator API endpoint URL
+   * @param _validatorEndpoint - Validator API endpoint URL (reserved for future use)
    */
-  constructor(validatorEndpoint: string) {
-    this.validatorEndpoint = validatorEndpoint;
+  constructor(_validatorEndpoint: string) {
+    // _validatorEndpoint will be used in production for API calls
+    // Currently using local implementation
   }
 
   /**

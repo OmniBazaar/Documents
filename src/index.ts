@@ -1,9 +1,9 @@
 /**
  * OmniBazaar Documents Module
- * 
+ *
  * Main entry point for the Documents module, providing documentation,
  * forum, and support services for the OmniBazaar ecosystem.
- * 
+ *
  * @module DocumentsModule
  */
 
@@ -18,6 +18,50 @@ export * from './services';
  * @see {@link module:integration}
  */
 export * from './integration';
+
+/**
+ * Re-export documentation types
+ */
+export type {
+  DocumentMetadata,
+  Document,
+  DocumentCategory,
+  DocumentLanguage,
+  DocumentSearchParams,
+  DocumentAttachment,
+} from './services/documentation/DocumentationService';
+
+/**
+ * Re-export forum types
+ */
+export type {
+  ForumCategory,
+  ForumThread,
+  ForumPost,
+  CreateThreadRequest,
+  CreatePostRequest,
+  ForumSearchOptions,
+  ForumSearchResult,
+  ForumStats,
+  ForumVote,
+  ForumModeration,
+  ForumReputation,
+  ForumBadge,
+} from './services/forum/ForumTypes';
+
+/**
+ * Re-export support types
+ */
+export type {
+  SupportCategory,
+  SupportPriority,
+  SupportRequest,
+  SupportSession,
+  SupportVolunteer,
+  ChatMessage,
+  SupportSessionStatus,
+  SupportSystemStats,
+} from './services/support/SupportTypes';
 
 /**
  * Logger utility for consistent logging across the module
@@ -38,13 +82,13 @@ export const MODULE_INFO = {
     forum: true,
     support: true,
     consensus: true,
-    search: true
-  }
+    search: true,
+  },
 };
 
 /**
  * Quick start function for Validator integration
- * 
+ *
  * @param config - Integration configuration
  * @param config.database - Database connection settings
  * @param config.database.host - Database host address
@@ -57,11 +101,11 @@ export const MODULE_INFO = {
  * @param config.ports.http - Optional HTTP server port
  * @param config.ports.websocket - Optional WebSocket server port
  * @returns Promise resolving to initialized ValidatorIntegration instance
- * 
+ *
  * @example
  * ```typescript
  * import { startDocumentsModule } from '@omnibazaar/documents';
- * 
+ *
  * const integration = await startDocumentsModule({
  *   database: {
  *     host: 'localhost',
@@ -72,7 +116,7 @@ export const MODULE_INFO = {
  *   },
  *   validatorEndpoint: 'http://localhost:8080'
  * });
- * 
+ *
  * // Use services
  * const services = integration.getServices();
  * ```
@@ -92,9 +136,9 @@ export async function startDocumentsModule(config: {
   };
 }): Promise<import('./integration').ValidatorIntegration> {
   const { ValidatorIntegration } = await import('./integration');
-  
+
   const integration = new ValidatorIntegration(config);
   await integration.start();
-  
+
   return integration;
 }
