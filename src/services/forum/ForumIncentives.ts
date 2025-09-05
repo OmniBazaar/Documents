@@ -727,12 +727,14 @@ export class ForumIncentives {
         points DECIMAL(10,2) NOT NULL,
         reason VARCHAR(50) NOT NULL,
         metadata JSONB,
-        awarded_at TIMESTAMP DEFAULT NOW(),
-        INDEX idx_awards_address (address),
-        INDEX idx_awards_reason (reason),
-        INDEX idx_awards_time (awarded_at)
+        awarded_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    
+    // Create indexes separately (PostgreSQL syntax)
+    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_address ON forum_point_awards(address)');
+    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_reason ON forum_point_awards(reason)');
+    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_time ON forum_point_awards(awarded_at)');
 
     // Post tracking for quality evaluation
     await this.db.query(`
