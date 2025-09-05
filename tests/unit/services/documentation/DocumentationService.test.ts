@@ -48,9 +48,9 @@ describe('DocumentationService', () => {
       testHelpers.assertDocument(doc);
       expect(doc.title).toBe(docData.title);
       expect(doc.content).toBe(docData.content);
-      expect(doc.authorId).toBe(docData.authorId);
+      expect(doc.authorAddress).toBe(docData.authorAddress);
       expect(doc.version).toBe(1);
-      expect(doc.status).toBe('draft');
+      expect(doc.viewCount).toBe(0);
     });
 
     test('should retrieve a document by ID', async () => {
@@ -70,7 +70,7 @@ describe('DocumentationService', () => {
         tags: ['updated', 'test', 'documentation'],
       };
 
-      const updated = await docService.updateDocument(doc.id, updates, doc.authorId);
+      const updated = await docService.updateDocument(doc.id, updates, doc.authorAddress);
 
       expect(updated.title).toBe(updates.title);
       expect(updated.content).toBe(updates.content);
@@ -80,12 +80,13 @@ describe('DocumentationService', () => {
 
     test('should delete a document', async () => {
       const doc = await docService.createDocument(generateTestDocument());
-      const result = await docService.deleteDocument(doc.id, doc.authorId);
+      const result = await docService.deleteDocument(doc.id, doc.authorAddress);
 
       expect(result).toBe(true);
 
       // Verify deletion
-      await expect(docService.getDocument(doc.id)).rejects.toThrow();
+      const deletedDoc = await docService.getDocument(doc.id);
+      expect(deletedDoc).toBeNull();
     });
 
     test('should prevent unauthorized updates', async () => {
@@ -93,7 +94,7 @@ describe('DocumentationService', () => {
       
       await expect(
         docService.updateDocument(doc.id, { title: 'Hacked' }, TEST_USERS.bob)
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('Only the author can update this document');
     });
   });
 
@@ -102,8 +103,8 @@ describe('DocumentationService', () => {
       const doc = await docService.createDocument(generateTestDocument());
       
       // Make multiple updates
-      await docService.updateDocument(doc.id, { title: 'Version 2' }, doc.authorId);
-      await docService.updateDocument(doc.id, { title: 'Version 3' }, doc.authorId);
+      await docService.updateDocument(doc.id, { title: 'Version 2' }, doc.authorAddress);
+      await docService.updateDocument(doc.id, { title: 'Version 3' }, doc.authorAddress);
       
       const versions = await docService.getDocumentVersions(doc.id);
       
@@ -115,7 +116,7 @@ describe('DocumentationService', () => {
 
     test('should retrieve specific version', async () => {
       const doc = await docService.createDocument(generateTestDocument());
-      await docService.updateDocument(doc.id, { title: 'Version 2' }, doc.authorId);
+      await docService.updateDocument(doc.id, { title: 'Version 2' }, doc.authorAddress);
       
       const v1 = await docService.getDocumentVersion(doc.id, 1);
       const v2 = await docService.getDocumentVersion(doc.id, 2);

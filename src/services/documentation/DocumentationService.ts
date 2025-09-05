@@ -286,7 +286,7 @@ export class DocumentationService extends EventEmitter {
           newDocument.language,
           newDocument.version,
           newDocument.authorAddress,
-          JSON.stringify(newDocument.tags),
+          newDocument.tags,
           newDocument.isOfficial,
           `${newDocument.title} ${newDocument.description} ${newDocument.content}`,
         ],
@@ -314,7 +314,7 @@ export class DocumentationService extends EventEmitter {
       return newDocument;
     } catch (error) {
       logger.error('Failed to create document:', error);
-      throw new Error('Document creation failed');
+      throw error;
     }
   }
 
@@ -432,8 +432,8 @@ export class DocumentationService extends EventEmitter {
       }
 
       if (tags.length > 0) {
-        whereConditions.push(`tags @> $${queryParams.length + 1}`);
-        queryParams.push(JSON.stringify(tags));
+        whereConditions.push(`tags && $${queryParams.length + 1}`);
+        queryParams.push(tags);
       }
 
       if (officialOnly) {
@@ -540,7 +540,7 @@ export class DocumentationService extends EventEmitter {
           updatedDocument.category,
           updatedDocument.language,
           updatedDocument.version,
-          JSON.stringify(updatedDocument.tags),
+          updatedDocument.tags,
           updatedDocument.updatedAt,
           `${updatedDocument.title} ${updatedDocument.description} ${updatedDocument.content}`,
         ],
@@ -571,6 +571,49 @@ export class DocumentationService extends EventEmitter {
       return updatedDocument;
     } catch (error) {
       logger.error(`Failed to update document ${documentId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes a document
+   * @param documentId - Document to delete
+   * @param deleterAddress - Address of the user requesting deletion
+   * @returns True if deleted successfully
+   * @throws {Error} If deletion fails or user lacks permission
+   */
+  async deleteDocument(documentId: string, deleterAddress: string): Promise<boolean> {
+    try {
+      const existing = await this.getDocument(documentId, false);
+      if (existing == null) {
+        throw new Error('Document not found');
+      }
+
+      // Check if this is an official document (cannot be deleted)
+      if (existing.isOfficial) {
+        throw new Error('Official documents cannot be deleted');
+      }
+
+      // Check if deleter is the author
+      if (existing.authorAddress !== deleterAddress) {
+        throw new Error('Only the author can delete this document');
+      }
+
+      // Delete from database
+      await this.db.query('DELETE FROM documents WHERE id = $1', [documentId]);
+
+      // Remove from search index
+      this.searchEngine.removeDocument(documentId);
+
+      // Clear cache
+      this.documentCache.delete(documentId);
+
+      this.emit('documentDeleted', { documentId, deleterAddress });
+      logger.info(`Document deleted: ${documentId}`);
+
+      return true;
+    } catch (error) {
+      logger.error(`Failed to delete document ${documentId}:`, error);
       throw error;
     }
   }
@@ -711,7 +754,7 @@ export class DocumentationService extends EventEmitter {
           contribution.content,
           contribution.category,
           contribution.language,
-          JSON.stringify(contribution.tags),
+          contribution.tags,
           contribution.contributorAddress,
           contribution.changeDescription,
         ],
@@ -884,7 +927,7 @@ export class DocumentationService extends EventEmitter {
       authorAddress: row.author_address,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
-      tags: JSON.parse(row.tags ?? '[]') as string[],
+      tags: Array.isArray(row.tags) ? row.tags : [],
       isOfficial: row.is_official,
       viewCount: row.view_count,
       rating:
@@ -893,9 +936,38 @@ export class DocumentationService extends EventEmitter {
           : row.rating != null
             ? parseFloat(String(row.rating))
             : 0,
-      attachments:
-        row.attachments != null ? (JSON.parse(row.attachments) as DocumentAttachment[]) : [],
+      attachments: this.parseAttachments(row.attachments),
     };
+  }
+
+  /**
+   * Parse attachments from database field
+   * @param attachments - Raw attachments field from database
+   * @returns Parsed attachments array
+   * @private
+   */
+  private parseAttachments(attachments: unknown): DocumentAttachment[] {
+    if (attachments == null) {
+      return [];
+    }
+    
+    try {
+      if (typeof attachments === 'string') {
+        if (attachments.trim() === '' || attachments === '[]') {
+          return [];
+        }
+        return JSON.parse(attachments) as DocumentAttachment[];
+      }
+      
+      if (Array.isArray(attachments)) {
+        return attachments as DocumentAttachment[];
+      }
+      
+      return [];
+    } catch (error) {
+      logger.warn('Failed to parse attachments:', error);
+      return [];
+    }
   }
 
   /**

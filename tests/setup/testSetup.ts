@@ -108,13 +108,13 @@ export async function setupTestServices(): Promise<DocumentServices> {
 export async function teardownTestServices(): Promise<void> {
   if (testServices) {
     try {
-      // Stop forum service
-      if (testServices.forum) {
+      // Stop forum service (check if stop method exists)
+      if (testServices.forum && typeof testServices.forum.stop === 'function') {
         await testServices.forum.stop();
       }
       
-      // Stop support service  
-      if (testServices.support) {
+      // Stop support service (check if stop method exists)
+      if (testServices.support && typeof testServices.support.stop === 'function') {
         await testServices.support.stop();
       }
       
@@ -148,7 +148,72 @@ export async function getTestServices(): Promise<DocumentServices> {
  * Creates necessary tables and indexes
  */
 async function runDatabaseMigrations(db: Database): Promise<void> {
-  // Documentation tables
+  // Documentation tables - matches DocumentationService schema
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id VARCHAR(100) PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      content TEXT NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      language VARCHAR(10) NOT NULL DEFAULT 'en',
+      version INTEGER DEFAULT 1,
+      author_address VARCHAR(42) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      tags TEXT[] DEFAULT '{}',
+      is_official BOOLEAN DEFAULT false,
+      view_count INTEGER DEFAULT 0,
+      rating DECIMAL(3,2) DEFAULT 0,
+      attachments JSONB DEFAULT '[]',
+      search_vector tsvector
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS document_ratings (
+      document_id VARCHAR(100) REFERENCES documents(id),
+      user_address VARCHAR(42),
+      rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (document_id, user_address)
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS document_contributions (
+      id VARCHAR(100) PRIMARY KEY,
+      document_id VARCHAR(100) REFERENCES documents(id),
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      language VARCHAR(10) DEFAULT 'en',
+      tags TEXT[] DEFAULT '{}',
+      contributor_address VARCHAR(42) NOT NULL,
+      change_description TEXT,
+      status VARCHAR(50) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS document_update_proposals (
+      proposal_id VARCHAR(100) PRIMARY KEY,
+      document_id VARCHAR(100) REFERENCES documents(id),
+      new_content TEXT NOT NULL,
+      new_metadata JSONB,
+      proposer_address VARCHAR(42) NOT NULL,
+      votes_yes INTEGER DEFAULT 0,
+      votes_no INTEGER DEFAULT 0,
+      votes_abstain INTEGER DEFAULT 0,
+      status VARCHAR(50) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP NOT NULL
+    )
+  `);
+
+  // Create documentation_pages for backward compatibility with forum/support
   await db.query(`
     CREATE TABLE IF NOT EXISTS documentation_pages (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -166,6 +231,16 @@ async function runDatabaseMigrations(db: Database): Promise<void> {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       published_at TIMESTAMP
     )
+  `);
+
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category);
+    CREATE INDEX IF NOT EXISTS idx_documents_author ON documents(author_address);
+    CREATE INDEX IF NOT EXISTS idx_documents_language ON documents(language);
+    CREATE INDEX IF NOT EXISTS idx_documents_official ON documents(is_official);
+    CREATE INDEX IF NOT EXISTS idx_documents_rating ON documents(rating);
+    CREATE INDEX IF NOT EXISTS idx_documents_views ON documents(view_count);
+    CREATE INDEX IF NOT EXISTS idx_documents_search ON documents USING gin(search_vector);
   `);
 
   await db.query(`
