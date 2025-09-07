@@ -183,7 +183,7 @@ export class SearchEngine {
       logger.debug(`Searching for query: "${query}" in ${this.documentIndex.size} documents`);
 
       // Search through indexed documents
-      for (const [_id, doc] of this.documentIndex) {
+      for (const [_id, doc] of Array.from(this.documentIndex)) {
         // Filter by type if specified
         if (params.type !== null && params.type !== undefined && params.type !== '' && doc.type !== params.type) {
           continue;

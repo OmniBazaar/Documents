@@ -23,7 +23,7 @@ import type {
   DocumentCategory,
 } from '../services/documentation/DocumentationService';
 import type { ForumThread, ForumPost, ForumSearchOptions } from '../services/forum/ForumTypes';
-import type { SupportRequest, SupportVolunteer, SupportCategory } from '../services/support/SupportTypes';
+import type { SupportRequest, SupportVolunteer, SupportCategory, SupportSession as SupportSessionType } from '../services/support/SupportTypes';
 
 /**
  * Integration configuration
@@ -550,7 +550,7 @@ export class ValidatorIntegration extends EventEmitter {
       forumService.on('thread:created', (data: { threadId: string; authorAddress: string }) => {
         // Get the full thread data
         this.services?.forum.getThread(data.threadId).then((thread) => {
-          if (thread) {
+          if (thread !== null && thread !== undefined) {
             this.emit('forum:thread:created', { type: 'forum:thread:created', data: thread });
           }
         }).catch((error) => {
@@ -561,7 +561,7 @@ export class ValidatorIntegration extends EventEmitter {
       forumService.on('post:created', (data: { postId: string; threadId: string; authorAddress: string }) => {
         // Get the full post data
         this.services?.forum.getPost(data.postId).then((post) => {
-          if (post) {
+          if (post !== null && post !== undefined) {
             this.emit('forum:post:created', { type: 'forum:post:created', data: post });
           }
         }).catch((error) => {
@@ -833,8 +833,8 @@ export class ValidatorIntegration extends EventEmitter {
         }
         const result = await this.api.support.requestSupport(request);
         // Map sessionId to id for validator integration compatibility
-        const sessionResult = result as SupportSession;
-        const mappedResult = {
+        const sessionResult = result as SupportSessionType;
+        const mappedResult: SupportSessionType & { id: string } = {
           ...sessionResult,
           id: sessionResult.sessionId,
         };
@@ -883,7 +883,7 @@ export class ValidatorIntegration extends EventEmitter {
         const pageSize = data.pageSize as number | undefined;
         const searchParams = pageSize !== undefined ? { pageSize } : {};
         const result = await this.api.documentation.search(query, searchParams);
-        return { success: true, data: { results: result.items || result } };
+        return { success: true, data: { results: 'items' in result ? result.items : result } };
       }
       default:
         throw new Error(`Unknown search action: ${action}`);

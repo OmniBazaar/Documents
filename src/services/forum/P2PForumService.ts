@@ -474,7 +474,8 @@ export class P2PForumService extends EventEmitter {
       [threadId],
     );
     
-    thread.score = scoreResult.rows[0]?.total_score ? Number(scoreResult.rows[0].total_score) : 0;
+    const scoreRow = scoreResult.rows[0] as { total_score: string | null } | undefined;
+    thread.score = scoreRow?.total_score !== null && scoreRow?.total_score !== undefined ? Number(scoreRow.total_score) : 0;
 
     return thread;
   }
@@ -1185,8 +1186,7 @@ export class P2PForumService extends EventEmitter {
     await this.incentives.rewardAcceptedAnswer(postId, post.authorAddress);
 
     const updatedPost = await this.getPost(postId) as ForumPost;
-    // Add isSolution property for test compatibility
-    return { ...updatedPost, isSolution: updatedPost.isAcceptedAnswer };
+    return updatedPost;
   }
 
   /**
@@ -1198,8 +1198,7 @@ export class P2PForumService extends EventEmitter {
    */
   async markPostAsSolution(postId: string, threadAuthorAddress: string): Promise<ForumPost> {
     const post = await this.markAsSolution(postId, threadAuthorAddress);
-    // Add isSolution property for compatibility
-    return { ...post, isSolution: post.isAcceptedAnswer };
+    return post;
   }
 
   /**
@@ -1227,7 +1226,7 @@ export class P2PForumService extends EventEmitter {
         throw new Error('No posts found in this thread');
       }
       
-      actualPostId = firstPostResult.rows[0].id;
+      actualPostId = (firstPostResult.rows[0] as { id: string }).id;
     }
 
     // Check if already voted
@@ -1619,7 +1618,7 @@ export class P2PForumService extends EventEmitter {
           `SELECT author_address FROM forum_posts WHERE id = $1`,
           [content_id]
         );
-        if (postResult.rows.length > 0 && postResult.rows[0].author_address === userAddress) {
+        if (postResult.rows.length > 0 && (postResult.rows[0] as { author_address: string }).author_address === userAddress) {
           violationCount++;
         }
       } else if (content_type === 'thread') {
@@ -1628,7 +1627,7 @@ export class P2PForumService extends EventEmitter {
           `SELECT author_address FROM forum_threads WHERE id = $1`,
           [content_id]
         );
-        if (threadResult.rows.length > 0 && threadResult.rows[0].author_address === userAddress) {
+        if (threadResult.rows.length > 0 && (threadResult.rows[0] as { author_address: string }).author_address === userAddress) {
           violationCount++;
         }
       }
@@ -1719,7 +1718,7 @@ export class P2PForumService extends EventEmitter {
     );
 
     // Count recent posts by this author
-    const recentCount = recent.rows?.length || 0;
+    const recentCount = recent.rows?.length ?? 0;
 
     if (recentCount >= 3) {
       throw new Error('Rate limit exceeded - please wait before posting again');
@@ -1747,7 +1746,7 @@ export class P2PForumService extends EventEmitter {
     );
 
     // If any posts with same content and author exist, it's a duplicate
-    if (duplicate.rows && duplicate.rows.length > 0) {
+    if (duplicate.rows.length > 0) {
       throw new Error('duplicate');
     }
   }

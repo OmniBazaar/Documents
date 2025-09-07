@@ -315,10 +315,9 @@ export class DocumentsService {
 
     try {
       // Check cache first
-      if (this.documentCache.has(documentId)) {
-        // Safe because we checked has() above
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.documentCache.get(documentId)!;
+      const cachedDoc = this.documentCache.get(documentId);
+      if (cachedDoc !== undefined) {
+        return cachedDoc;
       }
 
       // Load from validator
@@ -646,10 +645,8 @@ export class DocumentsService {
       // Save indexes
       await this.saveDocumentIndex();
 
-      // Close client
-      // Client close method doesn't return a promise
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      (this.client as any).close?.();
+      // Disconnect client
+      this.client.disconnect();
 
       this.isInitialized = false;
       logger.info('Documents Service disconnected');

@@ -1063,8 +1063,8 @@ export class VolunteerSupportService extends EventEmitter {
   }): Promise<{ id: string; category: string; userId: string; metadata?: Record<string, unknown> }> {
     const userAddress = params.userAddress ?? params.userId ?? '';
     const initialMessage = params.initialMessage ?? 
-      (params.description ? params.description : '') ?? 
-      (params.subject ? params.subject : '') ?? 
+      (params.description !== null && params.description !== undefined && params.description !== '' ? params.description : '') ?? 
+      (params.subject !== null && params.subject !== undefined && params.subject !== '' ? params.subject : '') ?? 
       '';
     const priority = (params.priority ?? 'medium') as SupportPriority;
     const category = params.category as SupportCategory;
@@ -1076,14 +1076,14 @@ export class VolunteerSupportService extends EventEmitter {
       initialMessage,
       language: 'en',
       userScore: 0, // Will be recalculated in requestSupport
-      metadata: params.metadata,
+      ...(params.metadata !== undefined && { metadata: params.metadata }),
     });
 
     return {
       id: session.request.requestId,
       category: session.request.category,
       userId: userAddress,
-      metadata: params.metadata,
+      ...(params.metadata !== undefined && { metadata: params.metadata }),
     };
   }
 
@@ -1101,15 +1101,15 @@ export class VolunteerSupportService extends EventEmitter {
   }): Promise<{ total: number; requests: unknown[] }> {
     try {
       // Query database for actual requests matching filters
-      let whereConditions: string[] = ['1=1'];
-      let queryParams: unknown[] = [];
+      const whereConditions: string[] = ['1=1'];
+      const queryParams: unknown[] = [];
 
-      if (filters?.category) {
+      if (filters?.category !== null && filters?.category !== undefined && filters?.category !== '') {
         whereConditions.push(`category = $${queryParams.length + 1}`);
         queryParams.push(filters.category);
       }
 
-      if (filters?.metadata) {
+      if (filters?.metadata !== null && filters?.metadata !== undefined) {
         for (const [key, value] of Object.entries(filters.metadata)) {
           whereConditions.push(`metadata->>'${key}' = $${queryParams.length + 1}`);
           queryParams.push(String(value));
@@ -1151,10 +1151,12 @@ export class VolunteerSupportService extends EventEmitter {
 
   /**
    * Gets category metrics (compatibility method for tests)
+   * 
+   * @returns Category metrics with counts
    */
   async getCategoryMetrics(): Promise<Record<string, number>> {
     // Simple implementation for tests
-    const stats = await this.getSystemStats();
+    await this.getSystemStats();
     return {
       'listing-help': 1,
       'payment-issue': 1,
@@ -1165,8 +1167,11 @@ export class VolunteerSupportService extends EventEmitter {
 
   /**
    * Gets volunteer by user ID (compatibility method for tests)
+   * 
+   * @param userId - User ID to look up
+   * @returns Volunteer information
    */
-  async getVolunteerByUserId(userId: string): Promise<{ id: string; address: string; userId: string }> {
+  getVolunteerByUserId(userId: string): { id: string; address: string; userId: string } {
     return {
       id: `volunteer_${userId}`,
       address: userId,
@@ -1176,9 +1181,12 @@ export class VolunteerSupportService extends EventEmitter {
 
   /**
    * Updates request status (compatibility method for tests)
-   * @param {string} requestId - Request ID to update
-   * @param {string} status - New status
-   * @param {object} options - Additional options (e.g., assignedVolunteerId)
+   * 
+   * @param requestId - Request ID to update
+   * @param status - New status
+   * @param options - Additional options
+   * @param options.assignedVolunteerId - Volunteer ID to assign
+   * @returns Promise that resolves when update is complete
    */
   async updateRequestStatus(
     requestId: string,
@@ -1190,7 +1198,7 @@ export class VolunteerSupportService extends EventEmitter {
       const updateValues: unknown[] = [status, requestId];
       let query = 'UPDATE support_requests SET status = $1';
       
-      if (options?.assignedVolunteerId) {
+      if (options?.assignedVolunteerId !== null && options?.assignedVolunteerId !== undefined && options?.assignedVolunteerId !== '') {
         query += ', assigned_volunteer_id = $3';
         updateValues.splice(1, 0, options.assignedVolunteerId);
       }
@@ -1216,12 +1224,18 @@ export class VolunteerSupportService extends EventEmitter {
 
   /**
    * Starts a support session (compatibility method for tests)
+   * 
+   * @param params - Session parameters
+   * @param params.requestId - Request ID to start session for
+   * @param params.volunteerId - Volunteer ID assigned to session
+   * @param params.userId - User ID of the requester
+   * @returns Session information with ID and request ID
    */
-  async startSession(params: {
+  startSession(params: {
     requestId: string;
     volunteerId: string;
     userId: string;
-  }): Promise<{ id: string; requestId: string }> {
+  }): { id: string; requestId: string } {
     return {
       id: `session_${params.requestId}`,
       requestId: params.requestId,
@@ -1230,8 +1244,11 @@ export class VolunteerSupportService extends EventEmitter {
 
   /**
    * Auto-assigns volunteer (compatibility method for tests)  
+   * 
+   * @param _requestId - Request ID to auto-assign (unused in test implementation)
+   * @returns Success status
    */
-  async autoAssignVolunteer(requestId: string): Promise<{ success: boolean }> {
+  autoAssignVolunteer(_requestId: string): { success: boolean } {
     // Simple implementation for tests
     return { success: true };
   }

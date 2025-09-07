@@ -187,14 +187,14 @@ export class ForumConsensus {
     }
 
     // Check content patterns
-    const contentPatterns = this.analyzeContentPatterns(post.content || '');
+    const contentPatterns = this.analyzeContentPatterns(post.content ?? '');
     if (contentPatterns.suspicious === true) {
       spamScore += contentPatterns.score;
       reasons.push(...contentPatterns.reasons);
     }
 
     // Check external links
-    const linkAnalysis = this.analyzeLinks(post.content || '');
+    const linkAnalysis = this.analyzeLinks(post.content ?? '');
     if (linkAnalysis.suspicious === true) {
       spamScore += 0.3;
       reasons.push(`Suspicious links detected: ${linkAnalysis.count} links`);
@@ -535,7 +535,7 @@ export class ForumConsensus {
     let score = 0;
 
     // Safeguard against empty or null content
-    if (!content) {
+    if (content === null || content === undefined || content === '') {
       return { suspicious: false, score: 0, reasons: [] };
     }
 
@@ -649,7 +649,7 @@ export class ForumConsensus {
    * @returns Estimated reading time in minutes
    */
   private estimateReadTime(content: string): number {
-    if (!content) {
+    if (content === null || content === undefined || content === '') {
       return 0;
     }
     const wordsPerMinute = 200;
@@ -665,7 +665,7 @@ export class ForumConsensus {
    * @returns Similarity score (0-1)
    */
   private calculateStringSimilarity(str1: string, str2: string): number {
-    if (!str1 || !str2) {
+    if (str1 === null || str1 === undefined || str1 === '' || str2 === null || str2 === undefined || str2 === '') {
       return 0;
     }
     const set1 = new Set(str1.toLowerCase().split(/\s+/));

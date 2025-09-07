@@ -298,11 +298,11 @@ export class DocumentationService extends EventEmitter {
   ): Promise<Document> {
     try {
       // Validate required fields
-      if (!document.title || document.title.trim() === '') {
+      if (document.title === null || document.title === undefined || document.title.trim() === '') {
         throw new Error('Document title cannot be empty');
       }
       
-      if (!document.content || document.content.trim() === '') {
+      if (document.content === null || document.content === undefined || document.content.trim() === '') {
         throw new Error('Document content cannot be empty');
       }
 
@@ -331,24 +331,24 @@ export class DocumentationService extends EventEmitter {
       }
       
       // Validate author address format
-      if (!document.authorAddress || !/^0x[a-fA-F0-9]{40}$/.test(document.authorAddress)) {
+      if (document.authorAddress === null || document.authorAddress === undefined || !/^0x[a-fA-F0-9]{40}$/.test(document.authorAddress)) {
         throw new Error('Invalid author address format');
       }
       
       // Validate tags array
-      if (document.tags && (!Array.isArray(document.tags) || document.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
+      if (document.tags !== null && document.tags !== undefined && (!Array.isArray(document.tags) || document.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
         throw new Error('Tags must be an array of non-empty strings');
       }
       
       // Validate description if provided
-      if (document.description && document.description.length > 1000) {
+      if (document.description !== null && document.description !== undefined && document.description.length > 1000) {
         throw new Error('Document description cannot exceed 1000 characters');
       }
       
       // If this is a translation, validate the original document exists
-      if (options?.translationOf && options.translationOf !== '') {
+      if (options?.translationOf !== null && options?.translationOf !== undefined && options.translationOf !== '') {
         const originalDoc = await this.getDocument(options.translationOf, false);
-        if (!originalDoc) {
+        if (originalDoc === null || originalDoc === undefined) {
           throw new Error('Original document for translation not found');
         }
         
@@ -391,7 +391,7 @@ export class DocumentationService extends EventEmitter {
           newDocument.isOfficial,
           `${newDocument.title} ${newDocument.description} ${newDocument.content}`,
           newDocument.status,
-          JSON.stringify(document.metadata || {}),
+          JSON.stringify(document.metadata ?? {}),
         ],
       );
 
@@ -406,7 +406,7 @@ export class DocumentationService extends EventEmitter {
           newDocument.content,
           newDocument.authorAddress,
           'Initial version',
-          JSON.stringify(newDocument.metadata || {}),
+          JSON.stringify(newDocument.metadata ?? {}),
         ],
       );
 
@@ -544,11 +544,11 @@ export class DocumentationService extends EventEmitter {
         throw new Error('Minimum rating must be between 0 and 5');
       }
       
-      if (category !== undefined && category !== null && category !== '' && !Object.values(DocumentCategory).includes(category)) {
+      if (category !== undefined && category !== null && !(Object.values(DocumentCategory) as string[]).includes(category)) {
         throw new Error('Invalid category');
       }
       
-      if (language && !SUPPORTED_LANGUAGES.includes(language)) {
+      if (language !== null && language !== undefined && !SUPPORTED_LANGUAGES.includes(language)) {
         throw new Error(`Unsupported language: ${language}`);
       }
       
@@ -560,11 +560,11 @@ export class DocumentationService extends EventEmitter {
         throw new Error('Invalid sortDirection parameter');
       }
       
-      if (status && !['draft', 'published', 'archived'].includes(status)) {
+      if (status !== null && status !== undefined && !['draft', 'published', 'archived'].includes(status)) {
         throw new Error('Invalid status parameter');
       }
       
-      if (tags && !Array.isArray(tags)) {
+      if (tags !== null && tags !== undefined && !Array.isArray(tags)) {
         throw new Error('Tags must be an array');
       }
       
@@ -639,7 +639,7 @@ export class DocumentationService extends EventEmitter {
       }
 
       // Handle metadata filters with enhanced validation
-      if (filters && Object.keys(filters).length > 0) {
+      if (filters !== null && filters !== undefined && Object.keys(filters).length > 0) {
         for (const [key, value] of Object.entries(filters)) {
           if (value !== undefined && value !== null && value !== '') {
             if (key.startsWith('metadata.')) {
@@ -654,11 +654,11 @@ export class DocumentationService extends EventEmitter {
               // Handle date range filtering
               if (typeof value === 'object' && value !== null) {
                 const dateRange = value as { start?: string; end?: string };
-                if (dateRange.start) {
+                if (dateRange.start !== null && dateRange.start !== undefined && dateRange.start !== '') {
                   whereConditions.push(`created_at >= $${queryParams.length + 1}`);
                   queryParams.push(new Date(dateRange.start).toISOString());
                 }
-                if (dateRange.end) {
+                if (dateRange.end !== null && dateRange.end !== undefined && dateRange.end !== '') {
                   whereConditions.push(`created_at <= $${queryParams.length + 1}`);
                   queryParams.push(new Date(dateRange.end).toISOString());
                 }
@@ -667,7 +667,7 @@ export class DocumentationService extends EventEmitter {
               // Handle multiple author filtering
               const placeholders = value.map((_, i) => `$${queryParams.length + i + 1}`).join(',');
               whereConditions.push(`author_address IN (${placeholders})`);
-              queryParams.push(...value);
+              queryParams.push(...(value as string[]));
             } else if (key === 'hasAttachments' && typeof value === 'boolean') {
               // Filter documents with/without attachments
               if (value) {
@@ -733,48 +733,48 @@ export class DocumentationService extends EventEmitter {
   ): Promise<Document> {
     try {
       // Enhanced input validation
-      if (!documentId || documentId.trim() === '') {
+      if (documentId === null || documentId === undefined || documentId.trim() === '') {
         throw new Error('Document ID cannot be empty');
       }
       
-      if (!updaterAddress || !/^0x[a-fA-F0-9]{40}$/.test(updaterAddress)) {
+      if (updaterAddress === null || updaterAddress === undefined || !/^0x[a-fA-F0-9]{40}$/.test(updaterAddress)) {
         throw new Error('Invalid updater address format');
       }
       
-      if (!updates || Object.keys(updates).length === 0) {
+      if (updates === null || updates === undefined || Object.keys(updates).length === 0) {
         throw new Error('No updates provided');
       }
       
       // Validate update fields
-      if (updates.title !== undefined && (!updates.title || updates.title.trim() === '')) {
+      if (updates.title !== undefined && (updates.title === null || updates.title === '' || updates.title.trim() === '')) {
         throw new Error('Document title cannot be empty');
       }
       
-      if (updates.title && (updates.title.trim().length < 3 || updates.title.trim().length > 255)) {
+      if (updates.title !== null && updates.title !== undefined && (updates.title.trim().length < 3 || updates.title.trim().length > 255)) {
         throw new Error('Document title must be between 3 and 255 characters');
       }
       
-      if (updates.content !== undefined && (!updates.content || updates.content.trim() === '')) {
+      if (updates.content !== undefined && (updates.content === null || updates.content === '' || updates.content.trim() === '')) {
         throw new Error('Document content cannot be empty');
       }
       
-      if (updates.content && updates.content.trim().length < 10) {
+      if (updates.content !== null && updates.content !== undefined && updates.content.trim().length < 10) {
         throw new Error('Document content must be at least 10 characters long');
       }
       
-      if (updates.language && !SUPPORTED_LANGUAGES.includes(updates.language)) {
+      if (updates.language !== null && updates.language !== undefined && !SUPPORTED_LANGUAGES.includes(updates.language)) {
         throw new Error(`Unsupported language: ${updates.language}. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`);
       }
       
-      if (updates.category && !Object.values(DocumentCategory).includes(updates.category)) {
+      if ((updates.category != null) && !Object.values(DocumentCategory).includes(updates.category)) {
         throw new Error('Invalid category');
       }
       
-      if (updates.tags && (!Array.isArray(updates.tags) || updates.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
+      if (updates.tags !== null && updates.tags !== undefined && (!Array.isArray(updates.tags) || updates.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
         throw new Error('Tags must be an array of non-empty strings');
       }
       
-      if (updates.description && updates.description.length > 1000) {
+      if (updates.description !== null && updates.description !== undefined && updates.description.length > 1000) {
         throw new Error('Document description cannot exceed 1000 characters');
       }
 
@@ -783,10 +783,7 @@ export class DocumentationService extends EventEmitter {
         throw new Error('Document not found');
       }
       
-      // Check for version conflicts (optimistic locking)
-      if (updates.version !== undefined && updates.version !== existing.version) {
-        throw new Error(`Version conflict: document has been updated. Expected version ${updates.version}, current version ${existing.version}`);
-      }
+      // Version check removed - 'version' is excluded from updates type
 
       // Check if this is an official document requiring consensus
       if (existing.isOfficial) {
@@ -824,7 +821,7 @@ export class DocumentationService extends EventEmitter {
           updatedDocument.content,
           updaterAddress,
           updates.description ?? 'Document updated',
-          JSON.stringify(updatedDocument.metadata || {}),
+          JSON.stringify(updatedDocument.metadata ?? {}),
         ],
       );
 
@@ -1339,13 +1336,13 @@ export class DocumentationService extends EventEmitter {
    */
   async getTranslations(documentId: string): Promise<Document[]> {
     try {
-      if (!documentId || documentId.trim() === '') {
+      if (documentId === null || documentId === undefined || documentId.trim() === '') {
         throw new Error('Document ID cannot be empty');
       }
       
       // Verify the original document exists
       const originalDoc = await this.getDocument(documentId, false);
-      if (!originalDoc) {
+      if (originalDoc === null || originalDoc === undefined) {
         throw new Error('Original document not found');
       }
       
@@ -1565,11 +1562,11 @@ export class DocumentationService extends EventEmitter {
    */
   async requestConsensusValidation(documentId: string, proposerAddress: string): Promise<string> {
     try {
-      if (!documentId || documentId.trim() === '') {
+      if (documentId === null || documentId === undefined || documentId.trim() === '') {
         throw new Error('Document ID cannot be empty');
       }
       
-      if (!proposerAddress || !/^0x[a-fA-F0-9]{40}$/.test(proposerAddress)) {
+      if (proposerAddress === null || proposerAddress === undefined || !/^0x[a-fA-F0-9]{40}$/.test(proposerAddress)) {
         throw new Error('Invalid proposer address format');
       }
       
@@ -1685,11 +1682,11 @@ export class DocumentationService extends EventEmitter {
    */
   async markDocumentHelpful(documentId: string, userAddress: string): Promise<boolean> {
     try {
-      if (!documentId || documentId.trim() === '') {
+      if (documentId === null || documentId === undefined || documentId.trim() === '') {
         throw new Error('Document ID cannot be empty');
       }
       
-      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+      if (userAddress === null || userAddress === undefined || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         throw new Error('Invalid user address format');
       }
       
@@ -1761,7 +1758,7 @@ export class DocumentationService extends EventEmitter {
       }
       
       // Validate IPFS hash format (Qm... format for IPFS v0 or more flexible for testing)
-      if (!ipfsHash.match(/^Qm[a-zA-Z0-9]{44}$/) && !ipfsHash.startsWith('ipfs_')) {
+      if ((ipfsHash.match(/^Qm[a-zA-Z0-9]{44}$/) === null) && !ipfsHash.startsWith('ipfs_')) {
         throw new Error('Invalid IPFS hash format');
       }
       
@@ -1797,7 +1794,7 @@ export class DocumentationService extends EventEmitter {
         }
       }
 
-      if (!result || result.rows.length === 0) {
+      if (result === null || result === undefined || result.rows.length === 0) {
         throw new Error(`Document not found in IPFS for hash: ${ipfsHash}`);
       }
 
@@ -1806,13 +1803,13 @@ export class DocumentationService extends EventEmitter {
         throw new Error('Retrieved document is null or undefined');
       }
       
-      if (!doc.content || doc.content.trim() === '') {
+      if (doc.content === null || doc.content === undefined || doc.content.trim() === '') {
         throw new Error('Retrieved document has empty content');
       }
       
       // Validate tags array
       let validatedTags: string[] = [];
-      if (doc.tags && Array.isArray(doc.tags)) {
+      if (doc.tags !== null && doc.tags !== undefined && Array.isArray(doc.tags)) {
         validatedTags = doc.tags.filter(tag => typeof tag === 'string' && tag.trim() !== '');
       }
 
@@ -2101,13 +2098,13 @@ export class DocumentationService extends EventEmitter {
         'SELECT COUNT(*) as count FROM documents WHERE status = $1',
         ['published']
       );
-      const totalDocuments = parseInt(totalDocsResult.rows[0].count);
+      const totalDocuments = parseInt(totalDocsResult.rows[0]?.count ?? '0');
 
       // Get total versions count
       const totalVersionsResult = await this.db.query<{ count: string }>(
         'SELECT COUNT(*) as count FROM document_versions'
       );
-      const totalVersions = parseInt(totalVersionsResult.rows[0].count);
+      const totalVersions = parseInt(totalVersionsResult.rows[0]?.count ?? '0');
 
       // Get documents by category
       const categoryResult = await this.db.query<{ category: string; count: string }>(
