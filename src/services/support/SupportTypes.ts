@@ -1,9 +1,9 @@
 /**
  * Support Chat Type Definitions
- * 
+ *
  * Comprehensive type definitions for the volunteer support chat system.
  * Defines all interfaces and types for support sessions, routing, and quality metrics.
- * 
+ *
  * @module SupportTypes
  */
 
@@ -20,7 +20,7 @@ export type SupportPriority = 'low' | 'medium' | 'high' | 'urgent';
 /**
  * Support topic categories
  */
-export type SupportCategory = 
+export type SupportCategory =
   | 'wallet_setup'
   | 'marketplace_listing'
   | 'marketplace_buying'
@@ -65,6 +65,10 @@ export interface SupportRequest {
     errorLogs?: string;
     /** Previous support history */
     previousSessions?: number;
+    /** Referenced documents */
+    referencedDocs?: string[];
+    /** Allow any additional metadata fields */
+    [key: string]: unknown;
   };
 }
 
@@ -242,7 +246,7 @@ export interface RoutingConfig {
  */
 export interface SupportSessionEvent {
   /** Event type */
-  type: 
+  type:
     | 'session_created'
     | 'volunteer_assigned'
     | 'message_sent'

@@ -12,6 +12,7 @@
 
 import { Database } from '@/services/database/Database';
 import { DocumentServices } from '@/services';
+import { DocumentCategory } from '@/services/documentation';
 import { 
   setupTestServices, 
   teardownTestServices, 
@@ -30,6 +31,11 @@ describe('Database Integration Tests', () => {
   beforeAll(async () => {
     services = await setupTestServices();
     db = services.db;
+  });
+
+  beforeEach(async () => {
+    // Clean test data before each test for isolation
+    await cleanTestData(db);
   });
 
   afterAll(async () => {
@@ -86,7 +92,7 @@ describe('Database Integration Tests', () => {
         await db.query(
           `INSERT INTO documentation_pages (title, content, category, author_id) 
            VALUES ($1, $2, $3, $4)`,
-          ['Transaction Test', 'Test content', 'test', TEST_USERS.alice]
+          ['Transaction Test', 'Test content', DocumentCategory.TECHNICAL, TEST_USERS.alice]
         );
         
         await db.commitTransaction();
@@ -112,7 +118,7 @@ describe('Database Integration Tests', () => {
         await db.query(
           `INSERT INTO documentation_pages (title, content, category, author_id) 
            VALUES ($1, $2, $3, $4)`,
-          ['Rollback Test', 'Test content', 'test', TEST_USERS.alice]
+          ['Rollback Test', 'Test content', DocumentCategory.TECHNICAL, TEST_USERS.alice]
         );
         
         // Force an error (invalid category constraint)
@@ -144,7 +150,7 @@ describe('Database Integration Tests', () => {
         const doc1 = await db.query(
           `INSERT INTO documentation_pages (title, content, category, author_id) 
            VALUES ($1, $2, $3, $4) RETURNING id`,
-          ['Outer Transaction', 'Content', 'test', TEST_USERS.alice]
+          ['Outer Transaction', 'Content', DocumentCategory.TECHNICAL, TEST_USERS.alice]
         );
         
         // Create savepoint
@@ -155,7 +161,7 @@ describe('Database Integration Tests', () => {
           await db.query(
             `INSERT INTO forum_threads (title, content, category, author_id)
              VALUES ($1, $2, $3, $4)`,
-            ['Nested Thread', 'Content', 'test', TEST_USERS.alice]
+            ['Nested Thread', 'Content', DocumentCategory.TECHNICAL, TEST_USERS.alice]
           );
           
           // Force error
@@ -202,7 +208,7 @@ describe('Database Integration Tests', () => {
           services.documentation.createDocument(
             generateTestDocument({
               title: `Concurrent Doc ${i}`,
-              category: 'concurrent-test',
+              category: DocumentCategory.TECHNICAL,
             })
           )
         );
@@ -213,8 +219,8 @@ describe('Database Integration Tests', () => {
       
       // Verify all inserted
       const count = await db.query<{ count: string }>(
-        'SELECT COUNT(*) FROM documentation_pages WHERE category = $1',
-        ['concurrent-test']
+        'SELECT COUNT(*) FROM documents WHERE category = $1',
+        [DocumentCategory.TECHNICAL]
       );
       
       expect(parseInt(count.rows[0].count)).toBe(50);
@@ -304,7 +310,7 @@ describe('Database Integration Tests', () => {
         await services.forum.createPost({
           threadId: thread.id,
           content: `Test post ${i}`,
-          authorId: TEST_USERS.alice,
+          authorAddress: TEST_USERS.alice,
         });
       }
       
@@ -354,7 +360,7 @@ describe('Database Integration Tests', () => {
       for (let i = 0; i < 100; i++) {
         await services.documentation.createDocument(
           generateTestDocument({
-            category: i < 50 ? 'indexed-cat-1' : 'indexed-cat-2',
+            category: i < 50 ? DocumentCategory.TECHNICAL : DocumentCategory.MARKETPLACE,
           })
         );
       }
@@ -472,12 +478,12 @@ describe('Database Integration Tests', () => {
     test('should maintain consistency across related tables', async () => {
       // Create document
       const doc = await services.documentation.createDocument(
-        generateTestDocument({ authorId: TEST_USERS.alice })
+        generateTestDocument({ authorAddress: TEST_USERS.alice })
       );
       
       // Create forum thread by same author
       const thread = await services.forum.createThread(
-        generateTestThread({ authorId: TEST_USERS.alice })
+        generateTestThread({ authorAddress: TEST_USERS.alice })
       );
       
       // Create support request
@@ -539,7 +545,7 @@ describe('Database Integration Tests', () => {
       await db.query(
         `INSERT INTO documentation_pages (title, content, category, author_id)
          VALUES ($1, $2, $3, $4)`,
-        [marker, 'Recovery test content', 'test', TEST_USERS.admin]
+        [marker, 'Recovery test content', DocumentCategory.TECHNICAL, TEST_USERS.admin]
       );
       
       // Verify marker exists
@@ -559,22 +565,23 @@ describe('Database Integration Tests', () => {
         COPY (
           SELECT id, title, category, created_at 
           FROM documentation_pages 
-          WHERE category = 'test'
+          WHERE category = $1
           LIMIT 10
         ) TO STDOUT WITH (FORMAT CSV, HEADER true)
       `;
       
       // This would normally export to file, but we test query validity
       await expect(
-        db.query(exportQuery)
+        db.query(exportQuery, [DocumentCategory.TECHNICAL])
       ).rejects.toThrow(/STDOUT/); // Expected as we're not in psql
       
       // Alternative: test data extraction
       const data = await db.query(
         `SELECT id, title, category, created_at 
          FROM documentation_pages 
-         WHERE category = 'test'
-         LIMIT 10`
+         WHERE category = $1
+         LIMIT 10`,
+        [DocumentCategory.TECHNICAL]
       );
       
       expect(Array.isArray(data.rows)).toBe(true);

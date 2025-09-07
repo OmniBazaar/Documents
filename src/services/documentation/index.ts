@@ -1,8 +1,8 @@
 /**
  * Documentation Service Module Exports
- * 
+ *
  * Central export file for all documentation-related services and types
- * 
+ *
  * @module Documentation
  */
 
@@ -68,17 +68,17 @@ export type { DocumentUpdateProposal } from './DocumentationService';
 
 /**
  * Create a fully configured documentation service instance
- * 
+ *
  * @param db - Database instance for YugabyteDB connection
  * @param participationService - ParticipationScoreService instance for score tracking
  * @param searchEngine - SearchEngine instance for document search functionality
  * @param validationService - ValidationService instance for content validation
  * @returns Promise resolving to initialized DocumentationService instance
- * 
+ *
  * @example
  * ```typescript
  * import { createDocumentationService } from '@omnibazaar/documents';
- * 
+ *
  * const docs = await createDocumentationService(db, participationService, searchEngine, validationService);
  * ```
  */
@@ -86,15 +86,10 @@ export async function createDocumentationService(
   db: Database,
   participationService: ParticipationScoreService,
   searchEngine: SearchEngine,
-  validationService: ValidationService
+  validationService: ValidationService,
 ): Promise<DocumentationServiceType> {
   const { DocumentationService: DocService } = await import('./DocumentationService');
-  const docService = new DocService(
-    db,
-    searchEngine,
-    participationService,
-    validationService
-  );
+  const docService = new DocService(db, searchEngine, participationService, validationService);
   return docService;
 }
 
@@ -118,8 +113,8 @@ export const DEFAULT_DOCUMENTATION_CONFIG = {
     'video/mp4',
     'application/pdf',
     'text/plain',
-    'text/markdown'
-  ]
+    'text/markdown',
+  ],
 };
 
 /**
@@ -137,12 +132,12 @@ export enum DocumentationEvent {
   /** Fired when a contribution is approved */
   CONTRIBUTION_APPROVED = 'contributionApproved',
   /** Fired when a contribution is rejected */
-  CONTRIBUTION_REJECTED = 'contributionRejected'
+  CONTRIBUTION_REJECTED = 'contributionRejected',
 }
 
 /**
  * Helper function to validate document content
- * 
+ *
  * @param content - Document content to validate
  * @returns Validation result
  */
@@ -157,7 +152,9 @@ export function validateDocumentContent(content: string): {
   }
 
   if (content.length > DEFAULT_DOCUMENTATION_CONFIG.maxDocumentSize) {
-    errors.push(`Content exceeds maximum size of ${DEFAULT_DOCUMENTATION_CONFIG.maxDocumentSize} bytes`);
+    errors.push(
+      `Content exceeds maximum size of ${DEFAULT_DOCUMENTATION_CONFIG.maxDocumentSize} bytes`,
+    );
   }
 
   // Check for basic markdown structure
@@ -168,13 +165,13 @@ export function validateDocumentContent(content: string): {
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
 /**
  * Helper function to format document for display
- * 
+ *
  * @param document - Document to format
  * @returns Formatted document
  */
@@ -188,10 +185,11 @@ export function formatDocumentForDisplay(document: Document): {
   const firstParagraph = document.content
     .split('\n\n')
     .find(p => p.trim().length > 0 && !p.startsWith('#'));
-  
-  const summary = firstParagraph !== undefined
-    ? firstParagraph.substring(0, 200) + (firstParagraph.length > 200 ? '...' : '')
-    : '';
+
+  const summary =
+    firstParagraph !== undefined
+      ? firstParagraph.substring(0, 200) + (firstParagraph.length > 200 ? '...' : '')
+      : '';
 
   // Estimate reading time (200 words per minute)
   const wordCount = document.content.split(/\s+/).length;
@@ -201,12 +199,15 @@ export function formatDocumentForDisplay(document: Document): {
     title: document.title,
     summary,
     readingTime,
-    lastUpdated: new Date(document.updatedAt).toLocaleDateString()
+    lastUpdated: new Date(document.updatedAt).toLocaleDateString(),
   };
 }
 
 // Re-import types for type checking
-import type { Document, DocumentationService as DocumentationServiceType } from './DocumentationService';
+import type {
+  Document,
+  DocumentationService as DocumentationServiceType,
+} from './DocumentationService';
 import type { Database } from '../database/Database';
 import type { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import type { SearchEngine } from '../search/SearchEngine';

@@ -1,6 +1,6 @@
 /**
  * Type definitions for the P2P Forum Service
- * 
+ *
  * @module ForumTypes
  */
 
@@ -50,6 +50,8 @@ export interface ForumThread {
   isLocked: boolean;
   /** Tags associated with the thread */
   tags: string[];
+  /** Thread score calculated from post votes */
+  score?: number;
   /** Additional metadata */
   metadata: Record<string, unknown>;
 }
@@ -78,6 +80,8 @@ export interface ForumPost {
   upvotes: number;
   /** Number of downvotes */
   downvotes: number;
+  /** Post score (upvotes - downvotes) */
+  score?: number;
   /** Whether this is the accepted answer (for Q&A threads) */
   isAcceptedAnswer: boolean;
   /** Whether post has been soft deleted */
@@ -156,6 +160,8 @@ export interface ForumStats {
   totalThreads: number;
   /** Total number of posts */
   totalPosts: number;
+  /** Total number of unique users */
+  totalUsers: number;
   /** Number of active users */
   activeUsers: number;
   /** Threads created today */
@@ -361,8 +367,14 @@ export interface ForumNotificationPreferences {
  */
 export interface ForumActivityEvent {
   /** Event type */
-  type: 'thread_created' | 'post_created' | 'post_voted' | 'post_edited' | 
-        'thread_locked' | 'thread_pinned' | 'answer_accepted';
+  type:
+    | 'thread_created'
+    | 'post_created'
+    | 'post_voted'
+    | 'post_edited'
+    | 'thread_locked'
+    | 'thread_pinned'
+    | 'answer_accepted';
   /** Related entity ID */
   entityId: string;
   /** Actor address */

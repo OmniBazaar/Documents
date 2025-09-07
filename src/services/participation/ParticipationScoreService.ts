@@ -44,13 +44,24 @@ export interface UserParticipationData {
  * - Support volunteer work
  */
 export class ParticipationScoreService {
+  /** In-memory score storage for testing */
+  private userScores: Map<string, UserScoreBreakdown> = new Map();
+
+  /**
+   * Clears all user scores (for testing)
+   * @internal
+   */
+  clearScores(): void {
+    this.userScores.clear();
+  }
+
   /**
    * Creates a new ParticipationScoreService instance
    * @param _validatorEndpoint - Validator API endpoint URL (reserved for future use)
    */
   constructor(_validatorEndpoint: string) {
     // _validatorEndpoint will be used in production for API calls
-    // Currently using local implementation
+    // Currently using local implementation with in-memory storage
   }
 
   /**
@@ -170,13 +181,18 @@ export class ParticipationScoreService {
     try {
       this.validateAddress(userAddress);
 
-      // In production, this would fetch from the validator API
-      // For now, log and return default data
       logger.info('Getting user participation score', { userAddress });
 
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 0));
 
+      // Return actual scores from in-memory storage
+      const scores = this.userScores.get(userAddress);
+      if (scores !== null && scores !== undefined) {
+        return scores;
+      }
+
+      // Return default scores if user has no activity
       return {
         total: 0,
         documentation: 0,
@@ -216,12 +232,26 @@ export class ParticipationScoreService {
       this.validateAddress(userAddress);
       this.validatePoints(points);
 
-      // In production, this would make an API call to the validator
-      // For now, log the activity
+      // Get current scores or initialize
+      const currentScores = this.userScores.get(userAddress) ?? {
+        total: 0,
+        documentation: 0,
+        forum: 0,
+        support: 0,
+      };
+
+      // Update the specific category
+      currentScores[category] += points;
+      currentScores.total += points;
+
+      // Store updated scores
+      this.userScores.set(userAddress, currentScores);
+
       logger.info(`${category} activity points awarded`, {
         category,
         userAddress,
         points,
+        newTotal: currentScores.total,
       });
 
       // Simulate API delay

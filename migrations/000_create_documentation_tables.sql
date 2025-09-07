@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS documents (
     view_count INTEGER DEFAULT 0,
     rating DECIMAL(3,2) DEFAULT 0,
     attachments JSONB DEFAULT '[]',
+    metadata JSONB DEFAULT '{}',
     search_vector tsvector
 );
 
@@ -56,6 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_author ON documents(author_address);
 CREATE INDEX IF NOT EXISTS idx_documents_official ON documents(is_official);
 CREATE INDEX IF NOT EXISTS idx_documents_search ON documents USING gin(search_vector);
 CREATE INDEX IF NOT EXISTS idx_documents_tags ON documents USING gin(tags);
+CREATE INDEX IF NOT EXISTS idx_documents_metadata ON documents USING gin(metadata);
 
 -- Trigger to update search vector
 CREATE OR REPLACE FUNCTION update_document_search_vector() RETURNS trigger AS $$

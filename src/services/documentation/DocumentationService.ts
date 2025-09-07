@@ -89,6 +89,14 @@ export interface Document extends DocumentMetadata {
   searchVector?: string;
   /** Media attachments (IPFS CIDs for files > 10MB) */
   attachments?: DocumentAttachment[];
+  /** IPFS hash for published documents */
+  ipfsHash?: string;
+  /** Document status */
+  status?: 'draft' | 'published' | 'archived';
+  /** Timestamp when document was published */
+  publishedAt?: Date;
+  /** Additional metadata for custom properties */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -130,6 +138,26 @@ export interface DocumentContribution {
 }
 
 /**
+ * Database row type for document versions table
+ */
+interface DocumentVersionRow {
+  id: number;
+  document_id: string;
+  version: number;
+  title: string;
+  content: string;
+  editor_address: string;
+  change_description?: string;
+  created_at: string;
+  category?: string;
+  language?: string;
+  tags?: string[];
+  is_official?: boolean;
+  description?: string;
+  metadata?: string | Record<string, unknown>;
+}
+
+/**
  * Database row type for documents table
  */
 interface DocumentRow {
@@ -148,6 +176,10 @@ interface DocumentRow {
   view_count: number;
   rating: string | number;
   attachments?: string;
+  metadata?: string;
+  ipfs_hash?: string;
+  status?: string;
+  published_at?: Date | string;
 }
 
 /**
@@ -174,6 +206,10 @@ export interface DocumentSearchParams {
   sortBy?: 'relevance' | 'date' | 'rating' | 'views';
   /** Sort direction */
   sortDirection?: 'asc' | 'desc';
+  /** Filter by status */
+  status?: 'draft' | 'published' | 'archived';
+  /** Additional metadata filters */
+  filters?: Record<string, unknown>;
 }
 
 /**
@@ -251,13 +287,77 @@ export class DocumentationService extends EventEmitter {
   /**
    * Creates a new document
    * @param document - Document data
+   * @param options - Additional options like translationOf
+   * @param options.translationOf - ID of document this is a translation of
    * @returns Created document with ID
    * @throws {Error} If document creation fails
    */
   async createDocument(
     document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'rating'>,
+    options?: { translationOf?: string },
   ): Promise<Document> {
     try {
+      // Validate required fields
+      if (!document.title || document.title.trim() === '') {
+        throw new Error('Document title cannot be empty');
+      }
+      
+      if (!document.content || document.content.trim() === '') {
+        throw new Error('Document content cannot be empty');
+      }
+
+      // Enhanced validation for title length and content quality
+      if (document.title.trim().length < 3) {
+        throw new Error('Document title must be at least 3 characters long');
+      }
+      
+      if (document.title.trim().length > 255) {
+        throw new Error('Document title cannot exceed 255 characters');
+      }
+      
+      if (document.content.trim().length < 10) {
+        throw new Error('Document content must be at least 10 characters long');
+      }
+
+      // Validate category
+      const validCategories = Object.values(DocumentCategory);
+      if (!validCategories.includes(document.category)) {
+        throw new Error('Invalid category');
+      }
+      
+      // Validate language
+      if (!SUPPORTED_LANGUAGES.includes(document.language)) {
+        throw new Error(`Unsupported language: ${document.language}. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`);
+      }
+      
+      // Validate author address format
+      if (!document.authorAddress || !/^0x[a-fA-F0-9]{40}$/.test(document.authorAddress)) {
+        throw new Error('Invalid author address format');
+      }
+      
+      // Validate tags array
+      if (document.tags && (!Array.isArray(document.tags) || document.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
+        throw new Error('Tags must be an array of non-empty strings');
+      }
+      
+      // Validate description if provided
+      if (document.description && document.description.length > 1000) {
+        throw new Error('Document description cannot exceed 1000 characters');
+      }
+      
+      // If this is a translation, validate the original document exists
+      if (options?.translationOf && options.translationOf !== '') {
+        const originalDoc = await this.getDocument(options.translationOf, false);
+        if (!originalDoc) {
+          throw new Error('Original document for translation not found');
+        }
+        
+        // Ensure we're not creating a circular translation reference
+        if (originalDoc.language === document.language) {
+          throw new Error('Translation must be in a different language than the original');
+        }
+      }
+
       const id = this.generateDocumentId();
       const now = new Date();
 
@@ -269,14 +369,15 @@ export class DocumentationService extends EventEmitter {
         viewCount: 0,
         rating: 0,
         version: 1,
+        status: 'draft',
       };
 
       // Store in database
       await this.db.query(
         `INSERT INTO documents (
           id, title, description, content, category, language, version,
-          author_address, tags, is_official, search_vector
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_tsvector('english', $11))`,
+          author_address, tags, is_official, search_vector, status, metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_tsvector('english', $11), $12, $13)`,
         [
           newDocument.id,
           newDocument.title,
@@ -289,8 +390,42 @@ export class DocumentationService extends EventEmitter {
           newDocument.tags,
           newDocument.isOfficial,
           `${newDocument.title} ${newDocument.description} ${newDocument.content}`,
+          newDocument.status,
+          JSON.stringify(document.metadata || {}),
         ],
       );
+
+      // Save initial version
+      await this.db.query(
+        `INSERT INTO document_versions (document_id, version, title, content, editor_address, change_description, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          newDocument.id,
+          1,
+          newDocument.title,
+          newDocument.content,
+          newDocument.authorAddress,
+          'Initial version',
+          JSON.stringify(newDocument.metadata || {}),
+        ],
+      );
+
+      // If this is a translation of another document, create the link
+      if (options?.translationOf !== null && options?.translationOf !== undefined && options?.translationOf !== '') {
+        // Check if translation link already exists to prevent duplicates
+        const existingLink = await this.db.query<{ original_id: string; translation_id: string }>(
+          `SELECT * FROM document_translation_links WHERE original_id = $1 AND translation_id = $2`,
+          [options.translationOf, newDocument.id],
+        );
+        
+        if (existingLink.rows.length === 0) {
+          await this.db.query(
+            `INSERT INTO document_translation_links (original_id, translation_id)
+             VALUES ($1, $2)`,
+            [options.translationOf, newDocument.id],
+          );
+        }
+      }
 
       // Index in search engine
       this.searchEngine.indexDocument({
@@ -369,12 +504,18 @@ export class DocumentationService extends EventEmitter {
    * @returns Array of matching documents
    */
   async searchDocuments(params: DocumentSearchParams): Promise<{
+    items: Document[];
     documents: Document[];
     total: number;
     page: number;
     pageSize: number;
   }> {
     try {
+      // Enhanced parameter validation but handle empty params object
+      if (params === null || params === undefined) {
+        throw new Error('Search parameters are required');
+      }
+      
       const {
         query = '',
         category,
@@ -386,20 +527,67 @@ export class DocumentationService extends EventEmitter {
         pageSize = 20,
         sortBy = 'relevance',
         sortDirection = 'desc',
+        status,
+        filters = {},
       } = params;
+      
+      // Validate search parameters
+      if (page < 1) {
+        throw new Error('Page number must be at least 1');
+      }
+      
+      if (pageSize < 1 || pageSize > 500) {
+        throw new Error('Page size must be between 1 and 500');
+      }
+      
+      if (minRating < 0 || minRating > 5) {
+        throw new Error('Minimum rating must be between 0 and 5');
+      }
+      
+      if (category !== undefined && category !== null && category !== '' && !Object.values(DocumentCategory).includes(category)) {
+        throw new Error('Invalid category');
+      }
+      
+      if (language && !SUPPORTED_LANGUAGES.includes(language)) {
+        throw new Error(`Unsupported language: ${language}`);
+      }
+      
+      if (!['relevance', 'date', 'rating', 'views'].includes(sortBy)) {
+        throw new Error('Invalid sortBy parameter');
+      }
+      
+      if (!['asc', 'desc'].includes(sortDirection)) {
+        throw new Error('Invalid sortDirection parameter');
+      }
+      
+      if (status && !['draft', 'published', 'archived'].includes(status)) {
+        throw new Error('Invalid status parameter');
+      }
+      
+      if (tags && !Array.isArray(tags)) {
+        throw new Error('Tags must be an array');
+      }
+      
+      // Sanitize query to prevent potential issues
+      const sanitizedQuery = typeof query === 'string' ? query.trim().substring(0, 500) : '';
 
       // Use search engine for text search
-      if (query != null && query !== '') {
+      if (sanitizedQuery !== '') {
+        const searchFilters: Record<string, unknown> = {};
+        if (category !== null && category !== undefined) searchFilters.category = category;
+        if (language !== null && language !== undefined && language.length > 0)
+          searchFilters.language = language;
+        if (tags.length > 0) searchFilters.tags = tags;
+        if (officialOnly === true) searchFilters.isOfficial = true;
+        if (minRating > 0) searchFilters.minRating = minRating;
+        if (status !== null && status !== undefined && status.length > 0) searchFilters.status = status;
+        // Add custom filters
+        Object.assign(searchFilters, filters);
+
         const searchResults = this.searchEngine.search({
-          query,
+          query: sanitizedQuery,
           type: 'documentation',
-          filters: {
-            category,
-            language,
-            tags: tags.length > 0 ? tags : undefined,
-            isOfficial: officialOnly || undefined,
-            minRating,
-          },
+          ...(Object.keys(searchFilters).length > 0 && { filters: searchFilters }),
           page,
           pageSize,
           sortBy,
@@ -410,7 +598,8 @@ export class DocumentationService extends EventEmitter {
         const documents = await this.getDocumentsByIds(documentIds);
 
         return {
-          documents,
+          items: documents,
+          documents: documents,
           total: searchResults.total,
           page: searchResults.page,
           pageSize: searchResults.pageSize,
@@ -444,6 +633,52 @@ export class DocumentationService extends EventEmitter {
         whereConditions.push(`rating >= $${queryParams.length + 1}`);
         queryParams.push(minRating);
       }
+      if (status != null) {
+        whereConditions.push(`status = $${queryParams.length + 1}`);
+        queryParams.push(status);
+      }
+
+      // Handle metadata filters with enhanced validation
+      if (filters && Object.keys(filters).length > 0) {
+        for (const [key, value] of Object.entries(filters)) {
+          if (value !== undefined && value !== null && value !== '') {
+            if (key.startsWith('metadata.')) {
+              const metadataKey = key.substring('metadata.'.length);
+              // Validate metadata key to prevent injection
+              if (!/^[a-zA-Z0-9_]+$/.test(metadataKey)) {
+                throw new Error(`Invalid metadata key: ${metadataKey}`);
+              }
+              whereConditions.push(`metadata->>'${metadataKey}' = $${queryParams.length + 1}`);
+              queryParams.push(String(value));
+            } else if (key === 'dateRange') {
+              // Handle date range filtering
+              if (typeof value === 'object' && value !== null) {
+                const dateRange = value as { start?: string; end?: string };
+                if (dateRange.start) {
+                  whereConditions.push(`created_at >= $${queryParams.length + 1}`);
+                  queryParams.push(new Date(dateRange.start).toISOString());
+                }
+                if (dateRange.end) {
+                  whereConditions.push(`created_at <= $${queryParams.length + 1}`);
+                  queryParams.push(new Date(dateRange.end).toISOString());
+                }
+              }
+            } else if (key === 'authorAddresses' && Array.isArray(value)) {
+              // Handle multiple author filtering
+              const placeholders = value.map((_, i) => `$${queryParams.length + i + 1}`).join(',');
+              whereConditions.push(`author_address IN (${placeholders})`);
+              queryParams.push(...value);
+            } else if (key === 'hasAttachments' && typeof value === 'boolean') {
+              // Filter documents with/without attachments
+              if (value) {
+                whereConditions.push(`attachments IS NOT NULL AND attachments != '[]'`);
+              } else {
+                whereConditions.push(`(attachments IS NULL OR attachments = '[]')`);
+              }
+            }
+          }
+        }
+      }
 
       const offset = (page - 1) * pageSize;
 
@@ -471,7 +706,8 @@ export class DocumentationService extends EventEmitter {
       const documents = result.rows.map(row => this.mapRowToDocument(row));
 
       return {
-        documents,
+        items: documents,
+        documents: documents,
         total,
         page,
         pageSize,
@@ -496,9 +732,60 @@ export class DocumentationService extends EventEmitter {
     updaterAddress: string,
   ): Promise<Document> {
     try {
+      // Enhanced input validation
+      if (!documentId || documentId.trim() === '') {
+        throw new Error('Document ID cannot be empty');
+      }
+      
+      if (!updaterAddress || !/^0x[a-fA-F0-9]{40}$/.test(updaterAddress)) {
+        throw new Error('Invalid updater address format');
+      }
+      
+      if (!updates || Object.keys(updates).length === 0) {
+        throw new Error('No updates provided');
+      }
+      
+      // Validate update fields
+      if (updates.title !== undefined && (!updates.title || updates.title.trim() === '')) {
+        throw new Error('Document title cannot be empty');
+      }
+      
+      if (updates.title && (updates.title.trim().length < 3 || updates.title.trim().length > 255)) {
+        throw new Error('Document title must be between 3 and 255 characters');
+      }
+      
+      if (updates.content !== undefined && (!updates.content || updates.content.trim() === '')) {
+        throw new Error('Document content cannot be empty');
+      }
+      
+      if (updates.content && updates.content.trim().length < 10) {
+        throw new Error('Document content must be at least 10 characters long');
+      }
+      
+      if (updates.language && !SUPPORTED_LANGUAGES.includes(updates.language)) {
+        throw new Error(`Unsupported language: ${updates.language}. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`);
+      }
+      
+      if (updates.category && !Object.values(DocumentCategory).includes(updates.category)) {
+        throw new Error('Invalid category');
+      }
+      
+      if (updates.tags && (!Array.isArray(updates.tags) || updates.tags.some(tag => typeof tag !== 'string' || tag.trim() === ''))) {
+        throw new Error('Tags must be an array of non-empty strings');
+      }
+      
+      if (updates.description && updates.description.length > 1000) {
+        throw new Error('Document description cannot exceed 1000 characters');
+      }
+
       const existing = await this.getDocument(documentId, false);
       if (existing == null) {
         throw new Error('Document not found');
+      }
+      
+      // Check for version conflicts (optimistic locking)
+      if (updates.version !== undefined && updates.version !== existing.version) {
+        throw new Error(`Version conflict: document has been updated. Expected version ${updates.version}, current version ${existing.version}`);
       }
 
       // Check if this is an official document requiring consensus
@@ -510,6 +797,13 @@ export class DocumentationService extends EventEmitter {
       if (existing.authorAddress !== updaterAddress) {
         throw new Error('Only the author can update this document');
       }
+      
+      // Prevent changing critical fields that shouldn't be updated
+      const forbiddenUpdates = ['authorAddress', 'createdAt', 'viewCount', 'rating'];
+      const attemptedForbiddenUpdates = Object.keys(updates).filter(key => forbiddenUpdates.includes(key));
+      if (attemptedForbiddenUpdates.length > 0) {
+        throw new Error(`Cannot update the following fields: ${attemptedForbiddenUpdates.join(', ')}`);
+      }
 
       // Update document
       const updatedDocument: Document = {
@@ -518,6 +812,21 @@ export class DocumentationService extends EventEmitter {
         version: existing.version + 1,
         updatedAt: new Date(),
       };
+
+      // Save version history
+      await this.db.query(
+        `INSERT INTO document_versions (document_id, version, title, content, editor_address, change_description, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          documentId,
+          updatedDocument.version,
+          updatedDocument.title,
+          updatedDocument.content,
+          updaterAddress,
+          updates.description ?? 'Document updated',
+          JSON.stringify(updatedDocument.metadata || {}),
+        ],
+      );
 
       // Update in database
       await this.db.query(
@@ -846,12 +1155,15 @@ export class DocumentationService extends EventEmitter {
       let points = 0;
 
       if (action === 'create') {
-        // Award based on document completeness and category
+        // Base points for creating any document
+        points = 1;
+
+        // Award bonus points based on document completeness and category
         if (document.content.length > 1000) {
-          points = document.category === DocumentCategory.FAQ ? 1 : 2;
+          points = document.category === DocumentCategory.FAQ ? 2 : 3;
         }
         if (document.content.length > 5000) {
-          points = 3;
+          points = 4;
         }
         if (document.category === DocumentCategory.TECHNICAL && document.content.length > 3000) {
           points = 5;
@@ -867,6 +1179,680 @@ export class DocumentationService extends EventEmitter {
     } catch (error) {
       logger.error('Failed to award contribution points:', error);
     }
+  }
+
+  /**
+   * Gets all versions of a document
+   * @param documentId - Document ID
+   * @returns Array of document versions
+   */
+  async getDocumentVersions(documentId: string): Promise<Document[]> {
+    try {
+      const result = await this.db.query<DocumentVersionRow>(
+        `SELECT 
+          v.*, 
+          d.category, 
+          d.language, 
+          d.tags, 
+          d.is_official,
+          d.author_address as original_author
+        FROM document_versions v
+        JOIN documents d ON d.id = v.document_id
+        WHERE v.document_id = $1
+        ORDER BY v.version ASC`,
+        [documentId],
+      );
+
+      return result.rows.map(row => ({
+        id: row.document_id,
+        title: row.title,
+        description: '',
+        content: row.content,
+        category: row.category as DocumentCategory,
+        language: row.language as DocumentLanguage,
+        version: row.version,
+        authorAddress: row.editor_address,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.created_at),
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        isOfficial: Boolean(row.is_official),
+        viewCount: 0,
+        rating: 0,
+      }));
+    } catch (error) {
+      logger.error('Failed to get document versions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets a specific version of a document
+   * @param documentId - Document ID
+   * @param version - Version number
+   * @returns Document at specified version or null
+   */
+  async getDocumentVersion(documentId: string, version: number): Promise<Document | null> {
+    try {
+      const result = await this.db.query<DocumentVersionRow>(
+        `SELECT 
+          v.*, 
+          d.category, 
+          d.language, 
+          d.tags, 
+          d.is_official,
+          d.author_address as original_author,
+          d.description
+        FROM document_versions v
+        JOIN documents d ON d.id = v.document_id
+        WHERE v.document_id = $1 AND v.version = $2`,
+        [documentId, version],
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const row = result.rows[0];
+      if (row === null || row === undefined) {
+        return null;
+      }
+
+      return {
+        id: row.document_id,
+        title: row.title,
+        description: row.description ?? '',
+        content: row.content,
+        category: row.category as DocumentCategory,
+        language: row.language as DocumentLanguage,
+        version: row.version,
+        authorAddress: row.editor_address,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.created_at),
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        isOfficial: Boolean(row.is_official),
+        viewCount: 0,
+        rating: 0,
+        metadata: this.parseMetadata(row.metadata),
+      };
+    } catch (error) {
+      logger.error('Failed to get document version:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Restores a previous version of a document
+   * @param documentId - Document ID
+   * @param version - Version to restore
+   * @param restorerAddress - Address of user restoring the version
+   * @returns Restored document
+   */
+  async restoreVersion(
+    documentId: string,
+    version: number,
+    restorerAddress: string,
+  ): Promise<Document> {
+    const oldVersion = await this.getDocumentVersion(documentId, version);
+    if (oldVersion === null || oldVersion === undefined) {
+      throw new Error('Version not found');
+    }
+
+    // Create a new version with the old content
+    const updated = await this.updateDocument(
+      documentId,
+      {
+        title: oldVersion.title,
+        content: oldVersion.content,
+      },
+      restorerAddress,
+    );
+
+    return updated;
+  }
+
+  /**
+   * Gets documents by language
+   * @param language - Language code
+   * @param limit - Maximum number of documents
+   * @returns Array of documents
+   */
+  async getDocumentsByLanguage(
+    language: DocumentLanguage,
+    limit: number = 20,
+  ): Promise<Document[]> {
+    try {
+      const result = await this.db.query<DocumentRow>(
+        'SELECT * FROM documents WHERE language = $1 AND is_official = true ORDER BY created_at DESC LIMIT $2',
+        [language, limit],
+      );
+      return result.rows.map(row => this.mapRowToDocument(row));
+    } catch (error) {
+      logger.error('Failed to get documents by language:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Gets translations of a document
+   * @param documentId - Document ID
+   * @returns Array of translations
+   */
+  async getTranslations(documentId: string): Promise<Document[]> {
+    try {
+      if (!documentId || documentId.trim() === '') {
+        throw new Error('Document ID cannot be empty');
+      }
+      
+      // Verify the original document exists
+      const originalDoc = await this.getDocument(documentId, false);
+      if (!originalDoc) {
+        throw new Error('Original document not found');
+      }
+      
+      // Find documents linked as translations of this document
+      const result = await this.db.query<DocumentRow>(
+        `SELECT d.* FROM documents d
+         JOIN document_translation_links t ON d.id = t.translation_id
+         WHERE t.original_id = $1 AND d.id != $1
+         ORDER BY d.language, d.created_at`,
+        [documentId],
+      );
+
+      // Filter out any invalid translations (same language as original)
+      const translations = result.rows
+        .map(row => this.mapRowToDocument(row))
+        .filter(doc => doc.language !== originalDoc.language);
+        
+      return translations;
+    } catch (error) {
+      logger.error('Failed to get translations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Publishes a draft document
+   * @param documentId - Document ID
+   * @param _publisherAddress - Publisher address
+   * @returns Updated document
+   */
+  async publishDocument(documentId: string, _publisherAddress: string): Promise<Document> {
+    try {
+      // Generate IPFS hash (in production, this would upload to IPFS)
+      const ipfsHash = this.generateIPFSHash();
+
+      await this.db.query(
+        'UPDATE documents SET status = $2, ipfs_hash = $3, published_at = NOW(), updated_at = NOW() WHERE id = $1',
+        [documentId, 'published', ipfsHash],
+      );
+
+      // Clear cache to ensure we get the updated document
+      this.documentCache.delete(documentId);
+
+      const doc = await this.getDocument(documentId);
+      if (doc === null || doc === undefined) {
+        throw new Error('Document not found');
+      }
+
+      this.emit('documentPublished', doc);
+      return doc;
+    } catch (error) {
+      logger.error('Failed to publish document:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unpublishes a document
+   * @param documentId - Document ID
+   * @param _unpublisherAddress - Unpublisher address
+   * @returns Updated document
+   */
+  async unpublishDocument(documentId: string, _unpublisherAddress: string): Promise<Document> {
+    try {
+      await this.db.query(
+        'UPDATE documents SET status = $2, published_at = NULL, updated_at = NOW() WHERE id = $1',
+        [documentId, 'draft'],
+      );
+
+      // Clear cache to ensure we get the updated document
+      this.documentCache.delete(documentId);
+
+      const doc = await this.getDocument(documentId);
+      if (doc === null || doc === undefined) {
+        throw new Error('Document not found');
+      }
+
+      this.emit('documentUnpublished', doc);
+      return doc;
+    } catch (error) {
+      logger.error('Failed to unpublish document:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archives a document
+   * @param documentId - Document ID
+   * @param archiverAddress - Archiver address
+   * @returns Archived document
+   */
+  async archiveDocument(documentId: string, archiverAddress: string): Promise<Document> {
+    try {
+      await this.db.query('UPDATE documents SET status = $2, updated_at = NOW() WHERE id = $1', [
+        documentId,
+        'archived',
+      ]);
+
+      const doc = await this.getDocument(documentId);
+      if (doc === null || doc === undefined) {
+        throw new Error('Document not found');
+      }
+
+      this.emit('documentArchived', { documentId, archiverAddress });
+      return doc;
+    } catch (error) {
+      logger.error('Failed to archive document:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all categories (alias for listCategories)
+   * @returns Array of categories with metadata
+   */
+  async getCategories(): Promise<
+    Array<{ category: DocumentCategory; count: number; description: string }>
+  > {
+    return this.listCategories();
+  }
+
+  /**
+   * Gets category statistics
+   * @param category - Document category
+   * @returns Category statistics
+   */
+  async getCategoryStats(category: DocumentCategory): Promise<{
+    totalDocs: number;
+    publishedDocs: number;
+    totalViews: number;
+    avgRating: number;
+    topTags: string[];
+  }> {
+    try {
+      const result = await this.db.query<{
+        total: string;
+        published: string;
+        views: string;
+        avg_rating: string;
+      }>(
+        `SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'published' THEN 1 END) as published,
+          SUM(view_count) as views,
+          AVG(rating) as avg_rating
+        FROM documents
+        WHERE category = $1`,
+        [category],
+      );
+
+      const tagsResult = await this.db.query<{ tag: string; count: string }>(
+        `SELECT unnest(tags) as tag, COUNT(*) as count
+        FROM documents
+        WHERE category = $1
+        GROUP BY tag
+        ORDER BY count DESC
+        LIMIT 5`,
+        [category],
+      );
+
+      const stats = result.rows[0];
+      return {
+        totalDocs: parseInt(stats?.total ?? '0'),
+        publishedDocs: parseInt(stats?.published ?? '0'),
+        totalViews: parseInt(stats?.views ?? '0'),
+        avgRating: parseFloat(stats?.avg_rating ?? '0'),
+        topTags: tagsResult.rows.map(r => r.tag),
+      };
+    } catch (error) {
+      logger.error('Failed to get category stats:', error);
+      return {
+        totalDocs: 0,
+        publishedDocs: 0,
+        totalViews: 0,
+        avgRating: 0,
+        topTags: [],
+      };
+    }
+  }
+
+  /**
+   * Lists all available categories
+   * @returns Array of categories with metadata
+   */
+  async listCategories(): Promise<
+    Array<{ category: DocumentCategory; count: number; description: string }>
+  > {
+    const categories = Object.values(DocumentCategory).map(category => ({
+      category,
+      count: 0,
+      description: this.getCategoryDescription(category),
+    }));
+
+    try {
+      const result = await this.db.query<{ category: string; count: string }>(
+        'SELECT category, COUNT(*) as count FROM documents GROUP BY category',
+      );
+
+      result.rows.forEach(row => {
+        const cat = categories.find(c => c.category === (row.category as DocumentCategory));
+        if (cat !== null && cat !== undefined) {
+          cat.count = parseInt(row.count);
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to get category counts:', error);
+    }
+
+    return categories;
+  }
+
+  /**
+   * Requests consensus validation for a document
+   * @param documentId - Document ID
+   * @param proposerAddress - Proposer address
+   * @returns Validation request ID
+   */
+  async requestConsensusValidation(documentId: string, proposerAddress: string): Promise<string> {
+    try {
+      if (!documentId || documentId.trim() === '') {
+        throw new Error('Document ID cannot be empty');
+      }
+      
+      if (!proposerAddress || !/^0x[a-fA-F0-9]{40}$/.test(proposerAddress)) {
+        throw new Error('Invalid proposer address format');
+      }
+      
+      const doc = await this.getDocument(documentId, false);
+      if (doc === null || doc === undefined) {
+        throw new Error('Document not found');
+      }
+      
+      // Only allow consensus requests for published documents
+      if (doc.status !== 'published') {
+        throw new Error('Only published documents can request consensus validation');
+      }
+      
+      // Check if there's already an active proposal for this document
+      const existingProposal = await this.db.query<{ proposal_id: string; status: string }>(
+        `SELECT proposal_id, status FROM documentation_proposals 
+         WHERE document_id = $1 AND status IN ('voting', 'pending')
+         ORDER BY created_at DESC LIMIT 1`,
+        [documentId],
+      );
+      
+      if (existingProposal.rows.length > 0) {
+        throw new Error('Document already has an active consensus proposal');
+      }
+      
+      // Validate proposer has sufficient participation score or is document author
+      if (doc.authorAddress !== proposerAddress) {
+        // In a real implementation, check participation score from ParticipationScoreService
+        // For now, allow any validated address to propose
+      }
+
+      const proposalId = `proposal_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      // Create validation request
+      await this.db.query(
+        `INSERT INTO documentation_proposals 
+         (proposal_id, document_id, new_content, new_metadata, proposer_address, voting_ends_at, status)
+         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days', 'voting')`,
+        [
+          proposalId,
+          documentId,
+          doc.content,
+          JSON.stringify({ title: doc.title, description: doc.description, category: doc.category }),
+          proposerAddress,
+        ],
+      );
+
+      this.emit('consensusRequested', { proposalId, documentId, proposerAddress });
+      logger.info(`Consensus validation requested: ${proposalId} for document ${documentId}`);
+      return proposalId;
+    } catch (error) {
+      logger.error('Failed to request consensus validation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets consensus status for a proposal
+   * @param proposalId - Proposal ID
+   * @returns Consensus status
+   */
+  async getConsensusStatus(proposalId: string): Promise<{
+    status: 'voting' | 'approved' | 'rejected' | 'expired';
+    yesVotes: number;
+    noVotes: number;
+    totalStake: number;
+  }> {
+    try {
+      const result = await this.db.query<{
+        status: string;
+        yes_votes: string;
+        no_votes: string;
+        total_stake: string;
+      }>(
+        `SELECT 
+          p.status,
+          COALESCE(SUM(CASE WHEN v.vote = 'yes' THEN v.stake_weight ELSE 0 END), 0) as yes_votes,
+          COALESCE(SUM(CASE WHEN v.vote = 'no' THEN v.stake_weight ELSE 0 END), 0) as no_votes,
+          COALESCE(SUM(v.stake_weight), 0) as total_stake
+        FROM documentation_proposals p
+        LEFT JOIN documentation_votes v ON p.proposal_id = v.proposal_id
+        WHERE p.proposal_id = $1
+        GROUP BY p.proposal_id, p.status`,
+        [proposalId],
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error('Proposal not found');
+      }
+
+      const row = result.rows[0];
+      if (row === null || row === undefined) {
+        throw new Error('Proposal not found');
+      }
+
+      return {
+        status: row.status as 'voting' | 'approved' | 'rejected' | 'expired',
+        yesVotes: parseInt(row.yes_votes),
+        noVotes: parseInt(row.no_votes),
+        totalStake: parseInt(row.total_stake),
+      };
+    } catch (error) {
+      logger.error('Failed to get consensus status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marks a document as helpful
+   * @param documentId - Document ID
+   * @param userAddress - User marking document as helpful
+   * @returns Success status
+   */
+  async markDocumentHelpful(documentId: string, userAddress: string): Promise<boolean> {
+    try {
+      if (!documentId || documentId.trim() === '') {
+        throw new Error('Document ID cannot be empty');
+      }
+      
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        throw new Error('Invalid user address format');
+      }
+      
+      // Check if document exists
+      const doc = await this.getDocument(documentId, false);
+      if (doc === null || doc === undefined) {
+        throw new Error('Document not found');
+      }
+      
+      // Only allow helpful marking for published documents
+      if (doc.status !== 'published') {
+        throw new Error('Only published documents can be marked as helpful');
+      }
+      
+      // Prevent users from marking their own documents as helpful
+      if (doc.authorAddress === userAddress) {
+        throw new Error('Authors cannot mark their own documents as helpful');
+      }
+
+      // Check if user has already marked this document as helpful
+      const existingMark = await this.db.query(
+        'SELECT 1 FROM document_helpful_marks WHERE document_id = $1 AND user_address = $2',
+        [documentId, userAddress],
+      );
+
+      if (existingMark.rows.length > 0) {
+        // Already marked as helpful - this is not an error, just return true
+        return true;
+      }
+
+      // Mark document as helpful with timestamp
+      await this.db.query(
+        'INSERT INTO document_helpful_marks (document_id, user_address, created_at) VALUES ($1, $2, NOW())',
+        [documentId, userAddress],
+      );
+
+      // Award participation points to the author
+      try {
+        await this.participationService.updateDocumentationActivity(doc.authorAddress, 0.5);
+      } catch (error) {
+        logger.warn('Failed to award participation points for helpful mark:', error);
+        // Don't fail the entire operation if points can't be awarded
+      }
+
+      this.emit('documentMarkedHelpful', {
+        documentId,
+        userAddress,
+        authorAddress: doc.authorAddress,
+      });
+
+      logger.debug(`Document ${documentId} marked as helpful by ${userAddress}`);
+      return true;
+    } catch (error) {
+      logger.error('Failed to mark document as helpful:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves a document from IPFS
+   * @param ipfsHash - IPFS content hash
+   * @returns Document content
+   */
+  async getDocumentFromIPFS(ipfsHash: string): Promise<{ content: string; metadata?: unknown }> {
+    try {
+      // Enhanced IPFS hash validation
+      if (ipfsHash === null || ipfsHash === undefined || ipfsHash === '') {
+        throw new Error('IPFS hash cannot be empty');
+      }
+      
+      // Validate IPFS hash format (Qm... format for IPFS v0 or more flexible for testing)
+      if (!ipfsHash.match(/^Qm[a-zA-Z0-9]{44}$/) && !ipfsHash.startsWith('ipfs_')) {
+        throw new Error('Invalid IPFS hash format');
+      }
+      
+      let result;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      // Retry logic for IPFS retrieval
+      while (attempts < maxAttempts) {
+        try {
+          // In a real implementation, this would connect to IPFS node
+          // For now, we'll retrieve from database where we stored the content
+          result = await this.db.query<{
+            content: string;
+            title: string;
+            category: string;
+            language: string;
+            tags: string[];
+            id: string;
+            description?: string;
+            created_at: string;
+          }>('SELECT id, content, title, description, category, language, tags, created_at FROM documents WHERE ipfs_hash = $1', [
+            ipfsHash,
+          ]);
+          break;
+        } catch (dbError) {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            logger.error(`IPFS retrieval failed after ${maxAttempts} attempts:`, dbError);
+            throw new Error('IPFS retrieval service temporarily unavailable');
+          }
+          await new Promise(resolve => setTimeout(resolve, 100 * attempts));
+        }
+      }
+
+      if (!result || result.rows.length === 0) {
+        throw new Error(`Document not found in IPFS for hash: ${ipfsHash}`);
+      }
+
+      const doc = result.rows[0];
+      if (doc === null || doc === undefined) {
+        throw new Error('Retrieved document is null or undefined');
+      }
+      
+      if (!doc.content || doc.content.trim() === '') {
+        throw new Error('Retrieved document has empty content');
+      }
+      
+      // Validate tags array
+      let validatedTags: string[] = [];
+      if (doc.tags && Array.isArray(doc.tags)) {
+        validatedTags = doc.tags.filter(tag => typeof tag === 'string' && tag.trim() !== '');
+      }
+
+      logger.debug(`Successfully retrieved ${doc.content.length} characters from IPFS hash: ${ipfsHash}`);
+      return {
+        content: doc.content,
+        metadata: {
+          id: doc.id,
+          title: doc.title,
+          description: doc.description,
+          category: doc.category,
+          language: doc.language,
+          tags: validatedTags,
+          createdAt: doc.created_at,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to retrieve document from IPFS:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets description for a category
+   * @param category - Document category
+   * @returns Category description
+   * @private
+   */
+  private getCategoryDescription(category: DocumentCategory): string {
+    const descriptions: Record<DocumentCategory, string> = {
+      [DocumentCategory.GETTING_STARTED]: 'Guides for new users',
+      [DocumentCategory.WALLET]: 'Wallet usage and features',
+      [DocumentCategory.MARKETPLACE]: 'Marketplace tutorials',
+      [DocumentCategory.DEX]: 'Trading and DEX guides',
+      [DocumentCategory.TECHNICAL]: 'Developer documentation',
+      [DocumentCategory.FAQ]: 'Frequently asked questions',
+      [DocumentCategory.GOVERNANCE]: 'DAO and governance',
+      [DocumentCategory.SECURITY]: 'Security best practices',
+    };
+    return descriptions[category] ?? '';
   }
 
   /**
@@ -928,7 +1914,7 @@ export class DocumentationService extends EventEmitter {
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
       tags: Array.isArray(row.tags) ? row.tags : [],
-      isOfficial: row.is_official,
+      isOfficial: Boolean(row.is_official),
       viewCount: row.view_count,
       rating:
         typeof row.rating === 'number'
@@ -937,6 +1923,10 @@ export class DocumentationService extends EventEmitter {
             ? parseFloat(String(row.rating))
             : 0,
       attachments: this.parseAttachments(row.attachments),
+      metadata: this.parseMetadata(row.metadata),
+      ...(row.ipfs_hash !== null && row.ipfs_hash !== undefined && row.ipfs_hash !== '' && { ipfsHash: row.ipfs_hash }),
+      ...(row.status !== null && row.status !== undefined && row.status !== '' && { status: row.status as 'draft' | 'published' | 'archived' }),
+      ...(row.published_at !== null && row.published_at !== undefined && { publishedAt: new Date(row.published_at) }),
     };
   }
 
@@ -950,7 +1940,7 @@ export class DocumentationService extends EventEmitter {
     if (attachments == null) {
       return [];
     }
-    
+
     try {
       if (typeof attachments === 'string') {
         if (attachments.trim() === '' || attachments === '[]') {
@@ -958,15 +1948,45 @@ export class DocumentationService extends EventEmitter {
         }
         return JSON.parse(attachments) as DocumentAttachment[];
       }
-      
+
       if (Array.isArray(attachments)) {
         return attachments as DocumentAttachment[];
       }
-      
+
       return [];
     } catch (error) {
       logger.warn('Failed to parse attachments:', error);
       return [];
+    }
+  }
+
+  /**
+   * Parse metadata from database field
+   * @param metadata - Raw metadata field from database
+   * @returns Parsed metadata object
+   * @private
+   */
+  private parseMetadata(metadata: unknown): Record<string, unknown> {
+    if (metadata == null) {
+      return {};
+    }
+
+    try {
+      if (typeof metadata === 'string') {
+        if (metadata.trim() === '' || metadata === '{}') {
+          return {};
+        }
+        return JSON.parse(metadata) as Record<string, unknown>;
+      }
+
+      if (typeof metadata === 'object' && metadata !== null) {
+        return metadata as Record<string, unknown>;
+      }
+
+      return {};
+    } catch (error) {
+      logger.warn('Failed to parse metadata:', error);
+      return {};
     }
   }
 
@@ -1047,6 +2067,88 @@ export class DocumentationService extends EventEmitter {
       });
     } catch (error) {
       logger.error('Failed to notify validators:', error);
+    }
+  }
+
+  /**
+   * Generates a mock IPFS hash for testing
+   * In production, this would actually upload to IPFS
+   * @returns Mock IPFS hash
+   * @private
+   */
+  private generateIPFSHash(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let hash = 'Qm';
+    for (let i = 0; i < 44; i++) {
+      hash += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return hash;
+  }
+
+  /**
+   * Gets statistics about the documentation service
+   * @returns Promise resolving to documentation statistics
+   */
+  async getStats(): Promise<{
+    totalDocuments: number;
+    totalVersions: number;
+    documentsByCategory: Record<string, number>;
+    documentsByLanguage: Record<string, number>;
+  }> {
+    try {
+      // Get total documents count
+      const totalDocsResult = await this.db.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM documents WHERE status = $1',
+        ['published']
+      );
+      const totalDocuments = parseInt(totalDocsResult.rows[0].count);
+
+      // Get total versions count
+      const totalVersionsResult = await this.db.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM document_versions'
+      );
+      const totalVersions = parseInt(totalVersionsResult.rows[0].count);
+
+      // Get documents by category
+      const categoryResult = await this.db.query<{ category: string; count: string }>(
+        `SELECT category, COUNT(*) as count 
+         FROM documents 
+         WHERE status = $1 
+         GROUP BY category`,
+        ['published']
+      );
+      const documentsByCategory: Record<string, number> = {};
+      categoryResult.rows.forEach(row => {
+        documentsByCategory[row.category] = parseInt(row.count);
+      });
+
+      // Get documents by language
+      const languageResult = await this.db.query<{ language: string; count: string }>(
+        `SELECT language, COUNT(*) as count 
+         FROM documents 
+         WHERE status = $1 
+         GROUP BY language`,
+        ['published']
+      );
+      const documentsByLanguage: Record<string, number> = {};
+      languageResult.rows.forEach(row => {
+        documentsByLanguage[row.language] = parseInt(row.count);
+      });
+
+      return {
+        totalDocuments,
+        totalVersions,
+        documentsByCategory,
+        documentsByLanguage,
+      };
+    } catch (error) {
+      logger.error('Error getting documentation stats:', error);
+      return {
+        totalDocuments: 0,
+        totalVersions: 0,
+        documentsByCategory: {},
+        documentsByLanguage: {},
+      };
     }
   }
 }

@@ -35,12 +35,8 @@ module.exports = {
         allowSyntheticDefaultImports: true,
         strict: true,
       },
+      isolatedModules: true,
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true,
-    },
-  },
 };

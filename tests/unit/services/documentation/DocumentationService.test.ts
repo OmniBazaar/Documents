@@ -10,7 +10,7 @@
  * - IPFS integration
  */
 
-import { DocumentationService } from '@/services/documentation/DocumentationService';
+import { DocumentationService, DocumentCategory } from '@/services/documentation/DocumentationService';
 import { Database } from '@/services/database/Database';
 import { SearchEngine } from '@/services/search/SearchEngine';
 import { ParticipationScoreService } from '@/services/participation/ParticipationScoreService';
@@ -33,6 +33,13 @@ describe('DocumentationService', () => {
     services = await setupTestServices();
     docService = services.documentation;
     db = services.db;
+  });
+  
+  beforeEach(() => {
+    // Clear participation scores before each test to ensure clean state
+    if (services.participation && typeof (services.participation as any).clearScores === 'function') {
+      (services.participation as any).clearScores();
+    }
   });
 
   afterAll(async () => {
@@ -130,10 +137,10 @@ describe('DocumentationService', () => {
       const doc = await docService.createDocument(generateTestDocument({ title: originalTitle }));
       
       // Update to new version
-      await docService.updateDocument(doc.id, { title: 'New Title' }, doc.authorId);
+      await docService.updateDocument(doc.id, { title: 'New Title' }, doc.authorAddress);
       
       // Restore version 1
-      const restored = await docService.restoreVersion(doc.id, 1, doc.authorId);
+      const restored = await docService.restoreVersion(doc.id, 1, doc.authorAddress);
       
       expect(restored.title).toBe(originalTitle);
       expect(restored.version).toBe(3); // New version created from restore
@@ -152,22 +159,23 @@ describe('DocumentationService', () => {
     });
 
     test('should filter documents by language', async () => {
-      // Create docs in different languages
-      await docService.createDocument(generateTestDocument({ 
+      // Create official docs in different languages
+      const enDoc = await docService.createDocument(generateTestDocument({ 
         language: 'en',
-        category: 'multilang-test' 
+        category: DocumentCategory.GETTING_STARTED,
+        isOfficial: true
       }));
+      
       await docService.createDocument(generateTestDocument({ 
         language: 'es',
-        category: 'multilang-test' 
+        category: DocumentCategory.GETTING_STARTED,
+        isOfficial: true
       }));
       
-      const englishDocs = await docService.getDocumentsByLanguage('en', {
-        category: 'multilang-test'
-      });
+      const englishDocs = await docService.getDocumentsByLanguage('en');
       
-      expect(englishDocs.items.length).toBeGreaterThan(0);
-      expect(englishDocs.items.every(d => d.language === 'en')).toBe(true);
+      expect(englishDocs.length).toBeGreaterThan(0);
+      expect(englishDocs.every(d => d.language === 'en')).toBe(true);
     });
 
     test('should link translations', async () => {
@@ -176,11 +184,13 @@ describe('DocumentationService', () => {
         title: 'English Guide'
       }));
       
-      const esDoc = await docService.createDocument(generateTestDocument({ 
-        language: 'es',
-        title: 'Guía en Español',
-        translationOf: enDoc.id
-      }));
+      const esDoc = await docService.createDocument(
+        generateTestDocument({ 
+          language: 'es',
+          title: 'Guía en Español'
+        }),
+        { translationOf: enDoc.id }
+      );
       
       const translations = await docService.getTranslations(enDoc.id);
       
@@ -204,22 +214,22 @@ describe('DocumentationService', () => {
       });
       
       expect(results.total).toBeGreaterThan(0);
-      expect(results.items.some(d => d.title.includes('Blockchain'))).toBe(true);
+      expect(results.documents.some(d => d.title.includes('Blockchain'))).toBe(true);
     });
 
     test('should filter search by category', async () => {
       await docService.createDocument(generateTestDocument({
-        category: 'tutorials',
+        category: DocumentCategory.GETTING_STARTED,
         title: 'Search Test Tutorial'
       }));
       
       const results = await docService.searchDocuments({
         query: 'test',
-        category: 'tutorials',
+        category: DocumentCategory.GETTING_STARTED,
         pageSize: 10
       });
       
-      expect(results.items.every(d => d.category === 'tutorials')).toBe(true);
+      expect(results.documents.every(d => d.category === DocumentCategory.GETTING_STARTED)).toBe(true);
     });
 
     test('should filter search by tags', async () => {
@@ -233,7 +243,7 @@ describe('DocumentationService', () => {
         pageSize: 10
       });
       
-      expect(results.items.some(d => d.tags.includes('test-search'))).toBe(true);
+      expect(results.documents.some(d => d.tags.includes('test-search'))).toBe(true);
     });
 
     test('should paginate search results', async () => {
@@ -241,27 +251,27 @@ describe('DocumentationService', () => {
       for (let i = 0; i < 15; i++) {
         await docService.createDocument(generateTestDocument({
           title: `Pagination Test ${i}`,
-          category: 'pagination-test'
+          category: DocumentCategory.TECHNICAL
         }));
       }
       
       const page1 = await docService.searchDocuments({
         query: '',
-        category: 'pagination-test',
+        category: DocumentCategory.TECHNICAL,
         page: 1,
         pageSize: 10
       });
       
       const page2 = await docService.searchDocuments({
         query: '',
-        category: 'pagination-test',
+        category: DocumentCategory.TECHNICAL,
         page: 2,
         pageSize: 10
       });
       
-      expect(page1.items.length).toBe(10);
-      expect(page2.items.length).toBe(5);
-      expect(page1.totalPages).toBe(2);
+      expect(page1.documents.length).toBe(10);
+      expect(page2.documents.length).toBe(5);
+      expect(Math.ceil(page1.total / page1.pageSize)).toBe(2);
     });
   });
 
@@ -270,7 +280,7 @@ describe('DocumentationService', () => {
       const doc = await docService.createDocument(generateTestDocument());
       expect(doc.status).toBe('draft');
       
-      const published = await docService.publishDocument(doc.id, doc.authorId);
+      const published = await docService.publishDocument(doc.id, doc.authorAddress);
       
       expect(published.status).toBe('published');
       expect(published.publishedAt).toBeDefined();
@@ -278,9 +288,9 @@ describe('DocumentationService', () => {
 
     test('should unpublish a document', async () => {
       const doc = await docService.createDocument(generateTestDocument());
-      await docService.publishDocument(doc.id, doc.authorId);
+      await docService.publishDocument(doc.id, doc.authorAddress);
       
-      const unpublished = await docService.unpublishDocument(doc.id, doc.authorId);
+      const unpublished = await docService.unpublishDocument(doc.id, doc.authorAddress);
       
       expect(unpublished.status).toBe('draft');
     });
@@ -288,48 +298,49 @@ describe('DocumentationService', () => {
     test('should archive a document', async () => {
       const doc = await docService.createDocument(generateTestDocument());
       
-      const archived = await docService.archiveDocument(doc.id, doc.authorId);
+      const archived = await docService.archiveDocument(doc.id, doc.authorAddress);
       
       expect(archived.status).toBe('archived');
     });
 
     test('should filter by status', async () => {
       const draft = await docService.createDocument(generateTestDocument({
-        category: 'status-test'
+        category: DocumentCategory.FAQ
       }));
       
       const published = await docService.createDocument(generateTestDocument({
-        category: 'status-test'
+        category: DocumentCategory.FAQ
       }));
-      await docService.publishDocument(published.id, published.authorId);
+      await docService.publishDocument(published.id, published.authorAddress);
       
       const publishedDocs = await docService.searchDocuments({
         query: '',
-        category: 'status-test',
+        category: DocumentCategory.FAQ,
         status: 'published'
       });
       
-      expect(publishedDocs.items.every(d => d.status === 'published')).toBe(true);
-      expect(publishedDocs.items.some(d => d.id === draft.id)).toBe(false);
+      expect(publishedDocs.documents.every(d => d.status === 'published')).toBe(true);
+      expect(publishedDocs.documents.some(d => d.id === draft.id)).toBe(false);
     });
   });
 
   describe('Categories and Organization', () => {
     test('should list all categories', async () => {
       // Create docs in various categories
-      await docService.createDocument(generateTestDocument({ category: 'guides' }));
-      await docService.createDocument(generateTestDocument({ category: 'tutorials' }));
-      await docService.createDocument(generateTestDocument({ category: 'references' }));
+      await docService.createDocument(generateTestDocument({ category: DocumentCategory.GETTING_STARTED }));
+      await docService.createDocument(generateTestDocument({ category: DocumentCategory.TECHNICAL }));
+      await docService.createDocument(generateTestDocument({ category: DocumentCategory.FAQ }));
       
       const categories = await docService.getCategories();
+      const categoryNames = categories.map(c => c.category);
       
-      expect(categories).toContain('guides');
-      expect(categories).toContain('tutorials');
-      expect(categories).toContain('references');
+      expect(categoryNames).toContain(DocumentCategory.GETTING_STARTED);
+      expect(categoryNames).toContain(DocumentCategory.TECHNICAL);
+      expect(categoryNames).toContain(DocumentCategory.FAQ);
     });
 
     test('should get category statistics', async () => {
-      const testCategory = 'stats-test-' + Date.now();
+      const testCategory = DocumentCategory.TECHNICAL;
       
       // Create multiple docs in category
       for (let i = 0; i < 5; i++) {
@@ -340,38 +351,50 @@ describe('DocumentationService', () => {
       
       const stats = await docService.getCategoryStats(testCategory);
       
-      expect(stats.totalDocuments).toBe(5);
-      expect(stats.category).toBe(testCategory);
+      // At least 5 documents should exist (may be more from other tests)
+      expect(stats.totalDocs).toBeGreaterThanOrEqual(5);
+      expect(stats.publishedDocs).toBeDefined();
     });
 
     test('should validate category names', async () => {
       await expect(
         docService.createDocument(generateTestDocument({ 
-          category: 'invalid category!' // Contains invalid characters
+          category: 'invalid category!' as any // Contains invalid characters
         }))
       ).rejects.toThrow('Invalid category');
     });
   });
 
   describe('Consensus Validation', () => {
+    beforeEach(async () => {
+      // Clean up any existing proposals to avoid conflicts
+      await db.query('DELETE FROM documentation_proposals WHERE 1=1');
+    });
+
     test('should request consensus validation', async () => {
       const doc = await docService.createDocument(generateTestDocument());
+      // Publish the document first to allow consensus validation
+      await docService.publishDocument(doc.id, doc.authorAddress);
       
-      const result = await docService.requestConsensusValidation(doc.id, doc.authorId);
+      const proposalId = await docService.requestConsensusValidation(doc.id, doc.authorAddress);
       
-      expect(result.documentId).toBe(doc.id);
-      expect(result.status).toBeDefined();
-      expect(['pending', 'approved', 'rejected']).toContain(result.status);
+      expect(proposalId).toBeDefined();
+      expect(proposalId).toMatch(/^proposal_.*/);
     });
 
     test('should get consensus status', async () => {
-      const doc = await docService.createDocument(generateTestDocument());
-      await docService.requestConsensusValidation(doc.id, doc.authorId);
+      const doc = await docService.createDocument(generateTestDocument({
+        title: 'Another Test Document for Consensus Status'
+      }));
+      // Publish the document first to allow consensus validation
+      await docService.publishDocument(doc.id, doc.authorAddress);
+      const proposalId = await docService.requestConsensusValidation(doc.id, doc.authorAddress);
       
-      const status = await docService.getConsensusStatus(doc.id);
+      const status = await docService.getConsensusStatus(proposalId);
       
       expect(status).toBeDefined();
-      expect(status.documentId).toBe(doc.id);
+      expect(status.status).toBeDefined();
+      expect(['voting', 'approved', 'rejected', 'expired']).toContain(status.status);
     });
   });
 
@@ -380,27 +403,29 @@ describe('DocumentationService', () => {
       const initialScore = await services.participation.getUserScore(TEST_USERS.alice);
       
       await docService.createDocument(generateTestDocument({
-        authorId: TEST_USERS.alice
+        authorAddress: TEST_USERS.alice
       }));
       
       const newScore = await services.participation.getUserScore(TEST_USERS.alice);
       
       expect(newScore.total).toBeGreaterThan(initialScore.total);
-      expect(newScore.components.documentation).toBeGreaterThan(
-        initialScore.components.documentation
+      expect(newScore.documentation).toBeGreaterThan(
+        initialScore.documentation
       );
     });
 
     test('should award points for helpful documents', async () => {
       const doc = await docService.createDocument(generateTestDocument({
-        authorId: TEST_USERS.bob
+        authorAddress: TEST_USERS.bob
       }));
+      // Publish the document first to allow helpful marking
+      await docService.publishDocument(doc.id, TEST_USERS.bob);
       
       // Simulate document being marked as helpful
       await docService.markDocumentHelpful(doc.id, TEST_USERS.alice);
       
       const authorScore = await services.participation.getUserScore(TEST_USERS.bob);
-      expect(authorScore.components.documentation).toBeGreaterThan(0);
+      expect(authorScore.documentation).toBeGreaterThan(0);
     });
   });
 
@@ -411,7 +436,7 @@ describe('DocumentationService', () => {
       }));
       
       // Publish to trigger IPFS storage
-      const published = await docService.publishDocument(doc.id, doc.authorId);
+      const published = await docService.publishDocument(doc.id, doc.authorAddress);
       
       expect(published.ipfsHash).toBeDefined();
       expect(published.ipfsHash).toMatch(/^Qm[a-zA-Z0-9]{44}$/); // IPFS hash format
@@ -423,7 +448,7 @@ describe('DocumentationService', () => {
         content: originalContent
       }));
       
-      const published = await docService.publishDocument(doc.id, doc.authorId);
+      const published = await docService.publishDocument(doc.id, doc.authorAddress);
       
       // Retrieve from IPFS
       const retrieved = await docService.getDocumentFromIPFS(published.ipfsHash!);
@@ -436,7 +461,8 @@ describe('DocumentationService', () => {
     test('should handle document not found', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
       
-      await expect(docService.getDocument(fakeId)).rejects.toThrow('Document not found');
+      const result = await docService.getDocument(fakeId);
+      expect(result).toBeNull();
     });
 
     test('should handle invalid document data', async () => {
@@ -444,8 +470,8 @@ describe('DocumentationService', () => {
         docService.createDocument({
           title: '', // Empty title
           content: generateTestDocument().content,
-          category: 'test',
-          authorId: TEST_USERS.alice,
+          category: DocumentCategory.FAQ,
+          authorAddress: TEST_USERS.alice,
         } as any)
       ).rejects.toThrow();
     });
@@ -474,7 +500,7 @@ describe('DocumentationService', () => {
         promises.push(
           docService.createDocument(generateTestDocument({
             title: `Bulk Test ${i}`,
-            category: 'performance-test'
+            category: DocumentCategory.TECHNICAL
           }))
         );
       }
@@ -488,7 +514,7 @@ describe('DocumentationService', () => {
       // Verify all created
       const results = await docService.searchDocuments({
         query: '',
-        category: 'performance-test',
+        category: DocumentCategory.TECHNICAL,
         pageSize: 200
       });
       

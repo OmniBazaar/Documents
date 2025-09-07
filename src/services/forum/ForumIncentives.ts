@@ -1,10 +1,10 @@
 /**
  * Forum Incentives Service
- * 
+ *
  * Manages Proof of Participation (PoP) point distribution for forum activities,
  * quality answer rewards, and moderator incentives. Integrates with the main
  * ParticipationScoreService to award points for valuable contributions.
- * 
+ *
  * @module ForumIncentives
  */
 
@@ -77,48 +77,48 @@ const DEFAULT_POINT_ALLOCATION: ForumPointAllocation = {
   threadCreation: {
     base: 0.5,
     categoryMultipliers: {
-      'technical': 1.5,
-      'feature': 1.2,
-      'governance': 2.0,
-      'wallet': 1.0,
-      'marketplace': 1.0,
-      'dex': 1.0
-    }
+      technical: 1.5,
+      feature: 1.2,
+      governance: 2.0,
+      wallet: 1.0,
+      marketplace: 1.0,
+      dex: 1.0,
+    },
   },
   posting: {
     base: 0.1,
     acceptedAnswer: 1.0,
-    helpfulPost: 0.2
+    helpfulPost: 0.2,
   },
   voting: {
     receivedUpvote: 0.2,
     maxUpvotePoints: 2.0,
-    receivedDownvote: -0.1
+    receivedDownvote: -0.1,
   },
   moderation: {
     flagSpam: 0.1,
     correctFlag: 0.5,
-    reviewPost: 0.3
+    reviewPost: 0.3,
   },
   bonuses: {
     newUserHelp: 1.5,
     multilingualSupport: 1.3,
     streakMultiplier: 1.1,
-    highQualityMultiplier: 1.5
-  }
+    highQualityMultiplier: 1.5,
+  },
 };
 
 /**
  * Forum Incentives Service
- * 
+ *
  * @example
  * ```typescript
  * const incentives = new ForumIncentives(participationService);
  * await incentives.initialize();
- * 
+ *
  * // Reward thread creation
  * await incentives.rewardThreadCreation(userAddress, 'technical');
- * 
+ *
  * // Process upvote rewards
  * await incentives.processVoteRewards(postId, 'upvote');
  * ```
@@ -128,7 +128,7 @@ export class ForumIncentives {
 
   /**
    * Creates a new Forum Incentives instance
-   * 
+   *
    * @param participationService - Service for managing participation scores
    * @param db - Database instance
    * @param pointAllocation - Optional custom point allocation
@@ -136,7 +136,7 @@ export class ForumIncentives {
   constructor(
     private participationService: ParticipationScoreService,
     db: Database,
-    private pointAllocation: ForumPointAllocation = DEFAULT_POINT_ALLOCATION
+    private pointAllocation: ForumPointAllocation = DEFAULT_POINT_ALLOCATION,
   ) {
     this.db = db;
   }
@@ -151,19 +151,16 @@ export class ForumIncentives {
 
   /**
    * Rewards a user for creating a thread
-   * 
+   *
    * @param authorAddress - Thread author's address
    * @param category - Thread category
    * @returns Points awarded
    */
-  async rewardThreadCreation(
-    authorAddress: string,
-    category: string
-  ): Promise<number> {
+  async rewardThreadCreation(authorAddress: string, category: string): Promise<number> {
     try {
       // Calculate base points
       let points = this.pointAllocation.threadCreation.base;
-      
+
       // Apply category multiplier
       const multiplier = this.pointAllocation.threadCreation.categoryMultipliers[category] ?? 1.0;
       points *= multiplier;
@@ -177,7 +174,7 @@ export class ForumIncentives {
       // Award points
       await this.awardPoints(authorAddress, points, 'thread_creation', {
         category,
-        streakDays: streak
+        streakDays: streak,
       });
 
       // Update user stats
@@ -188,7 +185,7 @@ export class ForumIncentives {
       logger.error('Error rewarding thread creation', {
         error: error instanceof Error ? error.message : String(error),
         authorAddress,
-        category
+        category,
       });
       return 0;
     }
@@ -196,57 +193,47 @@ export class ForumIncentives {
 
   /**
    * Tracks post creation for later reward calculation
-   * 
+   *
    * @param authorAddress - Post author's address
    * @param postId - Created post ID
    */
-  async trackPostCreation(
-    authorAddress: string,
-    postId: string
-  ): Promise<void> {
+  async trackPostCreation(authorAddress: string, postId: string): Promise<void> {
     try {
       // Record post creation
       await this.db.query(
         `INSERT INTO forum_post_tracking (post_id, author_address, created_at)
          VALUES ($1, $2, NOW())`,
-        [postId, authorAddress]
+        [postId, authorAddress],
       );
 
       // Award base posting points
-      await this.awardPoints(
-        authorAddress, 
-        this.pointAllocation.posting.base,
-        'post_creation',
-        { postId }
-      );
+      await this.awardPoints(authorAddress, this.pointAllocation.posting.base, 'post_creation', {
+        postId,
+      });
 
       // Update streak
       await this.updateUserStreak(authorAddress);
-
     } catch (error) {
       logger.error('Error tracking post creation', {
         error: error instanceof Error ? error.message : String(error),
         authorAddress,
-        postId
+        postId,
       });
     }
   }
 
   /**
    * Processes vote rewards for post authors
-   * 
+   *
    * @param postId - Post that received the vote
    * @param voteType - Type of vote (upvote/downvote)
    */
-  async processVoteRewards(
-    postId: string,
-    voteType: 'upvote' | 'downvote'
-  ): Promise<void> {
+  async processVoteRewards(postId: string, voteType: 'upvote' | 'downvote'): Promise<void> {
     try {
       // Get post author
       const postResult = await this.db.query(
         'SELECT author_address, upvotes FROM forum_posts WHERE id = $1',
-        [postId]
+        [postId],
       );
 
       if (postResult.rows.length === 0) return;
@@ -262,7 +249,7 @@ export class ForumIncentives {
             authorAddress,
             this.pointAllocation.voting.receivedUpvote,
             'received_upvote',
-            { postId, totalUpvotes: upvotes }
+            { postId, totalUpvotes: upvotes },
           );
         }
       } else {
@@ -271,38 +258,34 @@ export class ForumIncentives {
           authorAddress,
           this.pointAllocation.voting.receivedDownvote,
           'received_downvote',
-          { postId }
+          { postId },
         );
       }
 
       // Check for quality threshold bonuses
       await this.checkQualityBonuses(postId, authorAddress);
-
     } catch (error) {
       logger.error('Error processing vote rewards', {
         error: error instanceof Error ? error.message : String(error),
         postId,
-        voteType
+        voteType,
       });
     }
   }
 
   /**
    * Rewards accepted answer
-   * 
+   *
    * @param postId - Post marked as accepted answer
    * @param authorAddress - Post author's address
    */
-  async rewardAcceptedAnswer(
-    postId: string,
-    authorAddress: string
-  ): Promise<void> {
+  async rewardAcceptedAnswer(postId: string, authorAddress: string): Promise<void> {
     try {
       await this.awardPoints(
         authorAddress,
         this.pointAllocation.posting.acceptedAnswer,
         'accepted_answer',
-        { postId }
+        { postId },
       );
 
       // Update user stats
@@ -310,21 +293,20 @@ export class ForumIncentives {
         `UPDATE forum_user_stats 
          SET accepted_answers = accepted_answers + 1
          WHERE address = $1`,
-        [authorAddress]
+        [authorAddress],
       );
-
     } catch (error) {
       logger.error('Error rewarding accepted answer', {
         error: error instanceof Error ? error.message : String(error),
         postId,
-        authorAddress
+        authorAddress,
       });
     }
   }
 
   /**
    * Rewards moderation activities
-   * 
+   *
    * @param moderatorAddress - Moderator's address
    * @param action - Type of moderation action
    * @param wasCorrect - Whether the action was validated as correct
@@ -332,7 +314,7 @@ export class ForumIncentives {
   async rewardModeration(
     moderatorAddress: string,
     action: 'flag_spam' | 'review_post',
-    wasCorrect = true
+    wasCorrect = true,
   ): Promise<void> {
     try {
       let points = 0;
@@ -350,36 +332,29 @@ export class ForumIncentives {
       }
 
       if (points > 0) {
-        await this.awardPoints(
-          moderatorAddress,
-          points,
-          `moderation_${action}`,
-          { wasCorrect }
-        );
+        await this.awardPoints(moderatorAddress, points, `moderation_${action}`, { wasCorrect });
       }
-
     } catch (error) {
       logger.error('Error rewarding moderation', {
         error: error instanceof Error ? error.message : String(error),
         moderatorAddress,
         action,
-        wasCorrect
+        wasCorrect,
       });
     }
   }
 
   /**
    * Gets user contribution statistics
-   * 
+   *
    * @param address - User's address
    * @returns User contribution stats
    */
   async getUserContributionStats(address: string): Promise<UserContributionStats> {
     try {
-      const stats = await this.db.query(
-        `SELECT * FROM forum_user_stats WHERE address = $1`,
-        [address]
-      );
+      const stats = await this.db.query(`SELECT * FROM forum_user_stats WHERE address = $1`, [
+        address,
+      ]);
 
       if (stats.rows.length === 0) {
         // Return default stats for new user
@@ -391,16 +366,15 @@ export class ForumIncentives {
           acceptedAnswers: 0,
           streakDays: 0,
           avgQualityScore: 0,
-          languagesSupported: []
+          languagesSupported: [],
         };
       }
 
       return this.mapUserStats(stats.rows[0] as Record<string, unknown>);
-
     } catch (error) {
       logger.error('Error getting user contribution stats', {
         error: error instanceof Error ? error.message : String(error),
-        address
+        address,
       });
       throw error;
     }
@@ -408,7 +382,7 @@ export class ForumIncentives {
 
   /**
    * Calculates and awards daily participation bonus
-   * 
+   *
    * @param address - User's address
    */
   async calculateDailyBonus(address: string): Promise<void> {
@@ -417,37 +391,31 @@ export class ForumIncentives {
       const existing = await this.db.query(
         `SELECT * FROM forum_daily_bonuses 
          WHERE address = $1 AND date = CURRENT_DATE`,
-        [address]
+        [address],
       );
 
       if (existing.rows.length > 0) return;
 
       // Calculate activity score for the day
       const activityScore = await this.calculateDailyActivityScore(address);
-      
+
       if (activityScore > 0) {
         // Award bonus based on activity
         const bonus = Math.min(activityScore * 0.1, 1.0); // Cap at 1 point
-        
-        await this.awardPoints(
-          address,
-          bonus,
-          'daily_participation',
-          { activityScore }
-        );
+
+        await this.awardPoints(address, bonus, 'daily_participation', { activityScore });
 
         // Record daily bonus
         await this.db.query(
           `INSERT INTO forum_daily_bonuses (address, date, bonus_points)
            VALUES ($1, CURRENT_DATE, $2)`,
-          [address, bonus]
+          [address, bonus],
         );
       }
-
     } catch (error) {
       logger.error('Error calculating daily bonus', {
         error: error instanceof Error ? error.message : String(error),
-        address
+        address,
       });
     }
   }
@@ -464,20 +432,17 @@ export class ForumIncentives {
     address: string,
     points: number,
     reason: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     // Update participation score
-    await this.participationService.updateForumActivity(
-      address,
-      points
-    );
+    await this.participationService.updateForumActivity(address, points);
 
     // Log the award
     await this.db.query(
       `INSERT INTO forum_point_awards (
         address, points, reason, metadata, awarded_at
       ) VALUES ($1, $2, $3, $4, NOW())`,
-      [address, points, reason, JSON.stringify(metadata ?? {})]
+      [address, points, reason, JSON.stringify(metadata ?? {})],
     );
   }
 
@@ -490,7 +455,7 @@ export class ForumIncentives {
   private async getUserStreak(address: string): Promise<number> {
     const result = await this.db.query(
       `SELECT streak_days FROM forum_user_stats WHERE address = $1`,
-      [address]
+      [address],
     );
 
     const streakData = result.rows[0] as { streak_days: number } | undefined;
@@ -508,7 +473,7 @@ export class ForumIncentives {
       `SELECT MAX(created_at) as last_activity 
        FROM forum_posts 
        WHERE author_address = $1`,
-      [address]
+      [address],
     );
 
     const activityData = lastActivity.rows[0] as { last_activity: Date | null } | undefined;
@@ -517,7 +482,7 @@ export class ForumIncentives {
     const lastActivityDate = new Date(activityData.last_activity);
     const today = new Date();
     const daysSinceLastActivity = Math.floor(
-      (today.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24)
+      (today.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (daysSinceLastActivity === 1) {
@@ -526,7 +491,7 @@ export class ForumIncentives {
         `UPDATE forum_user_stats 
          SET streak_days = streak_days + 1, last_activity_date = CURRENT_DATE
          WHERE address = $1`,
-        [address]
+        [address],
       );
     } else if (daysSinceLastActivity > 1) {
       // Reset streak
@@ -534,7 +499,7 @@ export class ForumIncentives {
         `UPDATE forum_user_stats 
          SET streak_days = 1, last_activity_date = CURRENT_DATE
          WHERE address = $1`,
-        [address]
+        [address],
       );
     }
   }
@@ -551,7 +516,7 @@ export class ForumIncentives {
       `INSERT INTO forum_user_stats (address, created_at)
        VALUES ($1, NOW())
        ON CONFLICT (address) DO NOTHING`,
-      [address]
+      [address],
     );
 
     // Update specific stat based on action
@@ -561,7 +526,7 @@ export class ForumIncentives {
           `UPDATE forum_user_stats 
            SET threads_created = threads_created + 1
            WHERE address = $1`,
-          [address]
+          [address],
         );
         break;
       case 'post_created':
@@ -569,7 +534,7 @@ export class ForumIncentives {
           `UPDATE forum_user_stats 
            SET posts_made = posts_made + 1
            WHERE address = $1`,
-          [address]
+          [address],
         );
         break;
     }
@@ -588,12 +553,16 @@ export class ForumIncentives {
        FROM forum_posts p
        JOIN forum_content_stats s ON p.id = s.post_id
        WHERE p.id = $1`,
-      [postId]
+      [postId],
     );
 
     if (metrics.rows.length === 0) return;
 
-    const metricsData = metrics.rows[0] as { quality_score: number; upvotes: number; downvotes: number };
+    const metricsData = metrics.rows[0] as {
+      quality_score: number;
+      upvotes: number;
+      downvotes: number;
+    };
     const { quality_score, upvotes, downvotes } = metricsData;
 
     // High quality bonus (score > 80, ratio > 0.9)
@@ -602,9 +571,10 @@ export class ForumIncentives {
       if (ratio > 0.9) {
         await this.awardPoints(
           authorAddress,
-          this.pointAllocation.posting.helpfulPost * this.pointAllocation.bonuses.highQualityMultiplier,
+          this.pointAllocation.posting.helpfulPost *
+            this.pointAllocation.bonuses.highQualityMultiplier,
           'high_quality_post',
-          { postId, qualityScore: quality_score, ratio }
+          { postId, qualityScore: quality_score, ratio },
         );
       }
     }
@@ -627,20 +597,20 @@ export class ForumIncentives {
        FROM forum_posts p
        JOIN forum_threads t ON p.thread_id = t.id
        WHERE p.id = $1`,
-      [postId]
+      [postId],
     );
 
     if (threadInfo.rows.length > 0) {
       const threadData = threadInfo.rows[0] as { author_address: string; user_post_count: number };
       const { author_address: threadAuthor, user_post_count } = threadData;
-      
+
       // If thread author is new (less than 5 posts) and different from helper
       if (user_post_count < 5 && threadAuthor !== helperAddress) {
         await this.awardPoints(
           helperAddress,
           this.pointAllocation.posting.helpfulPost * this.pointAllocation.bonuses.newUserHelp,
           'new_user_help',
-          { postId, helpedUser: threadAuthor }
+          { postId, helpedUser: threadAuthor },
         );
       }
     }
@@ -661,7 +631,7 @@ export class ForumIncentives {
        FROM forum_posts
        WHERE author_address = $1
        AND created_at >= CURRENT_DATE`,
-      [address]
+      [address],
     );
 
     if (activity.rows.length === 0) return 0;
@@ -672,9 +642,9 @@ export class ForumIncentives {
       quality_posts: number;
     };
     const { threads_participated, posts_made, quality_posts } = activityData;
-    
+
     // Simple scoring: 1 point per thread, 0.5 per post, 1 per quality post
-    return (threads_participated * 1) + (posts_made * 0.5) + (quality_posts * 1);
+    return threads_participated * 1 + posts_made * 0.5 + quality_posts * 1;
   }
 
   /**
@@ -692,7 +662,7 @@ export class ForumIncentives {
       acceptedAnswers: (row.accepted_answers as number) ?? 0,
       streakDays: (row.streak_days as number) ?? 0,
       avgQualityScore: (row.avg_quality_score as number) ?? 0,
-      languagesSupported: (row.languages_supported as string[]) ?? []
+      languagesSupported: (row.languages_supported as string[]) ?? [],
     };
   }
 
@@ -730,11 +700,17 @@ export class ForumIncentives {
         awarded_at TIMESTAMP DEFAULT NOW()
       )
     `);
-    
+
     // Create indexes separately (PostgreSQL syntax)
-    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_address ON forum_point_awards(address)');
-    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_reason ON forum_point_awards(reason)');
-    await this.db.query('CREATE INDEX IF NOT EXISTS idx_awards_time ON forum_point_awards(awarded_at)');
+    await this.db.query(
+      'CREATE INDEX IF NOT EXISTS idx_awards_address ON forum_point_awards(address)',
+    );
+    await this.db.query(
+      'CREATE INDEX IF NOT EXISTS idx_awards_reason ON forum_point_awards(reason)',
+    );
+    await this.db.query(
+      'CREATE INDEX IF NOT EXISTS idx_awards_time ON forum_point_awards(awarded_at)',
+    );
 
     // Post tracking for quality evaluation
     await this.db.query(`
@@ -759,7 +735,7 @@ export class ForumIncentives {
 
   /**
    * Recalculates participation scores for a user
-   * 
+   *
    * @param address - User's address
    * @returns Updated participation score
    */
@@ -770,23 +746,20 @@ export class ForumIncentives {
         `SELECT SUM(points) as total_points
          FROM forum_point_awards
          WHERE address = $1`,
-        [address]
+        [address],
       );
 
       const awardData = awards.rows[0] as { total_points: number } | undefined;
       const totalPoints = awardData?.total_points ?? 0;
 
       // Update participation score
-      await this.participationService.updateForumActivity(
-        address,
-        totalPoints
-      );
+      await this.participationService.updateForumActivity(address, totalPoints);
 
       return totalPoints;
     } catch (error) {
       logger.error('Error recalculating user score', {
         error: error instanceof Error ? error.message : String(error),
-        address
+        address,
       });
       return 0;
     }

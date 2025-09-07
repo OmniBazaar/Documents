@@ -187,14 +187,14 @@ export class ForumConsensus {
     }
 
     // Check content patterns
-    const contentPatterns = this.analyzeContentPatterns(post.content);
+    const contentPatterns = this.analyzeContentPatterns(post.content || '');
     if (contentPatterns.suspicious === true) {
       spamScore += contentPatterns.score;
       reasons.push(...contentPatterns.reasons);
     }
 
     // Check external links
-    const linkAnalysis = this.analyzeLinks(post.content);
+    const linkAnalysis = this.analyzeLinks(post.content || '');
     if (linkAnalysis.suspicious === true) {
       spamScore += 0.3;
       reasons.push(`Suspicious links detected: ${linkAnalysis.count} links`);
@@ -294,7 +294,7 @@ export class ForumConsensus {
     qualityScore += replyRate * 100; // Reward discussion generation
 
     // Content length factor (longer, thoughtful posts score higher)
-    const contentLength = post.content.length;
+    const contentLength = post.content?.length ?? 0;
     if (contentLength > 500) qualityScore += 5;
     if (contentLength > 1000) qualityScore += 5;
 
@@ -534,6 +534,11 @@ export class ForumConsensus {
     const reasons: string[] = [];
     let score = 0;
 
+    // Safeguard against empty or null content
+    if (!content) {
+      return { suspicious: false, score: 0, reasons: [] };
+    }
+
     // Check for excessive capitalization
     const capsMatches = content.match(/[A-Z]/g);
     const capsRatio = (capsMatches?.length ?? 0) / content.length;
@@ -644,6 +649,9 @@ export class ForumConsensus {
    * @returns Estimated reading time in minutes
    */
   private estimateReadTime(content: string): number {
+    if (!content) {
+      return 0;
+    }
     const wordsPerMinute = 200;
     const wordCount = content.split(/\s+/).length;
     return wordCount / wordsPerMinute;
@@ -657,6 +665,9 @@ export class ForumConsensus {
    * @returns Similarity score (0-1)
    */
   private calculateStringSimilarity(str1: string, str2: string): number {
+    if (!str1 || !str2) {
+      return 0;
+    }
     const set1 = new Set(str1.toLowerCase().split(/\s+/));
     const set2 = new Set(str2.toLowerCase().split(/\s+/));
 

@@ -1,9 +1,9 @@
 /**
  * Logger utility for the Documents module
- * 
+ *
  * Provides consistent logging across all services with proper formatting
  * and log levels. Integrates with the validator logging infrastructure.
- * 
+ *
  * @module logger
  */
 
@@ -26,7 +26,7 @@ export enum LogLevel {
   /** Debug messages */
   DEBUG = 'debug',
   /** Silly level (most verbose) */
-  SILLY = 'silly'
+  SILLY = 'silly',
 }
 
 /**
@@ -53,7 +53,7 @@ const defaultConfig: LoggerConfig = {
   console: true,
   file: true,
   filePath: 'logs/documents.log',
-  json: process.env.NODE_ENV === 'production'
+  json: process.env.NODE_ENV === 'production',
 };
 
 /**
@@ -74,9 +74,9 @@ function createLogger(config: LoggerConfig = defaultConfig): winston.Logger {
           winston.format.printf(({ timestamp, level, message, ...meta }) => {
             const metaStr = Object.keys(meta).length > 0 ? JSON.stringify(meta) : '';
             return `${String(timestamp)} [${String(level)}]: ${String(message)} ${metaStr}`;
-          })
-        )
-      })
+          }),
+        ),
+      }),
     );
   }
 
@@ -92,16 +92,16 @@ function createLogger(config: LoggerConfig = defaultConfig): winston.Logger {
               winston.format.printf(({ timestamp, level, message, ...meta }) => {
                 const metaStr = Object.keys(meta).length > 0 ? JSON.stringify(meta) : '';
                 return `${String(timestamp)} [${String(level)}]: ${String(message)} ${metaStr}`;
-              })
-            )
-      })
+              }),
+            ),
+      }),
     );
   }
 
   return winston.createLogger({
     level: config.level,
     transports,
-    exitOnError: false
+    exitOnError: false,
   });
 }
 
@@ -125,22 +125,19 @@ export function createChildLogger(context: Record<string, unknown>): winston.Log
  * @param error - Error object
  * @param meta - Additional metadata
  */
-export function logError(
-  message: string,
-  error: unknown,
-  meta?: Record<string, unknown>
-): void {
-  const errorInfo = error instanceof Error
-    ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      }
-    : { error: String(error) };
+export function logError(message: string, error: unknown, meta?: Record<string, unknown>): void {
+  const errorInfo =
+    error instanceof Error
+      ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        }
+      : { error: String(error) };
 
   logger.error(message, {
     ...errorInfo,
-    ...meta
+    ...meta,
   });
 }
 
