@@ -59,10 +59,10 @@ export {
  * ```typescript
  * import { createForumService } from '@omnibazaar/documents';
  * import { Database } from '@omnibazaar/documents/database';
- * import { MockParticipationScoreService } from '@omnibazaar/documents/interfaces';
+ * import { ParticipationScoreService } from '@omnibazaar/documents/participation';
  *
  * const db = new Database(dbConfig);
- * const participationService = new MockParticipationScoreService();
+ * const participationService = new ParticipationScoreService();
  *
  * const forum = await createForumService(db, participationService, {
  *   maxTitleLength: 200,
