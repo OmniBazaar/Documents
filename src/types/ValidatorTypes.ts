@@ -310,9 +310,10 @@ class ValidatorClient implements OmniValidatorClient {
       return;
     }
 
+    const wsEndpoint = this.config.wsEndpoint;
     return new Promise((resolve, reject) => {
       try {
-        this.wsEmitter.ws = new WebSocket(this.config.wsEndpoint);
+        this.wsEmitter.ws = new WebSocket(wsEndpoint);
 
         this.wsEmitter.ws.onopen = () => resolve();
         this.wsEmitter.ws.onerror = (error) => reject(error);

@@ -90,7 +90,11 @@ User Query → Federated AI Processing → Multi-Modal Analysis → Swarm Intell
 
 2. **Install dependencies**
    ```bash
+   # From OmniBazaar root directory
+   cd ..
    npm install
+   
+   # Note: Dependencies are now managed at the root level in /home/rickc/OmniBazaar/node_modules
    ```
 
 3. **Set up IPFS node**
@@ -107,6 +111,35 @@ User Query → Federated AI Processing → Multi-Modal Analysis → Swarm Intell
    ```bash
    npm run dev
    ```
+
+### Integration Testing
+
+The Documents module is integrated with the OmniBazaar test suite:
+
+#### Cross-Module Integration Testing
+
+```bash
+# Run all integration tests from OmniBazaar root
+cd /home/rickc/OmniBazaar
+npm run test:integration
+
+# Run document-specific integration tests
+npm run test:integration -- documents
+
+# Run forum and knowledge base tests
+npm run test:integration -- documents-forum
+```
+
+#### Integration Test Features
+
+- **Document Storage**: Tests IPFS document storage and retrieval
+- **Knowledge Base**: Tests Q&A, guides, and announcements
+- **Forum System**: Tests voting, commenting, and moderation
+- **Cross-Module**: Tests integration with Validator and Marketplace
+
+For detailed integration testing documentation, see:
+- [Integration Test Suite](/home/rickc/OmniBazaar/tests/integration/README.md)
+- [Document Tests](/home/rickc/OmniBazaar/tests/integration/features/documents)
 
 ### Development Commands
 
