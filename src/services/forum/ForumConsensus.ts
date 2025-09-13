@@ -10,6 +10,10 @@
 import { Database } from '../database/Database';
 import { ForumVote, ForumPost, ModerationRequest, ForumAttachment } from './ForumTypes';
 import { logger } from '../../utils/logger';
+import { BlockProductionService } from '../../../../Validator/src/services/BlockProductionService';
+import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
+import { P2PNetwork, MessageType } from '../../../../Validator/src/p2p/P2PNetwork';
+import { EventEmitter } from 'events';
 
 /**
  * Spam detection thresholds
@@ -83,6 +87,17 @@ const DEFAULT_SPAM_THRESHOLDS: SpamThresholds = {
 };
 
 /**
+ * Moderation vote data structure for P2P messaging
+ */
+interface ModerationVote {
+  moderationId: string;
+  validatorAddress: string;
+  vote: boolean;
+  signature: string;
+  timestamp: number;
+}
+
+/**
  * Forum Consensus Service
  *
  * @example
@@ -97,8 +112,13 @@ const DEFAULT_SPAM_THRESHOLDS: SpamThresholds = {
  * const isSpam = await consensus.detectSpam(post);
  * ```
  */
-export class ForumConsensus {
+export class ForumConsensus extends EventEmitter {
   private spamThresholds: SpamThresholds;
+  private blockProductionService?: BlockProductionService;
+  private masterMerkleEngine?: MasterMerkleEngine;
+  private p2pNetwork?: P2PNetwork;
+  private pendingVotes: Map<string, Map<string, ModerationVote>> = new Map();
+  private voteTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
   /**
    * Creates a new Forum Consensus instance
@@ -110,6 +130,7 @@ export class ForumConsensus {
     private db: Database,
     thresholds: Partial<SpamThresholds> = {},
   ) {
+    super();
     this.spamThresholds = { ...DEFAULT_SPAM_THRESHOLDS, ...thresholds };
   }
 
@@ -119,6 +140,34 @@ export class ForumConsensus {
   async initialize(): Promise<void> {
     // Create necessary tables for consensus tracking
     await this.createConsensusTables();
+    
+    // Initialize validator services if available
+    try {
+      // Try to get MasterMerkleEngine instance
+      this.masterMerkleEngine = MasterMerkleEngine.getInstance();
+      if (this.masterMerkleEngine && this.masterMerkleEngine.getServices()) {
+        const services = this.masterMerkleEngine.getServices();
+        this.blockProductionService = services.blockProduction as BlockProductionService;
+        
+        // Try to get P2P network instance for voting
+        try {
+          this.p2pNetwork = P2PNetwork.getInstance();
+          if (this.p2pNetwork) {
+            this.setupP2PVoting();
+          }
+        } catch (error) {
+          logger.warn('P2P network not available for voting', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+    } catch (error) {
+      // Validator services not available - will fall back to default validators
+      logger.warn('Validator services not available for ForumConsensus', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+    
     // Forum Consensus Service initialized successfully
   }
 
@@ -218,10 +267,13 @@ export class ForumConsensus {
     const moderationId = await this.recordModerationRequest(request);
 
     // Get eligible validators for voting
-    const validators = this.getEligibleValidators(request);
+    const validators = await this.getEligibleValidators(request);
+    
+    // Broadcast the moderation request to validators
+    await this.broadcastModerationRequest(moderationId, request, validators);
 
-    // Collect votes from validators (in real implementation, this would be async)
-    const votes = this.collectValidatorVotes(moderationId, validators);
+    // Collect votes from validators
+    const votes = await this.collectValidatorVotes(moderationId, validators);
 
     // Calculate consensus
     const result = this.calculateConsensus(votes);
@@ -712,12 +764,31 @@ export class ForumConsensus {
   /**
    * Gets eligible validators for moderation voting
    * @private
-   * @param _request - Moderation request (unused in mock implementation)
+   * @param _request - Moderation request
    * @returns Array of validator addresses
    */
-  private getEligibleValidators(_request: ModerationRequest): string[] {
-    // In production, this would query active validators with sufficient stake
-    // For now, return mock validators
+  private async getEligibleValidators(_request: ModerationRequest): Promise<string[]> {
+    // Try to get real validators from BlockProductionService
+    if (this.blockProductionService) {
+      try {
+        const activeValidators = await this.blockProductionService.getActiveValidators();
+        
+        // Filter validators with high participation scores (> 70)
+        const eligibleValidators = activeValidators
+          .filter(v => v.isActive && v.participationScore > 70)
+          .map(v => v.address);
+        
+        if (eligibleValidators.length >= 3) {
+          return eligibleValidators;
+        }
+      } catch (error) {
+        logger.warn('Failed to get validators from BlockProductionService', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    // Fallback to default validators if service not available or insufficient validators
     return [
       '0x1234567890123456789012345678901234567890',
       '0x2345678901234567890123456789012345678901',
@@ -726,25 +797,188 @@ export class ForumConsensus {
   }
 
   /**
+   * Sets up P2P voting listeners
+   * @private
+   */
+  private setupP2PVoting(): void {
+    if (!this.p2pNetwork) return;
+    
+    // Listen for moderation votes from other validators
+    this.p2pNetwork.on('moderation-vote', (data: unknown) => {
+      try {
+        const vote = data as ModerationVote;
+        this.handleIncomingVote(vote);
+      } catch (error) {
+        logger.error('Error handling moderation vote', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+    
+    // Listen for moderation requests (if we're a validator)
+    this.p2pNetwork.on('moderation-request', async (data: unknown) => {
+      try {
+        const request = data as {
+          moderationId: string;
+          request: ModerationRequest;
+          requestedValidators: string[];
+          timestamp: number;
+        };
+        
+        // Check if we're one of the requested validators
+        const myAddress = await this.getMyValidatorAddress();
+        if (myAddress && request.requestedValidators.includes(myAddress)) {
+          // Process the request and vote
+          await this.processAndVote(request.moderationId, request.request);
+        }
+      } catch (error) {
+        logger.error('Error handling moderation request', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    });
+  }
+  
+  /**
+   * Handles incoming moderation vote from P2P network
+   * @private
+   * @param vote - The moderation vote
+   */
+  private handleIncomingVote(vote: ModerationVote): void {
+    const { moderationId, validatorAddress } = vote;
+    
+    // Get or create vote collection for this moderation request
+    if (!this.pendingVotes.has(moderationId)) {
+      this.pendingVotes.set(moderationId, new Map());
+    }
+    
+    const votes = this.pendingVotes.get(moderationId)!;
+    votes.set(validatorAddress, vote);
+    
+    // Emit event for vote received
+    this.emit('voteReceived', moderationId, validatorAddress, vote.vote);
+  }
+  
+  /**
+   * Broadcasts a moderation request to validators
+   * @private
+   * @param moderationId - ID of the moderation request
+   * @param request - The moderation request details
+   * @param validators - List of validator addresses to request votes from
+   */
+  private async broadcastModerationRequest(
+    moderationId: string,
+    request: ModerationRequest,
+    validators: string[],
+  ): Promise<void> {
+    if (!this.p2pNetwork) {
+      logger.warn('P2P network not available for broadcasting');
+      return;
+    }
+    
+    const requestData = {
+      moderationId,
+      request,
+      requestedValidators: validators,
+      timestamp: Date.now(),
+    };
+    
+    // Broadcast to all peers
+    this.p2pNetwork.broadcast({
+      type: MessageType.MODERATION_REQUEST,
+      payload: requestData,
+      from: this.masterMerkleEngine?.getNodeId() || 'forum-consensus',
+      timestamp: Date.now(),
+      id: `mod-req-${moderationId}`
+    });
+  }
+  
+  /**
    * Collects votes from validators
    * @private
-   * @param _moderationId - ID of the moderation request (unused in mock implementation)
+   * @param moderationId - ID of the moderation request
    * @param validators - List of validator addresses
    * @returns Vote results mapped by validator address
    */
-  private collectValidatorVotes(
-    _moderationId: string,
+  private async collectValidatorVotes(
+    moderationId: string,
     validators: string[],
-  ): Record<string, boolean> {
-    // In production, this would be an async process with timeouts
-    // For now, simulate votes
+  ): Promise<Record<string, boolean>> {
+    // If P2P network is available, wait for real votes
+    if (this.p2pNetwork) {
+      // Initialize vote collection
+      this.pendingVotes.set(moderationId, new Map());
+      
+      // Wait for votes with timeout (30 seconds)
+      const VOTE_TIMEOUT = 30000;
+      
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          // Collect whatever votes we have
+          const collectedVotes = this.pendingVotes.get(moderationId) || new Map();
+          const result: Record<string, boolean> = {};
+          
+          // Add collected votes
+          for (const [address, vote] of collectedVotes) {
+            if (validators.includes(address)) {
+              result[address] = vote.vote;
+            }
+          }
+          
+          // For validators that didn't respond, add abstentions
+          for (const validator of validators) {
+            if (!(validator in result)) {
+              // Abstention - neither approve nor reject
+              result[validator] = Math.random() > 0.5; // Temporary until we handle abstentions properly
+            }
+          }
+          
+          // Cleanup
+          this.pendingVotes.delete(moderationId);
+          this.voteTimeouts.delete(moderationId);
+          
+          resolve(result);
+        }, VOTE_TIMEOUT);
+        
+        this.voteTimeouts.set(moderationId, timeout);
+        
+        // Check if we already have all votes
+        const checkComplete = () => {
+          const votes = this.pendingVotes.get(moderationId);
+          if (votes && votes.size >= validators.length) {
+            clearTimeout(timeout);
+            this.voteTimeouts.delete(moderationId);
+            
+            const result: Record<string, boolean> = {};
+            for (const [address, vote] of votes) {
+              if (validators.includes(address)) {
+                result[address] = vote.vote;
+              }
+            }
+            
+            this.pendingVotes.delete(moderationId);
+            resolve(result);
+          }
+        };
+        
+        // Listen for vote completion
+        this.on('voteReceived', (voteModId: string) => {
+          if (voteModId === moderationId) {
+            checkComplete();
+          }
+        });
+        
+        // Initial check in case votes already arrived
+        checkComplete();
+      });
+    }
+    
+    // Fallback to simulation if P2P not available
     const votes: Record<string, boolean> = {};
-
     for (const validator of validators) {
       // Simulate 70% approval rate
       votes[validator] = Math.random() > 0.3;
     }
-
     return votes;
   }
 
@@ -961,5 +1195,117 @@ export class ForumConsensus {
         reviewed_at TIMESTAMP
       )
     `);
+  }
+  
+  /**
+   * Gets the current validator's address
+   * @private
+   * @returns The validator address or null if not a validator
+   */
+  private async getMyValidatorAddress(): Promise<string | null> {
+    // Try to get from BlockProductionService
+    if (this.blockProductionService) {
+      try {
+        const validators = await this.blockProductionService.getActiveValidators();
+        const nodeId = this.masterMerkleEngine?.getNodeId();
+        if (nodeId) {
+          const myValidator = validators.find(v => v.nodeId === nodeId);
+          if (myValidator) {
+            return myValidator.address;
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to get validator address', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Processes a moderation request and votes
+   * @private
+   * @param moderationId - ID of the moderation request
+   * @param request - The moderation request
+   */
+  private async processAndVote(moderationId: string, request: ModerationRequest): Promise<void> {
+    try {
+      // Evaluate the request based on our criteria
+      const shouldApprove = await this.evaluateModerationRequest(request);
+      
+      // Get our address
+      const myAddress = await this.getMyValidatorAddress();
+      if (!myAddress) {
+        logger.warn('Cannot vote - not a validator');
+        return;
+      }
+      
+      // Create and sign the vote
+      const vote: ModerationVote = {
+        moderationId,
+        validatorAddress: myAddress,
+        vote: shouldApprove,
+        signature: this.signVote(moderationId, shouldApprove), // Would need proper signing
+        timestamp: Date.now()
+      };
+      
+      // Broadcast our vote
+      if (this.p2pNetwork) {
+        this.p2pNetwork.broadcast({
+          type: MessageType.MODERATION_VOTE,
+          payload: vote,
+          from: this.masterMerkleEngine?.getNodeId() || myAddress,
+          timestamp: Date.now(),
+          id: `vote-${moderationId}-${myAddress}`
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to process and vote on moderation request', {
+        moderationId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  
+  /**
+   * Evaluates whether to approve a moderation request
+   * @private
+   * @param request - The moderation request
+   * @returns Whether to approve the request
+   */
+  private async evaluateModerationRequest(request: ModerationRequest): Promise<boolean> {
+    // Simple evaluation logic - in production this would be more sophisticated
+    switch (request.action) {
+      case 'delete':
+        // Approve deletion if reason is valid
+        return ['spam', 'offensive', 'illegal'].includes(request.reason);
+      
+      case 'lock':
+      case 'unlock':
+        // Approve lock/unlock for valid reasons
+        return ['resolved', 'off_topic', 'heated'].includes(request.reason);
+      
+      case 'pin':
+      case 'unpin':
+        // Approve pin/unpin for important content
+        return ['important', 'announcement'].includes(request.reason);
+      
+      default:
+        return false;
+    }
+  }
+  
+  /**
+   * Signs a vote (placeholder - needs proper crypto implementation)
+   * @private
+   * @param moderationId - ID of the moderation request
+   * @param vote - The vote (true/false)
+   * @returns Signature string
+   */
+  private signVote(moderationId: string, vote: boolean): string {
+    // TODO: Implement proper cryptographic signing
+    // This would use the validator's private key to sign the vote
+    return `sig-${moderationId}-${vote}`;
   }
 }

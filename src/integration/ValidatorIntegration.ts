@@ -680,10 +680,10 @@ export class ValidatorIntegration extends EventEmitter {
           return await this.handleParticipationMessage(message.action, message.data);
 
         case 'user':
-          return this.handleUserMessage(message.action, message.data);
+          return await this.handleUserMessage(message.action, message.data);
 
         case 'consensus':
-          return this.handleConsensusMessage(message.action, message.data);
+          return await this.handleConsensusMessage(message.action, message.data);
 
         case 'health':
           return { success: true, data: await this.getHealth() };
@@ -922,23 +922,54 @@ export class ValidatorIntegration extends EventEmitter {
    * Handles user-related messages
    * @private
    * @param action - Action to perform
-   * @param _data - Message data (currently unused in mock implementation)
+   * @param data - Message data containing userId
    * @returns Promise resolving to action result
    */
-  private handleUserMessage(action: string, _data: Record<string, unknown>): ValidatorResponse {
+  private async handleUserMessage(action: string, data: Record<string, unknown>): Promise<ValidatorResponse> {
     if (this.services === undefined) throw new Error('Services not initialized');
 
     switch (action) {
       case 'getActivity': {
-        // Mock user activity data (userId from data.userId not needed for this mock)
-        return {
-          success: true,
-          data: {
-            documents: 1,
-            forumThreads: 1,
-            supportSessions: 1,
-          },
-        };
+        const userId = data.userId as string;
+        if (!userId) {
+          return {
+            success: false,
+            error: 'userId is required',
+          };
+        }
+
+        try {
+          // Get real user activity from services
+          const [forumStats, documents] = await Promise.all([
+            // Get forum activity
+            this.services.forum.getUserStats(userId),
+            // Get documents authored by user
+            this.services.documentation.searchDocuments({
+              author: userId,
+              limit: 1000,
+            }),
+          ]);
+
+          // For support sessions, we need to count active sessions
+          // Since there's no direct getUserSessions method, we'll use a reasonable default
+          const supportSessions = 0; // TODO: Add method to VolunteerSupportService to get user sessions
+
+          return {
+            success: true,
+            data: {
+              documents: documents.documents.length,
+              forumThreads: forumStats.threads,
+              forumPosts: forumStats.posts,
+              supportSessions,
+            },
+          };
+        } catch (error) {
+          logger.error('Failed to get user activity:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to get user activity',
+          };
+        }
       }
       default:
         throw new Error(`Unknown user action: ${action}`);
@@ -949,28 +980,53 @@ export class ValidatorIntegration extends EventEmitter {
    * Handles consensus-related messages
    * @private
    * @param action - Action to perform
-   * @param _data - Message data (currently unused in mock implementation)
+   * @param data - Message data containing documentId or proposalId
    * @returns Promise resolving to action result
    */
-  private handleConsensusMessage(
+  private async handleConsensusMessage(
     action: string,
-    _data: Record<string, unknown>,
-  ): ValidatorResponse {
+    data: Record<string, unknown>,
+  ): Promise<ValidatorResponse> {
     if (this.services === undefined) throw new Error('Services not initialized');
 
     switch (action) {
       case 'getStatus': {
-        const documentId = _data.documentId as string;
-        // Mock consensus status
-        return {
-          success: true,
-          data: {
-            status: 'approved',
-            documentId,
-            votes: 5,
-            consensus: true,
-          },
-        };
+        const documentId = data.documentId as string;
+        const proposalId = data.proposalId as string;
+        
+        if (!documentId && !proposalId) {
+          return {
+            success: false,
+            error: 'documentId or proposalId is required',
+          };
+        }
+
+        try {
+          // Get real consensus status from documentation service
+          const consensusStatus = await this.services.documentation.getConsensusStatus(
+            proposalId || documentId
+          );
+
+          return {
+            success: true,
+            data: {
+              status: consensusStatus.approved ? 'approved' : consensusStatus.rejected ? 'rejected' : 'pending',
+              documentId: documentId || proposalId,
+              votes: consensusStatus.votesFor + consensusStatus.votesAgainst,
+              votesFor: consensusStatus.votesFor,
+              votesAgainst: consensusStatus.votesAgainst,
+              consensus: consensusStatus.approved,
+              quorumReached: consensusStatus.quorumReached,
+              endTime: consensusStatus.endTime,
+            },
+          };
+        } catch (error) {
+          logger.error('Failed to get consensus status:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to get consensus status',
+          };
+        }
       }
       default:
         throw new Error(`Unknown consensus action: ${action}`);

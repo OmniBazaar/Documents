@@ -11,6 +11,8 @@
 import { Database } from '../database/Database';
 import { logger } from '../../utils/logger';
 import { DocumentUpdateProposal, Document } from './DocumentationService';
+import { StakingService } from '../../../../Validator/src/services/StakingService';
+import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
 
 /**
  * Consensus configuration for documentation updates
@@ -105,6 +107,8 @@ const DEFAULT_CONFIG: ConsensusConfig = {
  * ```
  */
 export class DocumentationConsensus {
+  private stakingService?: StakingService;
+  
   /**
    * Creates a new Documentation Consensus instance
    *
@@ -114,7 +118,21 @@ export class DocumentationConsensus {
   constructor(
     private db: Database,
     private config: ConsensusConfig = DEFAULT_CONFIG,
-  ) {}
+  ) {
+    // Try to get StakingService from MasterMerkleEngine
+    try {
+      const masterMerkleEngine = MasterMerkleEngine.getInstance();
+      if (masterMerkleEngine && masterMerkleEngine.getServices()) {
+        const services = masterMerkleEngine.getServices();
+        this.stakingService = services.staking as StakingService;
+      }
+    } catch (error) {
+      // Staking service not available - will use fallback values
+      logger.warn('StakingService not available for DocumentationConsensus', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
 
   /**
    * Initializes the consensus service
@@ -487,10 +505,27 @@ export class DocumentationConsensus {
    * @private
    */
   private async getValidatorInfo(address: string): Promise<{ stake: number } | null> {
-    // In production, this would fetch from validator registry
-    // For now, return mock data
     const isVal = await this.isValidator(address);
-    return isVal ? { stake: 10000 } : null;
+    if (!isVal) {
+      return null;
+    }
+    
+    // Try to get real stake from StakingService
+    if (this.stakingService) {
+      try {
+        const stakedAmount = this.stakingService.getStakedAmount(address);
+        // Convert bigint to number (safe for reasonable stake amounts)
+        return { stake: Number(stakedAmount) };
+      } catch (error) {
+        logger.warn('Failed to get stake from StakingService', {
+          address,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    // Fallback to default stake value if service not available
+    return { stake: 10000 };
   }
 
   /**

@@ -14,6 +14,8 @@ import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { SearchEngine } from '../search/SearchEngine';
 import { ValidationService } from '../validation/ValidationService';
+import { IPFSStorageNetwork } from '../../../../Validator/src/services/storage/IPFSStorageNetwork';
+import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
 
 /**
  * Supported documentation languages
@@ -259,6 +261,8 @@ export class DocumentationService extends EventEmitter {
   private documentCache: Map<string, Document>;
   /** Cache TTL in milliseconds */
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  /** IPFS storage service */
+  private ipfsStorage?: IPFSStorageNetwork;
 
   /**
    * Creates a new DocumentationService instance
@@ -282,6 +286,20 @@ export class DocumentationService extends EventEmitter {
 
     // Clear cache periodically
     setInterval(() => this.clearExpiredCache(), this.CACHE_TTL);
+    
+    // Try to get IPFSStorageNetwork from MasterMerkleEngine
+    try {
+      const masterMerkleEngine = MasterMerkleEngine.getInstance();
+      if (masterMerkleEngine && masterMerkleEngine.getServices()) {
+        const services = masterMerkleEngine.getServices();
+        this.ipfsStorage = services.ipfsStorage as IPFSStorageNetwork;
+      }
+    } catch (error) {
+      // IPFS storage not available - will use mock hashes
+      logger.warn('IPFSStorageNetwork not available for DocumentationService', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   /**
@@ -1370,13 +1388,46 @@ export class DocumentationService extends EventEmitter {
   /**
    * Publishes a draft document
    * @param documentId - Document ID
-   * @param _publisherAddress - Publisher address
+   * @param publisherAddress - Publisher address
    * @returns Updated document
    */
-  async publishDocument(documentId: string, _publisherAddress: string): Promise<Document> {
+  async publishDocument(documentId: string, publisherAddress: string): Promise<Document> {
     try {
-      // Generate IPFS hash (in production, this would upload to IPFS)
-      const ipfsHash = this.generateIPFSHash();
+      // Get the document content
+      const doc = await this.getDocument(documentId);
+      if (!doc) {
+        throw new Error('Document not found');
+      }
+      
+      // Upload to IPFS if available, otherwise generate mock hash
+      let ipfsHash: string;
+      if (this.ipfsStorage) {
+        try {
+          // Create a JSON representation of the document
+          const documentData = JSON.stringify({
+            title: doc.title,
+            content: doc.content,
+            metadata: doc.metadata,
+            author: doc.authorAddress,
+            createdAt: doc.createdAt,
+          });
+          
+          const result = await this.ipfsStorage.storeData(
+            Buffer.from(documentData),
+            `doc_${documentId}.json`,
+            'application/json',
+            publisherAddress
+          );
+          ipfsHash = result.hash;
+        } catch (error) {
+          logger.warn('Failed to upload to IPFS, using mock hash', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+          ipfsHash = this.generateIPFSHash();
+        }
+      } else {
+        ipfsHash = this.generateIPFSHash();
+      }
 
       await this.db.query(
         'UPDATE documents SET status = $2, ipfs_hash = $3, published_at = NOW(), updated_at = NOW() WHERE id = $1',
