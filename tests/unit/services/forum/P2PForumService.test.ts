@@ -15,14 +15,14 @@ import { ForumConsensus } from '@/services/forum/ForumConsensus';
 import { ForumIncentives } from '@/services/forum/ForumIncentives';
 import { ForumModerationService } from '@/services/forum/ForumModerationService';
 import { Database } from '@/services/database/Database';
-import { 
-  setupTestServices, 
-  teardownTestServices, 
+import {
+  setupUnitTestServices,
+  teardownUnitTestServices,
   TEST_USERS,
   generateTestThread,
   testHelpers,
   cleanTestData,
-} from '@tests/setup/testSetup';
+} from '@tests/setup/unitTestSetup';
 
 describe('P2PForumService', () => {
   let services: any;
@@ -30,7 +30,7 @@ describe('P2PForumService', () => {
   let db: Database;
 
   beforeAll(async () => {
-    services = await setupTestServices();
+    services = await setupUnitTestServices();
     forumService = services.forum;
     db = services.db;
   }, 60000); // Increase timeout to 60 seconds
@@ -39,7 +39,7 @@ describe('P2PForumService', () => {
     if (db) {
       await cleanTestData(db);
     }
-    await teardownTestServices();
+    await teardownUnitTestServices();
   });
 
   beforeEach(async () => {

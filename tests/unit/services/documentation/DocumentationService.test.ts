@@ -15,14 +15,14 @@ import { Database } from '@/services/database/Database';
 import { SearchEngine } from '@/services/search/SearchEngine';
 import { ParticipationScoreService } from '@/services/participation/ParticipationScoreService';
 import { ValidationService } from '@/services/validation/ValidationService';
-import { 
-  setupTestServices, 
-  teardownTestServices, 
+import {
+  setupUnitTestServices,
+  teardownUnitTestServices,
   TEST_USERS,
   generateTestDocument,
   testHelpers,
   cleanTestData,
-} from '@tests/setup/testSetup';
+} from '@tests/setup/unitTestSetup';
 
 describe('DocumentationService', () => {
   let services: any;
@@ -30,11 +30,11 @@ describe('DocumentationService', () => {
   let db: Database;
 
   beforeAll(async () => {
-    services = await setupTestServices();
+    services = await setupUnitTestServices();
     docService = services.documentation;
     db = services.db;
   });
-  
+
   beforeEach(() => {
     // Clear participation scores before each test to ensure clean state
     if (services.participation && typeof (services.participation as any).clearScores === 'function') {
@@ -44,7 +44,7 @@ describe('DocumentationService', () => {
 
   afterAll(async () => {
     await cleanTestData(db);
-    await teardownTestServices();
+    await teardownUnitTestServices();
   });
 
   describe('Document CRUD Operations', () => {

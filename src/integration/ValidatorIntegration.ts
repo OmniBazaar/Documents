@@ -139,7 +139,7 @@ export interface IntegrationEvents {
  * ```typescript
  * const integration = new ValidatorIntegration({
  *   database: { host, port, database, user, password },
- *   validatorEndpoint: 'http://localhost:8080'
+ *   validatorEndpoint: 'http://localhost:4000'
  * });
  *
  * await integration.start();
@@ -957,9 +957,9 @@ export class ValidatorIntegration extends EventEmitter {
           return {
             success: true,
             data: {
-              documents: documents.documents.length,
-              forumThreads: forumStats.threads,
-              forumPosts: forumStats.posts,
+              documents: documents.items.length,
+              forumThreads: forumStats.threads_created || 0,
+              forumPosts: forumStats.posts_made || 0,
               supportSessions,
             },
           };

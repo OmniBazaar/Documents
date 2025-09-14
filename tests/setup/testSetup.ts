@@ -8,7 +8,6 @@
  */
 
 import { Database, DatabaseConfig } from '../../src/services/database/Database';
-import { MockDatabase } from '../mocks/MockDatabase';
 import { DocumentServices, initializeDocumentServices } from '../../src/services';
 import { logger } from '../../src/utils/logger';
 
@@ -98,7 +97,7 @@ export async function setupTestServices(): Promise<DocumentServices> {
 }
 
 /**
- * Initialize document services with mock database for testing
+ * Initialize document services with real database for testing
  */
 async function initializeTestDocumentServices(): Promise<DocumentServices> {
   // Dynamically import constructors to avoid circular dependencies
@@ -109,8 +108,9 @@ async function initializeTestDocumentServices(): Promise<DocumentServices> {
   const { SearchEngine } = await import('../../src/services/search/SearchEngine');
   const { ValidationService } = await import('../../src/services/validation/ValidationService');
 
-  // Initialize mock database
-  const db: Database = new MockDatabase();
+  // Initialize real YugabyteDB database
+  const db: Database = new Database(TEST_DB_CONFIG);
+  await db.connect();
 
   // Initialize core services
   const validatorEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:8080';
@@ -217,14 +217,14 @@ async function runDatabaseMigrations(db: Database): Promise<void> {
   // Read and execute the migration files
   const fs = await import('fs/promises');
   const path = await import('path');
-  
+
   // Run migrations in order
   const migrations = [
     '000_create_documentation_tables.sql',
     '001_create_forum_tables.sql',
     '002_create_support_tables.sql'
   ];
-  
+
   for (const migrationFile of migrations) {
     try {
       const migrationPath = path.resolve(__dirname, '../../migrations', migrationFile);

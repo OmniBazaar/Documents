@@ -1437,13 +1437,13 @@ export class DocumentationService extends EventEmitter {
       // Clear cache to ensure we get the updated document
       this.documentCache.delete(documentId);
 
-      const doc = await this.getDocument(documentId);
-      if (doc === null || doc === undefined) {
+      const updatedDoc = await this.getDocument(documentId);
+      if (updatedDoc === null || updatedDoc === undefined) {
         throw new Error('Document not found');
       }
 
-      this.emit('documentPublished', doc);
-      return doc;
+      this.emit('documentPublished', updatedDoc);
+      return updatedDoc;
     } catch (error) {
       logger.error('Failed to publish document:', error);
       throw error;

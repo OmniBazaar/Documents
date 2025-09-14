@@ -498,18 +498,18 @@ describe('Database Integration Tests', () => {
       );
       
       const threadCount = await db.query<{ count: string }>(
-        'SELECT COUNT(*) FROM forum_threads WHERE author_id = $1',
+        'SELECT COUNT(*) FROM forum_threads WHERE author_address = $1',
         [TEST_USERS.alice]
       );
-      
+
       const requestCount = await db.query<{ count: string }>(
-        'SELECT COUNT(*) FROM support_requests WHERE user_id = $1',
+        'SELECT COUNT(*) FROM support_requests WHERE user_address = $1',
         [TEST_USERS.alice]
       );
-      
+
       expect(parseInt(docCount.rows[0].count)).toBeGreaterThan(0);
       expect(parseInt(threadCount.rows[0].count)).toBeGreaterThan(0);
-      expect(parseInt(requestCount.rows[0].count)).toBeGreaterThan(0);
+      expect(parseInt(requestCount.rows[0]?.count || '0')).toBeGreaterThan(0);
     });
 
     test('should handle timestamp consistency', async () => {

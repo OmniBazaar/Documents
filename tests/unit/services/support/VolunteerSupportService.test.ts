@@ -22,13 +22,14 @@ import {
   SupportSessionStatus,
   ChatMessage,
 } from '../../../../src/services/support/SupportTypes';
-import { 
-  setupTestServices, 
-  teardownTestServices, 
+import {
+  setupUnitTestServices,
+  teardownUnitTestServices,
   TEST_USERS,
   testHelpers,
   cleanTestData,
-} from '../../../setup/testSetup';
+  generateTestSupportRequest,
+} from '../../../setup/unitTestSetup';
 import type { DocumentServices } from '../../../../src/services';
 
 // Interface for accessing private properties in tests
@@ -53,7 +54,7 @@ describe('VolunteerSupportService', () => {
   };
 
   beforeAll(async () => {
-    services = await setupTestServices();
+    services = await setupUnitTestServices();
     db = services.db;
     participationService = services.participation;
     
@@ -66,7 +67,7 @@ describe('VolunteerSupportService', () => {
     if (db) {
       await cleanTestData(db);
     }
-    await teardownTestServices();
+    await teardownUnitTestServices();
   });
 
   beforeEach(async () => {

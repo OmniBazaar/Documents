@@ -9,18 +9,18 @@
  */
 
 import { SearchEngine } from '@/services/search/SearchEngine';
-import { 
-  setupTestServices, 
-  teardownTestServices, 
+import {
+  setupUnitTestServices,
+  teardownUnitTestServices,
   TEST_USERS,
-} from '@tests/setup/testSetup';
+} from '@tests/setup/unitTestSetup';
 
 describe('SearchEngine', () => {
   let searchEngine: SearchEngine;
   let services: any;
 
   beforeAll(async () => {
-    services = await setupTestServices();
+    services = await setupUnitTestServices();
     searchEngine = new SearchEngine('test-documents');
     
     // Index test documents
@@ -78,7 +78,7 @@ describe('SearchEngine', () => {
   });
 
   afterAll(async () => {
-    await teardownTestServices();
+    await teardownUnitTestServices();
   });
 
   describe('Basic Search', () => {
