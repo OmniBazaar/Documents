@@ -59,7 +59,7 @@ export class GraphQLDatabase {
       } else if (normalizedQuery.startsWith('update')) {
         return await this.handleUpdate<T>(text, values);
       } else if (normalizedQuery.startsWith('delete')) {
-        return await this.handleDelete<T>(text, values);
+        return this.handleDelete<T>(text, values);
       } else if (normalizedQuery.includes('drop table')) {
         // Handle DROP TABLE for test cleanup
         return {
@@ -93,6 +93,9 @@ export class GraphQLDatabase {
 
   /**
    * Handles SELECT queries by converting to GraphQL queries
+   * @param text - SQL query text
+   * @param values - Query parameter values
+   * @returns Query result
    */
   private async handleSelect<T>(
     text: string,
@@ -108,10 +111,10 @@ export class GraphQLDatabase {
         logger.debug('GraphQLDatabase: Getting document by ID', { id });
         try {
           const document = await this.client.getDocument(id);
-          logger.debug('GraphQLDatabase: Document retrieved', { document: document ? 'found' : 'not found', id });
+          logger.debug('GraphQLDatabase: Document retrieved', { document: document !== null && document !== undefined ? 'found' : 'not found', id });
           return {
-            rows: document ? [document as T] : [],
-            rowCount: document ? 1 : 0,
+            rows: document !== null && document !== undefined ? [document as T] : [],
+            rowCount: document !== null && document !== undefined ? 1 : 0,
             command: 'SELECT',
             oid: 0,
             fields: [],
@@ -142,8 +145,8 @@ export class GraphQLDatabase {
         const id = String(values?.[0] ?? '');
         const thread = await this.client.getForumThread(id);
         return {
-          rows: thread ? [thread as T] : [],
-          rowCount: thread ? 1 : 0,
+          rows: thread !== null && thread !== undefined ? [thread as T] : [],
+          rowCount: thread !== null && thread !== undefined ? 1 : 0,
           command: 'SELECT',
           oid: 0,
           fields: [],
@@ -185,8 +188,8 @@ export class GraphQLDatabase {
         const id = String(values?.[0] ?? '');
         const request = await this.client.getSupportRequest(id);
         return {
-          rows: request ? [request as T] : [],
-          rowCount: request ? 1 : 0,
+          rows: request !== null && request !== undefined ? [request as T] : [],
+          rowCount: request !== null && request !== undefined ? 1 : 0,
           command: 'SELECT',
           oid: 0,
           fields: [],
@@ -207,6 +210,9 @@ export class GraphQLDatabase {
 
   /**
    * Handles INSERT queries by converting to GraphQL mutations
+   * @param text - SQL query text
+   * @param values - Query parameter values
+   * @returns Query result
    */
   private async handleInsert<T>(
     text: string,
@@ -232,7 +238,7 @@ export class GraphQLDatabase {
       };
 
       // Check if ID is provided in values (first parameter of INSERT)
-      if (values?.[0] && values[0] !== null) {
+      if (values !== undefined && values[0] !== undefined && values[0] !== null) {
         input.id = String(values[0]);
       }
       const created = await this.client.createDocument(input);
@@ -330,6 +336,9 @@ export class GraphQLDatabase {
 
   /**
    * Handles UPDATE queries by converting to GraphQL mutations
+   * @param text - SQL query text
+   * @param values - Query parameter values
+   * @returns Query result
    */
   private async handleUpdate<T>(
     text: string,
@@ -340,7 +349,7 @@ export class GraphQLDatabase {
     // Handle document updates
     if (normalizedQuery.includes('update documents')) {
       const updates = this.extractDocumentUpdates(text, values);
-      if (updates.id) {
+      if (updates.id !== undefined) {
         const id = String(updates.id);
         // Remove id from updates to pass to mutation
         const { id: _, ...updateInput } = updates;
@@ -381,11 +390,14 @@ export class GraphQLDatabase {
 
   /**
    * Handles DELETE queries
+   * @param _text - SQL query text
+   * @param _values - Query parameter values
+   * @returns Query result
    */
-  private async handleDelete<T>(
+  private handleDelete<T>(
     _text: string,
     _values?: unknown[]
-  ): Promise<TypedQueryResult<T>> {
+  ): TypedQueryResult<T> {
     // Most deletes are soft deletes handled by UPDATE
     return {
       rows: [],
@@ -399,7 +411,7 @@ export class GraphQLDatabase {
   /**
    * Begins a transaction (no-op for GraphQL)
    */
-  async begin(): Promise<void> {
+  begin(): void {
     // GraphQL doesn't support transactions
     logger.debug('GraphQL transaction begin (no-op)');
   }
@@ -407,7 +419,7 @@ export class GraphQLDatabase {
   /**
    * Commits a transaction (no-op for GraphQL)
    */
-  async commit(): Promise<void> {
+  commit(): void {
     // GraphQL doesn't support transactions
     logger.debug('GraphQL transaction commit (no-op)');
   }
@@ -415,7 +427,7 @@ export class GraphQLDatabase {
   /**
    * Rolls back a transaction (no-op for GraphQL)
    */
-  async rollback(): Promise<void> {
+  rollback(): void {
     // GraphQL doesn't support transactions
     logger.debug('GraphQL transaction rollback (no-op)');
   }
@@ -423,7 +435,7 @@ export class GraphQLDatabase {
   /**
    * Closes the database connection
    */
-  async close(): Promise<void> {
+  close(): void {
     // GraphQL client doesn't need explicit closing
     logger.info('GraphQL database connection closed');
   }
@@ -437,7 +449,7 @@ export class GraphQLDatabase {
 
     // Parse the WHERE clause to extract filters
     const whereMatch = text.match(/where\s+(.+?)(?:\s+order\s+by|\s+limit|\s*$)/i);
-    if (!whereMatch || !values) {
+    if (whereMatch === null || whereMatch[1] === undefined || values === undefined || values.length === 0) {
       return filters;
     }
 
@@ -445,21 +457,21 @@ export class GraphQLDatabase {
 
     // Extract text search pattern (ILIKE conditions)
     // Look for patterns like: title ILIKE $1 OR description ILIKE $1
-    const ilikeMatches = whereClause ? whereClause.match(/ilike\s+\$(\d+)/gi) : null;
-    if (ilikeMatches && ilikeMatches.length > 0) {
+    const ilikeMatches = whereClause.length > 0 ? whereClause.match(/ilike\s+\$(\d+)/gi) : null;
+    if (ilikeMatches !== null && ilikeMatches.length > 0) {
       // Get the parameter index from the first ILIKE match
       const firstMatch = ilikeMatches[0].match(/\$(\d+)/);
-      if (firstMatch && firstMatch[1]) {
+      if (firstMatch !== null && firstMatch[1] !== undefined) {
         const paramIndex = parseInt(firstMatch[1]) - 1;
         const searchValue = values[paramIndex];
         if (searchValue !== undefined) {
           const searchStr = String(searchValue);
           // Remove SQL wildcards if present
-          if (searchStr.startsWith('%') && searchStr.endsWith('%')) {
+          if (searchStr.length > 1 && searchStr.startsWith('%') && searchStr.endsWith('%')) {
             filters.query = searchStr.slice(1, -1);
-          } else if (searchStr.startsWith('%')) {
+          } else if (searchStr.length > 0 && searchStr.startsWith('%')) {
             filters.query = searchStr.slice(1);
-          } else if (searchStr.endsWith('%')) {
+          } else if (searchStr.length > 0 && searchStr.endsWith('%')) {
             filters.query = searchStr.slice(0, -1);
           } else {
             filters.query = searchStr;
@@ -469,8 +481,8 @@ export class GraphQLDatabase {
     }
 
     // Extract category filter
-    const categoryMatch = whereClause ? whereClause.match(/category\s*=\s*\$(\d+)/i) : null;
-    if (categoryMatch && categoryMatch[1]) {
+    const categoryMatch = whereClause.length > 0 ? whereClause.match(/category\s*=\s*\$(\d+)/i) : null;
+    if (categoryMatch !== null && categoryMatch[1] !== undefined) {
       const paramIndex = parseInt(categoryMatch[1]) - 1;
       if (values[paramIndex] !== undefined) {
         const category = String(values[paramIndex]);
@@ -494,8 +506,8 @@ export class GraphQLDatabase {
     }
 
     // Extract author address filter
-    const authorMatch = whereClause ? whereClause.match(/author_address\s*=\s*\$(\d+)/i) : null;
-    if (authorMatch && authorMatch[1]) {
+    const authorMatch = whereClause.length > 0 ? whereClause.match(/author_address\s*=\s*\$(\d+)/i) : null;
+    if (authorMatch !== null && authorMatch[1] !== undefined) {
       const paramIndex = parseInt(authorMatch[1]) - 1;
       if (values[paramIndex] !== undefined) {
         filters.authorAddress = values[paramIndex];
@@ -506,7 +518,7 @@ export class GraphQLDatabase {
     const limitMatch = text.match(/limit (\$\d+|\d+)/i);
     const offsetMatch = text.match(/offset (\$\d+|\d+)/i);
 
-    if (limitMatch && limitMatch[1]) {
+    if (limitMatch !== null && limitMatch[1] !== undefined) {
       const limitParam = limitMatch[1];
       if (limitParam.startsWith('$')) {
         const index = parseInt(limitParam.substring(1)) - 1;
@@ -516,7 +528,7 @@ export class GraphQLDatabase {
       }
     }
 
-    if (offsetMatch && offsetMatch[1]) {
+    if (offsetMatch !== null && offsetMatch[1] !== undefined) {
       const offsetParam = offsetMatch[1];
       if (offsetParam.startsWith('$')) {
         const index = parseInt(offsetParam.substring(1)) - 1;
@@ -531,11 +543,11 @@ export class GraphQLDatabase {
   private extractForumFilters(text: string, values?: unknown[]): Record<string, unknown> {
     const filters: Record<string, unknown> = {};
 
-    if (text.includes('category =') && values?.[0]) {
+    if (text.includes('category =') && values !== undefined && values[0] !== undefined) {
       filters.category = values[0];
     }
 
-    if (text.includes('author_address =') && values?.[0]) {
+    if (text.includes('author_address =') && values !== undefined && values[0] !== undefined) {
       filters.authorAddress = values[0];
     }
 
@@ -567,17 +579,17 @@ export class GraphQLDatabase {
       title: String(values?.[1] ?? ''),
       description: String(values?.[2] ?? ''),
       content: String(values?.[3] ?? ''),
-      category: mappedCategory as any,
+      category: mappedCategory,
       authorAddress: String(values?.[7] ?? ''),
       tags: values?.[8] as string[] ?? [],
-      language: values?.[5] as any ?? 'en',
+      language: values?.[5] as Document['language'] ?? 'en',
       version: Number(values?.[6] ?? 1),
       viewCount: 0,
       rating: null,
       ipfsHash: null,
       isOfficial: Boolean(values?.[9] ?? false),
-      status: values?.[11] as any ?? 'draft',
-      metadata: values?.[12] ? JSON.parse(String(values[12])) : {},
+      status: values?.[11] as Document['status'] ?? 'draft',
+      metadata: values !== undefined && values[12] !== undefined && values[12] !== null ? JSON.parse(String(values[12])) as Record<string, unknown> : {},
       publishedAt: null,
     };
   }
@@ -613,7 +625,7 @@ export class GraphQLDatabase {
     };
 
     // Only set parentId if it exists
-    if (values?.[2]) {
+    if (values !== undefined && values[2] !== undefined && values[2] !== null) {
       post.parentId = String(values[2]);
     }
 
@@ -623,11 +635,11 @@ export class GraphQLDatabase {
   private extractSupportRequestFromInsert(values?: unknown[]): Omit<SupportRequest, 'id' | 'createdAt'> {
     return {
       userAddress: String(values?.[1] ?? ''),
-      category: values?.[2] as any,
-      priority: values?.[3] as any,
+      category: values?.[2] as SupportRequest['category'] ?? 'general',
+      priority: values?.[3] as SupportRequest['priority'] ?? 'normal',
       status: 'waiting',
       initialMessage: String(values?.[4] ?? ''),
-      language: values?.[5] as any ?? 'en',
+      language: values?.[5] as Document['language'] ?? 'en',
       userScore: Number(values?.[6] ?? 0),
       assignedVolunteer: null,
       resolvedAt: null,
@@ -641,20 +653,20 @@ export class GraphQLDatabase {
 
     // Extract ID from WHERE clause
     const whereMatch = text.match(/where\s+id\s*=\s*\$(\d+)/i);
-    if (whereMatch && whereMatch[1] && values) {
+    if (whereMatch !== null && whereMatch[1] !== undefined && values !== undefined && values.length > 0) {
       const idIndex = parseInt(whereMatch[1]) - 1;
       updates.id = values[idIndex];
     }
 
     // Extract SET fields
     const setMatch = text.match(/set\s+(.+?)\s+where/i);
-    if (setMatch && setMatch[1] && values) {
+    if (setMatch !== null && setMatch[1] !== undefined && values !== undefined && values.length > 0) {
       const setPart = setMatch[1];
       const fields = setPart.split(',').map(f => f.trim());
 
       fields.forEach(field => {
         const fieldMatch = field.match(/(\w+)\s*=\s*\$(\d+)/);
-        if (fieldMatch && fieldMatch[1] && fieldMatch[2]) {
+        if (fieldMatch !== null && fieldMatch[1] !== undefined && fieldMatch[2] !== undefined) {
           const fieldName = fieldMatch[1];
           const valueIndex = parseInt(fieldMatch[2]) - 1;
           if (valueIndex >= 0 && valueIndex < values.length && values[valueIndex] !== undefined) {

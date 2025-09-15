@@ -33,8 +33,12 @@ interface BlockProductionService {
 }
 
 interface P2PNetwork {
-  on(event: string, handler: (data: any) => void): void;
-  broadcast(type: MessageType, data: any): void;
+  on(event: string, handler: (data: unknown) => void): void;
+  broadcast(type: MessageType, data: unknown): void;
+  getNodeId(): string;
+}
+
+interface MasterMerkleEngineInterface {
   getNodeId(): string;
 }
 
@@ -138,7 +142,7 @@ interface ModerationVote {
 export class ForumConsensus extends EventEmitter {
   private spamThresholds: SpamThresholds;
   private blockProductionService?: BlockProductionService; // Will be accessed via API
-  private masterMerkleEngine?: unknown; // MasterMerkleEngine - will be accessed via API
+  private masterMerkleEngine?: MasterMerkleEngineInterface; // MasterMerkleEngine - will be accessed via API
   private p2pNetwork?: P2PNetwork; // Will be accessed via API
   private pendingVotes: Map<string, Map<string, ModerationVote>> = new Map();
   private voteTimeouts: Map<string, NodeJS.Timeout> = new Map();
@@ -169,15 +173,15 @@ export class ForumConsensus extends EventEmitter {
       // Try to get MasterMerkleEngine instance
       // TODO: Access MasterMerkleEngine via API
       // this.masterMerkleEngine = MasterMerkleEngine.getInstance();
-      if (this.masterMerkleEngine && (this.masterMerkleEngine as any).getServices) {
-        const services = (this.masterMerkleEngine as any).getServices();
+      if (this.masterMerkleEngine !== undefined && 'getServices' in this.masterMerkleEngine && typeof (this.masterMerkleEngine as Record<string, unknown>).getServices === 'function') {
+        const services = ((this.masterMerkleEngine as unknown as { getServices: () => { blockProduction: BlockProductionService } }).getServices());
         this.blockProductionService = services.blockProduction;
         
         // Try to get P2P network instance for voting
         try {
           // TODO: Access P2PNetwork via API
           // this.p2pNetwork = P2PNetwork.getInstance();
-          if (this.p2pNetwork) {
+          if (this.p2pNetwork !== undefined) {
             this.setupP2PVoting();
           }
         } catch (error) {
@@ -794,7 +798,7 @@ export class ForumConsensus extends EventEmitter {
    */
   private async getEligibleValidators(_request: ModerationRequest): Promise<string[]> {
     // Try to get real validators from BlockProductionService
-    if (this.blockProductionService) {
+    if (this.blockProductionService !== undefined) {
       try {
         const activeValidators = await this.blockProductionService.getActiveValidators();
         
@@ -826,7 +830,7 @@ export class ForumConsensus extends EventEmitter {
    * @private
    */
   private setupP2PVoting(): void {
-    if (!this.p2pNetwork) return;
+    if (this.p2pNetwork === undefined) return;
     
     // Listen for moderation votes from other validators
     this.p2pNetwork.on('moderation-vote', (data: unknown) => {
@@ -841,7 +845,7 @@ export class ForumConsensus extends EventEmitter {
     });
     
     // Listen for moderation requests (if we're a validator)
-    this.p2pNetwork.on('moderation-request', async (data: unknown) => {
+    this.p2pNetwork.on('moderation-request', (data: unknown) => { void (async () => {
       try {
         const request = data as {
           moderationId: string;
@@ -852,7 +856,7 @@ export class ForumConsensus extends EventEmitter {
         
         // Check if we're one of the requested validators
         const myAddress = await this.getMyValidatorAddress();
-        if (myAddress && request.requestedValidators.includes(myAddress)) {
+        if (myAddress !== null && myAddress !== undefined && myAddress !== '' && request.requestedValidators.includes(myAddress)) {
           // Process the request and vote
           await this.processAndVote(request.moderationId, request.request);
         }
@@ -861,7 +865,7 @@ export class ForumConsensus extends EventEmitter {
           error: error instanceof Error ? error.message : String(error)
         });
       }
-    });
+    })(); });
   }
   
   /**
@@ -877,8 +881,10 @@ export class ForumConsensus extends EventEmitter {
       this.pendingVotes.set(moderationId, new Map());
     }
     
-    const votes = this.pendingVotes.get(moderationId)!;
-    votes.set(validatorAddress, vote);
+    const votes = this.pendingVotes.get(moderationId);
+    if (votes !== undefined) {
+      votes.set(validatorAddress, vote);
+    }
     
     // Emit event for vote received
     this.emit('voteReceived', moderationId, validatorAddress, vote.vote);
@@ -890,15 +896,16 @@ export class ForumConsensus extends EventEmitter {
    * @param moderationId - ID of the moderation request
    * @param request - The moderation request details
    * @param validators - List of validator addresses to request votes from
+   * @returns Promise that resolves when broadcast is complete
    */
-  private async broadcastModerationRequest(
+  private broadcastModerationRequest(
     moderationId: string,
     request: ModerationRequest,
     validators: string[],
   ): Promise<void> {
-    if (!this.p2pNetwork) {
+    if (this.p2pNetwork === undefined) {
       logger.warn('P2P network not available for broadcasting');
-      return;
+      return Promise.resolve();
     }
     
     const requestData = {
@@ -909,13 +916,14 @@ export class ForumConsensus extends EventEmitter {
     };
     
     // Broadcast to all peers
-    this.p2pNetwork.broadcast({
-      type: MessageType.MODERATION_REQUEST,
+    this.p2pNetwork.broadcast(MessageType.MODERATION_REQUEST, {
       payload: requestData,
-      from: this.masterMerkleEngine?.getNodeId() || 'forum-consensus',
+      from: this.masterMerkleEngine?.getNodeId() ?? 'forum-consensus',
       timestamp: Date.now(),
       id: `mod-req-${moderationId}`
     });
+
+    return Promise.resolve();
   }
   
   /**
@@ -930,7 +938,7 @@ export class ForumConsensus extends EventEmitter {
     validators: string[],
   ): Promise<Record<string, boolean>> {
     // If P2P network is available, wait for real votes
-    if (this.p2pNetwork) {
+    if (this.p2pNetwork !== undefined) {
       // Initialize vote collection
       this.pendingVotes.set(moderationId, new Map());
       
@@ -940,13 +948,13 @@ export class ForumConsensus extends EventEmitter {
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
           // Collect whatever votes we have
-          const collectedVotes = this.pendingVotes.get(moderationId) || new Map();
+          const collectedVotes = this.pendingVotes.get(moderationId) ?? new Map();
           const result: Record<string, boolean> = {};
           
           // Add collected votes
           for (const [address, vote] of collectedVotes) {
-            if (validators.includes(address)) {
-              result[address] = vote.vote;
+            if (validators.includes(address as string)) {
+              result[address as string] = (vote as ModerationVote).vote;
             }
           }
           
@@ -968,9 +976,9 @@ export class ForumConsensus extends EventEmitter {
         this.voteTimeouts.set(moderationId, timeout);
         
         // Check if we already have all votes
-        const checkComplete = () => {
+        const checkComplete = (): void => {
           const votes = this.pendingVotes.get(moderationId);
-          if (votes && votes.size >= validators.length) {
+          if (votes !== undefined && votes.size >= validators.length) {
             clearTimeout(timeout);
             this.voteTimeouts.delete(moderationId);
             
@@ -1229,13 +1237,13 @@ export class ForumConsensus extends EventEmitter {
    */
   private async getMyValidatorAddress(): Promise<string | null> {
     // Try to get from BlockProductionService
-    if (this.blockProductionService) {
+    if (this.blockProductionService !== undefined) {
       try {
         const validators = await this.blockProductionService.getActiveValidators();
         const nodeId = this.masterMerkleEngine?.getNodeId();
-        if (nodeId) {
-          const myValidator = validators.find(v => (v as any).nodeId === nodeId);
-          if (myValidator) {
+        if (nodeId !== null && nodeId !== undefined && nodeId !== '') {
+          const myValidator = validators.find(v => 'nodeId' in v && (v as Record<string, unknown>).nodeId === nodeId);
+          if (myValidator !== undefined) {
             return myValidator.address;
           }
         }
@@ -1257,11 +1265,11 @@ export class ForumConsensus extends EventEmitter {
   private async processAndVote(moderationId: string, request: ModerationRequest): Promise<void> {
     try {
       // Evaluate the request based on our criteria
-      const shouldApprove = await this.evaluateModerationRequest(request);
+      const shouldApprove = this.evaluateModerationRequest(request);
       
       // Get our address
       const myAddress = await this.getMyValidatorAddress();
-      if (!myAddress) {
+      if (myAddress === null || myAddress === undefined || myAddress === '') {
         logger.warn('Cannot vote - not a validator');
         return;
       }
@@ -1276,11 +1284,10 @@ export class ForumConsensus extends EventEmitter {
       };
       
       // Broadcast our vote
-      if (this.p2pNetwork) {
-        this.p2pNetwork.broadcast({
-          type: MessageType.MODERATION_VOTE,
+      if (this.p2pNetwork !== undefined) {
+        this.p2pNetwork.broadcast(MessageType.MODERATION_VOTE, {
           payload: vote,
-          from: this.masterMerkleEngine?.getNodeId() || myAddress,
+          from: this.masterMerkleEngine?.getNodeId() ?? myAddress,
           timestamp: Date.now(),
           id: `vote-${moderationId}-${myAddress}`
         });
@@ -1299,7 +1306,7 @@ export class ForumConsensus extends EventEmitter {
    * @param request - The moderation request
    * @returns Whether to approve the request
    */
-  private async evaluateModerationRequest(request: ModerationRequest): Promise<boolean> {
+  private evaluateModerationRequest(request: ModerationRequest): boolean {
     // Simple evaluation logic - in production this would be more sophisticated
     switch (request.action) {
       case 'delete':

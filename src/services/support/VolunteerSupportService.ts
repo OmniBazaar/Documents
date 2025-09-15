@@ -1092,6 +1092,10 @@ export class VolunteerSupportService extends EventEmitter {
    * Registers a volunteer and returns the registration (compatibility method for tests)
    *
    * @param params - Volunteer registration parameters
+   * @param params.address - Volunteer's wallet address
+   * @param params.displayName - Display name for the volunteer
+   * @param params.languages - Languages the volunteer can support
+   * @param params.expertiseCategories - Categories of expertise
    * @returns Registered volunteer information
    */
   async registerVolunteerWithReturn(params: {

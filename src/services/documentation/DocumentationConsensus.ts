@@ -16,9 +16,9 @@ import { DocumentUpdateProposal, Document } from './DocumentationService';
 // import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
 
 // Temporary interface until we can import from Validator
-type StakingService = {
-  getStake(address: string): Promise<bigint>;
-};
+// type StakingService = {
+//   getStake(address: string): Promise<bigint>;
+// };
 
 /**
  * Consensus configuration for documentation updates
@@ -515,9 +515,10 @@ export class DocumentationConsensus {
     }
     
     // Try to get real stake from StakingService
-    if (this.stakingService) {
+    if (this.stakingService !== undefined && this.stakingService !== null) {
       try {
-        const stakedAmount = (this.stakingService as any).getStakedAmount(address);
+        const stakingService = this.stakingService as { getStakedAmount: (address: string) => bigint };
+        const stakedAmount = stakingService.getStakedAmount(address);
         // Convert bigint to number (safe for reasonable stake amounts)
         return { stake: Number(stakedAmount) };
       } catch (error) {

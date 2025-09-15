@@ -14,7 +14,7 @@ import type { VolunteerSupportService } from './support/VolunteerSupportService'
 import type { ParticipationScoreService } from './participation/ParticipationScoreService';
 import type { SearchEngine } from './search/SearchEngine';
 import type { ValidationService } from './validation/ValidationService';
-import type { ValidatorAPIClient } from './validator/ValidatorAPIClient';
+import type { ValidatorAPIClient } from './validator/ValidatorAPIClientGraphQL';
 
 // Re-export all services
 
@@ -146,7 +146,10 @@ export interface DocumentServicesConfig {
     /** Cache time-to-live in seconds */
     ttl?: number;
   };
-  /** @deprecated Database configuration (use validatorEndpoint instead) */
+  /**
+   * Database configuration (use validatorEndpoint instead)
+   * @deprecated Use validatorEndpoint for API-based communication
+   */
   database?: DatabaseConfig;
 }
 
@@ -168,7 +171,10 @@ export interface DocumentServices {
   participation: ParticipationScoreService;
   /** Validation service instance */
   validation: ValidationService;
-  /** @deprecated Database instance (use apiClient instead) */
+  /**
+   * Database instance (use apiClient instead)
+   * @deprecated Use apiClient for API-based communication
+   */
   db?: Database;
 }
 
@@ -200,7 +206,7 @@ export async function initializeDocumentServices(
   config: DocumentServicesConfig,
 ): Promise<DocumentServices> {
   // Dynamically import constructors to avoid circular dependencies
-  const { ValidatorAPIClient } = await import('./validator/ValidatorAPIClient');
+  const { ValidatorAPIClient } = await import('./validator/ValidatorAPIClientGraphQL');
   const { Database } = await import('./database/Database');
   const { DocumentationService } = await import('./documentation/DocumentationService');
   const { P2PForumService } = await import('./forum/P2PForumService');
@@ -210,13 +216,16 @@ export async function initializeDocumentServices(
   const { ValidationService } = await import('./validation/ValidationService');
 
   // Initialize API client
+  const validatorEndpoint = config.validatorEndpoint !== undefined && config.validatorEndpoint !== '' ? config.validatorEndpoint : 'http://localhost:4000';
   const apiClient = new ValidatorAPIClient({
-    endpoint: config.validatorEndpoint || 'http://localhost:4000',
-    wsEndpoint: config.validatorEndpoint?.replace('http', 'ws') || 'ws://localhost:4000'
+    endpoint: validatorEndpoint,
+    wsEndpoint: config.validatorWsEndpoint !== undefined && config.validatorWsEndpoint !== ''
+      ? config.validatorWsEndpoint
+      : (config.validatorEndpoint !== undefined && config.validatorEndpoint !== '' ? config.validatorEndpoint.replace('http', 'ws') : 'ws://localhost:4000')
   });
 
   // Initialize database (create a dummy instance if not provided for backward compatibility)
-  const db = config.database
+  const db = config.database !== undefined && config.database !== null
     ? new Database(config.database)
     : new Database({
         host: 'localhost',
@@ -227,10 +236,10 @@ export async function initializeDocumentServices(
       });
 
   // Initialize core services
-  const validatorEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:8080';
-  const participation: ParticipationScoreService = new ParticipationScoreService(validatorEndpoint);
+  const validatorApiEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:8080';
+  const participation: ParticipationScoreService = new ParticipationScoreService(validatorApiEndpoint);
   const search: SearchEngine = new SearchEngine('documents');
-  const validation: ValidationService = new ValidationService(validatorEndpoint);
+  const validation: ValidationService = new ValidationService(validatorApiEndpoint);
 
   // Initialize documentation service
   const documentation: DocumentationService = new DocumentationService(

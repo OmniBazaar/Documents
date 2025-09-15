@@ -11,17 +11,19 @@
 
 import { ValidatorAPIClient } from '../services/validator/ValidatorAPIClient';
 import { logger } from '../utils/logger';
-import type { ForumPost } from '../services/forum/ForumTypes';
+import type { ForumPost, ForumThread } from '../services/forum/ForumTypes';
+import type { Document, DocumentCategory } from '../services/documentation/DocumentationService';
 
 /**
  * Query result format matching pg module
- */
-/**
- * Query result format matching pg module
+ * @template T - Type of the row data
  */
 export interface QueryResult<T = unknown> {
+  /** Array of result rows */
   rows: T[];
+  /** Number of rows affected or returned */
   rowCount: number;
+  /** SQL command that was executed */
   command: string;
 }
 
@@ -29,14 +31,12 @@ export interface QueryResult<T = unknown> {
  * Database-like interface adapter for ValidatorAPIClient
  */
 export class APIToDBAdapter {
-  constructor(private apiClient: ValidatorAPIClient) {}
-
   /**
-   * Simulates database query by routing to appropriate API methods
-   * @param text - SQL query text (used to determine operation type)
-   * @param values - Query parameters
-   * @returns Query result
+   * Creates a new API to DB adapter
+   * @param apiClient - The ValidatorAPIClient instance to use
    */
+  constructor(private readonly apiClient: ValidatorAPIClient) {}
+
   /**
    * Simulates database query by routing to appropriate API methods
    * @param text - SQL query text (used to determine operation type)
@@ -55,17 +55,17 @@ export class APIToDBAdapter {
         // The DocumentationService already generated the ID and passes it as values[0]
         const id = String(values?.[0]);
         const document = {
-          id: id as string,  // Use the pre-generated ID
+          id: id,
           title: String(values?.[1] ?? ''),
           description: String(values?.[2] ?? ''),
           content: String(values?.[3] ?? ''),
-          category: String(values?.[4] ?? 'general') as any,
-          language: String(values?.[5] ?? 'en') as any,
+          category: String(values?.[4] ?? 'general') as DocumentCategory,
+          language: String(values?.[5] ?? 'en') as Document['language'],
           authorAddress: String(values?.[7] ?? ''),
           tags: (values?.[8] ?? []) as string[],
           isOfficial: Boolean(values?.[9] ?? false),
           version: Number(values?.[6] ?? 1),
-          status: String(values?.[11] ?? 'draft') as any,
+          status: String(values?.[11] ?? 'draft') as 'draft' | 'published' | 'archived',
           rating: 0,
           viewCount: 0,
         };
@@ -86,7 +86,7 @@ export class APIToDBAdapter {
       if (normalizedQuery.startsWith('select') && normalizedQuery.includes('from documents')) {
         // Handle IN clause queries for getDocumentsByIds
         if (normalizedQuery.includes('where id in (')) {
-          if (!values || values.length === 0) {
+          if (values === undefined || values === null || values.length === 0) {
             return {
               rows: [],
               rowCount: 0,
@@ -104,31 +104,31 @@ export class APIToDBAdapter {
 
           // Filter out nulls and map to database row format
           const rows = documents
-            .filter(doc => doc !== null)
+            .filter((doc): doc is NonNullable<typeof doc> => doc !== null)
             .map(doc => ({
-              id: doc!.id,
-              title: doc!.title,
-              description: doc!.description ?? '',
-              content: doc!.content,
-              category: doc!.category,
-              language: doc!.language,
-              version: doc!.version ?? 1,
-              author_address: doc!.authorAddress,
-              tags: doc!.tags ?? [],
-              is_official: doc!.isOfficial ?? false,
-              view_count: doc!.viewCount ?? 0,
-              rating: doc!.rating ?? 0,
-              status: doc!.status ?? 'draft',
-              created_at: doc!.createdAt || new Date(),
-              updated_at: doc!.updatedAt || new Date(),
-              metadata: JSON.stringify(doc!.metadata ?? {}),
-              attachments: JSON.stringify(doc!.attachments ?? []),
-              ipfs_hash: doc!.ipfsHash ?? null,
-              published_at: doc!.publishedAt ?? null,
+              id: doc.id,
+              title: doc.title,
+              description: doc.description ?? '',
+              content: doc.content,
+              category: doc.category,
+              language: doc.language,
+              version: doc.version ?? 1,
+              author_address: doc.authorAddress,
+              tags: doc.tags ?? [],
+              is_official: doc.isOfficial ?? false,
+              view_count: doc.viewCount ?? 0,
+              rating: doc.rating ?? 0,
+              status: doc.status ?? 'draft',
+              created_at: doc.createdAt ?? new Date(),
+              updated_at: doc.updatedAt ?? new Date(),
+              metadata: JSON.stringify(doc.metadata ?? {}),
+              attachments: JSON.stringify(doc.attachments ?? []),
+              ipfs_hash: doc.ipfsHash ?? null,
+              published_at: doc.publishedAt ?? null,
             }));
 
           return {
-            rows: rows as any[],
+            rows: (rows as unknown) as T[],
             rowCount: rows.length,
             command: 'SELECT',
           };
@@ -137,18 +137,18 @@ export class APIToDBAdapter {
         // Handle COUNT queries
         if (normalizedQuery.includes('count(*)')) {
           // Parse WHERE clause for count query
-          const filters: any = {};
+          const filters: Record<string, unknown> = {};
 
           // Check for author_address filter
-          if (normalizedQuery.includes('author_address in') && values && values.length > 0) {
+          if (normalizedQuery.includes('author_address in') && values !== undefined && values !== null && values.length > 0) {
             filters.authorAddress = values[0];
           }
 
-          const results = await this.apiClient.searchDocuments({
-            query: '',
-            ...filters,
-            page: 1,
-            pageSize: 1, // We only need the total count
+          const results = await this.apiClient.searchDocuments('', filters as {
+            category?: DocumentCategory;
+            tags?: string[];
+            author?: string;
+            language?: string;
           });
 
           return {
@@ -165,7 +165,7 @@ export class APIToDBAdapter {
           logger.debug('APIToDBAdapter getDocument result', { id, doc });
 
           // Map API response to database row format
-          if (doc) {
+          if (doc !== null && doc !== undefined) {
             const dbRow = {
               id: doc.id,
               title: doc.title,
@@ -180,16 +180,16 @@ export class APIToDBAdapter {
               view_count: doc.viewCount ?? 0,
               rating: doc.rating ?? 0,
               status: doc.status ?? 'draft',
-              created_at: doc.createdAt || new Date(),
-              updated_at: doc.updatedAt || new Date(),
+              created_at: doc.createdAt ?? new Date(),
+              updated_at: doc.updatedAt ?? new Date(),
               metadata: JSON.stringify(doc.metadata ?? {}),
               attachments: JSON.stringify(doc.attachments ?? []),
               ipfs_hash: doc.ipfsHash ?? null,
               published_at: doc.publishedAt ?? null,
             };
 
-            const result = {
-              rows: [dbRow],
+            const result: QueryResult<T> = {
+              rows: [dbRow] as T[],
               rowCount: 1,
               command: 'SELECT',
             };
@@ -206,7 +206,7 @@ export class APIToDBAdapter {
 
         // Handle document search
         // Parse the WHERE clause to extract filters
-        const filters: any = {};
+        const filters: Record<string, unknown> = {};
 
         // Check for category filter
         if (normalizedQuery.includes('category =')) {
@@ -215,10 +215,10 @@ export class APIToDBAdapter {
           // Count how many parameters come before category in the WHERE clause
           const beforeCategory = normalizedQuery.substring(0, normalizedQuery.indexOf('category ='));
           const paramMatches = beforeCategory.match(/\$/g);
-          if (paramMatches) {
+          if (paramMatches !== null && paramMatches !== undefined) {
             paramIndex = paramMatches.length;
           }
-          if (values && values[paramIndex] !== undefined) {
+          if (values !== undefined && values !== null && paramIndex < values.length && values[paramIndex] !== undefined && values[paramIndex] !== null) {
             filters.category = values[paramIndex];
           }
         }
@@ -227,21 +227,19 @@ export class APIToDBAdapter {
         if (normalizedQuery.includes('author_address in')) {
           // Extract author addresses from IN clause
           const authorAddresses = values?.slice(0, values.length - 2); // Remove LIMIT and OFFSET
-          if (authorAddresses && authorAddresses.length === 1) {
+          if (authorAddresses !== undefined && authorAddresses !== null && authorAddresses.length === 1) {
             filters.authorAddress = authorAddresses[0];
           }
         }
 
         // Get limit and offset from the last two values
-        const limit = Number(values?.[values?.length - 2] || 10);
-        const offset = Number(values?.[values?.length - 1] || 0);
-        const page = Math.floor(offset / limit) + 1;
-
-        const results = await this.apiClient.searchDocuments({
-          query: '',
-          ...filters,
-          page,
-          pageSize: limit,
+        // Note: The API doesn't support pagination, so we get all results
+        // These values are parsed but not used since the API returns all results
+        const results = await this.apiClient.searchDocuments('', filters as {
+          category?: DocumentCategory;
+          tags?: string[];
+          author?: string;
+          language?: string;
         });
 
         // Convert API results to database row format
@@ -268,7 +266,7 @@ export class APIToDBAdapter {
         }));
 
         return {
-          rows: rows as any[],
+          rows: (rows as unknown) as T[],
           rowCount: results.total,
           command: 'SELECT',
         };
@@ -278,14 +276,14 @@ export class APIToDBAdapter {
       if (normalizedQuery.startsWith('update documents')) {
         // Handle publish/unpublish/archive operations
         if (normalizedQuery.includes('set status =')) {
-          if (values && values.length >= 2) {
+          if (values !== undefined && values !== null && values.length >= 2) {
             const documentId = String(values[0]);
             const status = String(values[1]);
 
             // For publish operation, values[2] would be ipfs_hash
-            const updates: any = { status };
-            if (values[2] !== undefined) {
-              updates.ipfsHash = values[2];
+            const updates: Partial<Document> = { status: status as 'draft' | 'published' | 'archived' };
+            if (values[2] !== undefined && values[2] !== null) {
+              updates.ipfsHash = values[2] as string;
             }
 
             // Call the API to update the document (result not used)
@@ -314,17 +312,17 @@ export class APIToDBAdapter {
         // $9 = updated_at
         // $10 = search_vector text
 
-        if (values && values.length >= 1) {
-          const documentId = String(values![0]); // First value is the ID from WHERE clause
+        if (values !== undefined && values !== null && values.length >= 1) {
+          const documentId = String(values[0]); // First value is the ID from WHERE clause
 
-          const updates: any = {};
-          if (values[1] !== undefined) updates.title = values[1];
-          if (values[3] !== undefined) updates.content = values[3];
-          if (values[2] !== undefined) updates.description = values[2];
-          if (values[4] !== undefined) updates.category = values[4];
-          if (values[5] !== undefined) updates.language = values[5];
-          if (values[6] !== undefined) updates.version = values[6];
-          if (values[7] !== undefined) updates.tags = values[7];
+          const updates: Partial<Document> = {};
+          if (values[1] !== undefined && values[1] !== null) updates.title = String(values[1]);
+          if (values[3] !== undefined && values[3] !== null) updates.content = String(values[3]);
+          if (values[2] !== undefined && values[2] !== null) updates.description = String(values[2]);
+          if (values[4] !== undefined && values[4] !== null) updates.category = values[4] as DocumentCategory;
+          if (values[5] !== undefined && values[5] !== null) updates.language = values[5] as Document['language'];
+          if (values[6] !== undefined && values[6] !== null) updates.version = Number(values[6]);
+          if (values[7] !== undefined && values[7] !== null) updates.tags = values[7] as string[];
 
           // Call the API to update the document
           const updated = await this.apiClient.updateDocument(documentId, updates);
@@ -351,7 +349,7 @@ export class APIToDBAdapter {
               attachments: JSON.stringify(updated.attachments ?? []),
               ipfs_hash: updated.ipfsHash ?? null,
               published_at: updated.publishedAt ?? null,
-            }] as any[],
+            }] as T[],
             rowCount: 1,
             command: 'UPDATE',
           };
@@ -382,9 +380,9 @@ export class APIToDBAdapter {
           const searchParams: Record<string, unknown> = {};
 
           // Extract search query if present
-          if (normalizedQuery.includes('ilike') && values && values.length > 0) {
+          if (normalizedQuery.includes('ilike') && values !== undefined && values !== null && values.length > 0) {
             const queryParam = values[0];
-            if (queryParam) {
+            if (queryParam !== undefined && queryParam !== null && typeof queryParam === 'string' && queryParam !== '') {
               searchParams.query = queryParam.replace(/%/g, '');
             }
           }
@@ -411,20 +409,20 @@ export class APIToDBAdapter {
           if (normalizedQuery.includes('title ilike') || normalizedQuery.includes('content ilike')) {
             // The query parameter is the first value (before LIMIT and OFFSET)
             const queryParam = values?.[0];
-            if (queryParam) {
+            if (queryParam !== undefined && queryParam !== null && typeof queryParam === 'string' && queryParam !== '') {
               searchParams.query = queryParam.replace(/%/g, '');
             }
           }
 
           // Extract pagination
-          const limit = values?.[values?.length - 2] || 10;
-          const offset = values?.[values?.length - 1] || 0;
+          const limit = Number(values?.[values?.length - 2] ?? 10);
+          const offset = Number(values?.[values?.length - 1] ?? 0);
           const page = Math.floor(offset / limit) + 1;
 
           const results = await this.apiClient.searchForumThreads({
             ...searchParams,
             page,
-            pageSize: limit,
+            pageSize: Number(limit),
           });
 
           // Convert API results to database row format
@@ -434,20 +432,20 @@ export class APIToDBAdapter {
             content: '',
             category: thread.category,
             author_address: thread.authorAddress,
-            created_at: thread.createdAt || new Date(),
-            updated_at: thread.updatedAt || new Date(),
+            created_at: thread.createdAt !== undefined && thread.createdAt !== null ? new Date(thread.createdAt) : new Date(),
+            updated_at: thread.updatedAt !== undefined && thread.updatedAt !== null ? new Date(thread.updatedAt) : new Date(),
             view_count: thread.viewCount ?? 0,
             reply_count: thread.replyCount ?? 0,
-            last_reply_at: thread.lastReplyAt || new Date(),
+            last_reply_at: thread.lastReplyAt !== undefined && thread.lastReplyAt !== null ? new Date(thread.lastReplyAt) : new Date(),
             is_pinned: thread.isPinned ?? false,
             is_locked: thread.isLocked ?? false,
-            is_deleted: thread.isDeleted ?? false,
+            is_deleted: false, // ForumThread doesn't have isDeleted property
             tags: thread.tags ?? [],
             metadata: JSON.stringify(thread.metadata ?? {}),
           }));
 
           return {
-            rows: rows as any[],
+            rows: (rows as unknown) as T[],
             rowCount: results.total,
             command: 'SELECT',
           };
@@ -456,8 +454,8 @@ export class APIToDBAdapter {
         if (normalizedQuery.startsWith('insert')) {
           // The ID is passed as the first value
           const id = String(values?.[0]);
-          const thread = {
-            id: id as string,  // Pass the pre-generated ID
+          const thread: Omit<ForumThread, 'createdAt' | 'updatedAt'> = {
+            id: id,
             title: String(values?.[1] ?? ''),
             category: String(values?.[3] ?? 'general'),
             authorAddress: String(values?.[4] ?? ''),
@@ -479,20 +477,20 @@ export class APIToDBAdapter {
 
         // Handle SELECT for getThread
         if (normalizedQuery.startsWith('select') && normalizedQuery.includes('where id =')) {
-          const threadId = values?.[0];
+          const threadId = String(values?.[0] ?? '');
           const thread = await this.apiClient.getForumThread(threadId);
 
-          if (thread) {
+          if (thread !== null && thread !== undefined) {
             const dbRow = {
               id: thread.id,
               title: thread.title,
               category: thread.category,
               author_address: thread.authorAddress,
-              created_at: thread.createdAt || new Date(),
-              updated_at: thread.updatedAt || new Date(),
+              created_at: thread.createdAt !== undefined && thread.createdAt !== null ? new Date(thread.createdAt) : new Date(),
+              updated_at: thread.updatedAt !== undefined && thread.updatedAt !== null ? new Date(thread.updatedAt) : new Date(),
               view_count: thread.viewCount ?? 0,
               reply_count: thread.replyCount ?? 0,
-              last_reply_at: thread.lastReplyAt || new Date(),
+              last_reply_at: new Date(thread.lastReplyAt),
               is_pinned: thread.isPinned ?? false,
               is_locked: thread.isLocked ?? false,
               is_deleted: false, // ForumThread doesn't have isDeleted property
@@ -519,7 +517,7 @@ export class APIToDBAdapter {
       if (normalizedQuery.includes('forum_posts')) {
         if (normalizedQuery.startsWith('insert')) {
           // The ID is passed as the first value but not used in GraphQL API
-          const parentId = values?.[2] ? String(values?.[2]) : undefined;
+          const parentId = values?.[2] !== undefined && values?.[2] !== null ? String(values?.[2]) : undefined;
           const postData: Omit<ForumPost, 'id' | 'createdAt' | 'updatedAt'> = {
             threadId: String(values?.[1] ?? ''),
             authorAddress: String(values?.[3] ?? ''),
@@ -531,7 +529,7 @@ export class APIToDBAdapter {
             downvotes: 0,
             isAcceptedAnswer: false,
             isDeleted: false,
-            ...(parentId && { parentId }),
+            ...(parentId !== undefined && { parentId }),
           };
           await this.apiClient.createForumPost(postData);
           return {
@@ -625,8 +623,10 @@ export class APIToDBAdapter {
 
   /**
    * Transaction wrapper (executes function immediately)
+   * @param fn - Function to execute within transaction context
+   * @returns Result of the function execution
    */
-  async transaction<T>(fn: (client: any) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (client: APIToDBAdapter) => Promise<T>): Promise<T> {
     // Execute immediately - API handles transactions
     return fn(this);
   }

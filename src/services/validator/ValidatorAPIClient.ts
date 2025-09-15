@@ -107,10 +107,10 @@ export class ValidatorAPIClient {
           throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
-        const result = await response.json();
+        const result = await response.json() as T;
         return {
           success: true,
-          data: result as T,
+          data: result,
         };
       } catch (error) {
         lastError = error as Error;
@@ -152,7 +152,7 @@ export class ValidatorAPIClient {
   async createDocument(document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> {
     const response = await this.request<Document>('POST', '/api/documents', document);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to create document');
     }
 
@@ -167,7 +167,7 @@ export class ValidatorAPIClient {
   async getDocument(id: string): Promise<Document | null> {
     const response = await this.request<Document>('GET', `/api/documents/${id}`);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       return null;
     }
 
@@ -183,7 +183,7 @@ export class ValidatorAPIClient {
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     const response = await this.request<Document>('PUT', `/api/documents/${id}`, updates);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to update document');
     }
 
@@ -206,6 +206,10 @@ export class ValidatorAPIClient {
    * Searches documents
    * @param query - Search query
    * @param filters - Search filters
+   * @param filters.category - Document category filter
+   * @param filters.tags - Tags to filter by
+   * @param filters.author - Author address filter
+   * @param filters.language - Language filter
    * @returns Search results
    */
   async searchDocuments(query: string, filters?: {
@@ -220,7 +224,7 @@ export class ValidatorAPIClient {
       { query, ...filters }
     );
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to search documents');
     }
 
@@ -237,7 +241,7 @@ export class ValidatorAPIClient {
   async createForumThread(thread: Omit<ForumThread, 'id' | 'createdAt' | 'updatedAt'>): Promise<ForumThread> {
     const response = await this.request<ForumThread>('POST', '/api/forum/threads', thread);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to create forum thread');
     }
 
@@ -252,7 +256,7 @@ export class ValidatorAPIClient {
   async getForumThread(id: string): Promise<ForumThread | null> {
     const response = await this.request<ForumThread>('GET', `/api/forum/threads/${id}`);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       return null;
     }
 
@@ -267,7 +271,7 @@ export class ValidatorAPIClient {
   async createForumPost(post: Omit<ForumPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<ForumPost> {
     const response = await this.request<ForumPost>('POST', '/api/forum/posts', post);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to create forum post');
     }
 
@@ -277,6 +281,10 @@ export class ValidatorAPIClient {
   /**
    * Searches forum threads
    * @param params - Search parameters
+   * @param params.query - Search query string
+   * @param params.tags - Tags to filter by
+   * @param params.page - Page number
+   * @param params.pageSize - Items per page
    * @returns Search results
    */
   async searchForumThreads(params: {
@@ -292,7 +300,7 @@ export class ValidatorAPIClient {
       pageSize: number;
     }>('POST', '/api/forum/threads/search', params);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to search forum threads');
     }
 
@@ -309,7 +317,7 @@ export class ValidatorAPIClient {
   async createSupportRequest(request: Omit<SupportRequest, 'id' | 'createdAt'>): Promise<SupportRequest> {
     const response = await this.request<SupportRequest>('POST', '/api/support/requests', request);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to create support request');
     }
 
@@ -324,7 +332,7 @@ export class ValidatorAPIClient {
   async getSupportRequest(id: string): Promise<SupportRequest | null> {
     const response = await this.request<SupportRequest>('GET', `/api/support/requests/${id}`);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       return null;
     }
 
@@ -339,7 +347,7 @@ export class ValidatorAPIClient {
   async createSupportSession(session: Omit<SupportSession, 'id' | 'createdAt'>): Promise<SupportSession> {
     const response = await this.request<SupportSession>('POST', '/api/support/sessions', session);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to create support session');
     }
 
@@ -354,7 +362,7 @@ export class ValidatorAPIClient {
   async registerSupportVolunteer(volunteer: Omit<SupportVolunteer, 'id' | 'createdAt'>): Promise<SupportVolunteer> {
     const response = await this.request<SupportVolunteer>('POST', '/api/support/volunteers', volunteer);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to register support volunteer');
     }
 
@@ -377,7 +385,7 @@ export class ValidatorAPIClient {
       components: Record<string, number>;
     }>('GET', `/api/participation/score/${userAddress}`);
 
-    if (!response.success || !response.data) {
+    if (!response.success || response.data === undefined) {
       throw new Error(response.error ?? 'Failed to get user score');
     }
 

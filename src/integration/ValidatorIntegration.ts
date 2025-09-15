@@ -932,7 +932,7 @@ export class ValidatorIntegration extends EventEmitter {
     switch (action) {
       case 'getActivity': {
         const userId = data.userId as string;
-        if (!userId) {
+        if (userId === '' || userId === undefined || userId === null) {
           return {
             success: false,
             error: 'userId is required',
@@ -960,8 +960,8 @@ export class ValidatorIntegration extends EventEmitter {
             success: true,
             data: {
               documents: documents.items.length,
-              forumThreads: forumStats.threadsCreated || 0,
-              forumPosts: forumStats.postsCreated || 0,
+              forumThreads: forumStats.threadsCreated ?? 0,
+              forumPosts: forumStats.postsCreated ?? 0,
               supportSessions,
             },
           };
@@ -996,7 +996,8 @@ export class ValidatorIntegration extends EventEmitter {
         const documentId = data.documentId as string;
         const proposalId = data.proposalId as string;
         
-        if (!documentId && !proposalId) {
+        if ((documentId === '' || documentId === undefined || documentId === null) &&
+            (proposalId === '' || proposalId === undefined || proposalId === null)) {
           return {
             success: false,
             error: 'documentId or proposalId is required',
@@ -1006,14 +1007,14 @@ export class ValidatorIntegration extends EventEmitter {
         try {
           // Get real consensus status from documentation service
           const consensusStatus = await this.services.documentation.getConsensusStatus(
-            proposalId || documentId
+            (proposalId !== '' && proposalId !== undefined && proposalId !== null) ? proposalId : documentId
           );
 
           return {
             success: true,
             data: {
               status: consensusStatus.status === 'approved' ? 'approved' : consensusStatus.status === 'rejected' ? 'rejected' : 'pending',
-              documentId: documentId || proposalId,
+              documentId: (documentId !== '' && documentId !== undefined && documentId !== null) ? documentId : proposalId,
               votes: consensusStatus.yesVotes + consensusStatus.noVotes,
               votesFor: consensusStatus.yesVotes,
               votesAgainst: consensusStatus.noVotes,

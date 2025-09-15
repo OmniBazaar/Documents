@@ -880,14 +880,14 @@ export class P2PForumService extends EventEmitter {
     return mappedPost;
   }
 
-  /**
-   * Generates unique thread ID
-   * @returns Unique thread ID
-   * @private
-   */
-  private generateThreadId(): string {
-    return generateUUID();
-  }
+  // /**
+  //  * Generates unique thread ID
+  //  * @returns Unique thread ID
+  //  * @private
+  //  */
+  // private generateThreadId(): string {
+  //   return generateUUID();
+  // }
 
   /**
    * Generates unique post ID

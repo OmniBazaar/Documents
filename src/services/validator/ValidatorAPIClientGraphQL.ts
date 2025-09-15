@@ -8,13 +8,11 @@
  */
 
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
-import type { NormalizedCacheObject } from '@apollo/client';
 import { createHttpLink } from '@apollo/client/link/http';
 import fetch from 'cross-fetch';
 import { logger } from '../../utils/logger';
-import type { Document, DocumentCategory } from '../documentation/DocumentationService';
-import type { ForumThread, ForumPost } from '../forum/ForumTypes';
-import type { SupportRequest, SupportVolunteer } from '../support/SupportTypes';
+import type { Document, DocumentCategory, DocumentLanguage, DocumentAttachment } from '../documentation/DocumentationService';
+import type { ForumThread, ForumPost, ForumAttachment } from '../forum/ForumTypes';
 
 /**
  * Configuration for ValidatorAPIClient
@@ -28,6 +26,109 @@ export interface ValidatorAPIConfig {
   timeout?: number;
   /** Custom headers */
   headers?: Record<string, string>;
+}
+
+/**
+ * GraphQL response types
+ */
+interface GetDocumentResponse {
+  getDocument: GraphQLDocument | null;
+}
+
+interface SearchDocumentsResponse {
+  searchDocuments: {
+    results: GraphQLDocument[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+}
+
+interface CreateDocumentResponse {
+  createDocument: GraphQLDocument;
+}
+
+interface UpdateDocumentResponse {
+  updateDocument: GraphQLDocument;
+}
+
+interface GetForumThreadResponse {
+  getForumThread: GraphQLForumThread | null;
+}
+
+interface SearchForumThreadsResponse {
+  searchForumThreads: {
+    results: GraphQLForumThread[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+}
+
+interface CreateForumThreadResponse {
+  createForumThread: GraphQLForumThread;
+}
+
+interface CreateForumPostResponse {
+  createForumPost: GraphQLForumPost;
+}
+
+interface GraphQLDocument {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  language: string;
+  version?: number;
+  authorAddress: string;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  isOfficial?: boolean;
+  viewCount?: number;
+  rating?: number;
+  ipfsHash?: string;
+  attachments?: unknown[];
+  status?: string;
+  metadata?: Record<string, unknown>;
+  publishedAt?: string;
+}
+
+interface GraphQLForumThread {
+  id: string;
+  title: string;
+  category: string;
+  authorAddress: string;
+  authorUsername?: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount?: number;
+  replyCount?: number;
+  lastReplyAt?: string;
+  isPinned?: boolean;
+  isLocked?: boolean;
+  tags?: string[];
+  score?: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface GraphQLForumPost {
+  id: string;
+  threadId: string;
+  parentId?: string;
+  authorAddress: string;
+  authorUsername?: string;
+  content: string;
+  createdAt: string;
+  editedAt?: string;
+  upvotes?: number;
+  downvotes?: number;
+  score?: number;
+  isAcceptedAnswer?: boolean;
+  isDeleted?: boolean;
+  attachments?: unknown[];
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -262,7 +363,7 @@ const MUTATIONS = {
  * GraphQL-based client for communicating with the Validator API
  */
 export class ValidatorAPIClient {
-  private apolloClient: ApolloClient<NormalizedCacheObject>;
+  private apolloClient: ApolloClient;
 
   /**
    * Creates a new Validator API client instance
@@ -300,12 +401,12 @@ export class ValidatorAPIClient {
    */
   async getDocument(id: string): Promise<Document | null> {
     try {
-      const result = await this.apolloClient.query({
+      const result = await this.apolloClient.query<GetDocumentResponse>({
         query: QUERIES.GET_DOCUMENT,
         variables: { id },
       });
 
-      if (result.data?.getDocument) {
+      if (result.data?.getDocument !== null && result.data?.getDocument !== undefined) {
         return this.transformDocument(result.data.getDocument);
       }
 
@@ -319,7 +420,14 @@ export class ValidatorAPIClient {
   /**
    * Search documents
    * @param params - Search parameters
-   * @returns Search results
+   * @param params.query - Optional search query text
+   * @param params.category - Optional document category filter
+   * @param params.authorAddress - Optional author address filter
+   * @param params.language - Optional language filter
+   * @param params.tags - Optional tags filter
+   * @param params.page - Optional page number (defaults to 1)
+   * @param params.pageSize - Optional page size (defaults to 20)
+   * @returns Search results with items, total count, and pagination info
    */
   async searchDocuments(params: {
     query?: string;
@@ -336,7 +444,7 @@ export class ValidatorAPIClient {
     pageSize: number;
   }> {
     try {
-      const result = await this.apolloClient.query({
+      const result = await this.apolloClient.query<SearchDocumentsResponse>({
         query: QUERIES.SEARCH_DOCUMENTS,
         variables: {
           query: params.query,
@@ -349,9 +457,9 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.searchDocuments) {
+      if (result.data?.searchDocuments !== undefined) {
         return {
-          items: result.data.searchDocuments.items.map((doc: any) => this.transformDocument(doc)),
+          items: result.data.searchDocuments.results.map((doc) => this.transformDocument(doc)),
           total: result.data.searchDocuments.total,
           page: result.data.searchDocuments.page,
           pageSize: result.data.searchDocuments.pageSize,
@@ -372,7 +480,7 @@ export class ValidatorAPIClient {
    */
   async createDocument(document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> {
     try {
-      const result = await this.apolloClient.mutate({
+      const result = await this.apolloClient.mutate<CreateDocumentResponse>({
         mutation: MUTATIONS.CREATE_DOCUMENT,
         variables: {
           input: {
@@ -391,7 +499,7 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.createDocument) {
+      if (result.data?.createDocument !== undefined) {
         return this.transformDocument(result.data.createDocument);
       }
 
@@ -410,7 +518,7 @@ export class ValidatorAPIClient {
    */
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
     try {
-      const result = await this.apolloClient.mutate({
+      const result = await this.apolloClient.mutate<UpdateDocumentResponse>({
         mutation: MUTATIONS.UPDATE_DOCUMENT,
         variables: {
           id,
@@ -428,7 +536,7 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.updateDocument) {
+      if (result.data?.updateDocument !== undefined) {
         return this.transformDocument(result.data.updateDocument);
       }
 
@@ -445,7 +553,7 @@ export class ValidatorAPIClient {
    */
   async deleteDocument(id: string): Promise<void> {
     try {
-      await this.apolloClient.mutate({
+      await this.apolloClient.mutate<{ deleteDocument: boolean }>({
         mutation: MUTATIONS.DELETE_DOCUMENT,
         variables: { id },
       });
@@ -462,12 +570,12 @@ export class ValidatorAPIClient {
    */
   async getForumThread(id: string): Promise<ForumThread | null> {
     try {
-      const result = await this.apolloClient.query({
+      const result = await this.apolloClient.query<GetForumThreadResponse>({
         query: QUERIES.GET_FORUM_THREAD,
         variables: { id },
       });
 
-      if (result.data?.getForumThread) {
+      if (result.data?.getForumThread !== null && result.data?.getForumThread !== undefined) {
         return this.transformForumThread(result.data.getForumThread);
       }
 
@@ -481,6 +589,12 @@ export class ValidatorAPIClient {
   /**
    * Search forum threads
    * @param params - Search parameters
+   * @param params.query - Optional search query text
+   * @param params.category - Optional category filter
+   * @param params.authorAddress - Optional author address filter
+   * @param params.tags - Optional tags filter
+   * @param params.page - Optional page number (defaults to 1)
+   * @param params.pageSize - Optional page size (defaults to 20)
    * @returns Search results
    */
   async searchForumThreads(params: {
@@ -497,7 +611,7 @@ export class ValidatorAPIClient {
     pageSize: number;
   }> {
     try {
-      const result = await this.apolloClient.query({
+      const result = await this.apolloClient.query<SearchForumThreadsResponse>({
         query: QUERIES.SEARCH_FORUM_THREADS,
         variables: {
           query: params.query,
@@ -509,9 +623,9 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.searchForumThreads) {
+      if (result.data?.searchForumThreads !== undefined) {
         return {
-          items: result.data.searchForumThreads.items.map((thread: any) => this.transformForumThread(thread)),
+          items: result.data.searchForumThreads.results.map((thread) => this.transformForumThread(thread)),
           total: result.data.searchForumThreads.total,
           page: result.data.searchForumThreads.page,
           pageSize: result.data.searchForumThreads.pageSize,
@@ -532,7 +646,7 @@ export class ValidatorAPIClient {
    */
   async createForumThread(thread: Omit<ForumThread, 'id' | 'createdAt' | 'updatedAt'>): Promise<ForumThread> {
     try {
-      const result = await this.apolloClient.mutate({
+      const result = await this.apolloClient.mutate<CreateForumThreadResponse>({
         mutation: MUTATIONS.CREATE_FORUM_THREAD,
         variables: {
           input: {
@@ -547,7 +661,7 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.createForumThread) {
+      if (result.data?.createForumThread !== undefined) {
         return this.transformForumThread(result.data.createForumThread);
       }
 
@@ -565,7 +679,7 @@ export class ValidatorAPIClient {
    */
   async createForumPost(post: Omit<ForumPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<ForumPost> {
     try {
-      const result = await this.apolloClient.mutate({
+      const result = await this.apolloClient.mutate<CreateForumPostResponse>({
         mutation: MUTATIONS.CREATE_FORUM_POST,
         variables: {
           input: {
@@ -579,7 +693,7 @@ export class ValidatorAPIClient {
         },
       });
 
-      if (result.data?.createForumPost) {
+      if (result.data?.createForumPost !== undefined) {
         return this.transformForumPost(result.data.createForumPost);
       }
 
@@ -592,15 +706,17 @@ export class ValidatorAPIClient {
 
   /**
    * Transform GraphQL document response to Document type
+   * @param data - GraphQL document data
+   * @returns Transformed document
    */
-  private transformDocument(data: any): Document {
-    return {
+  private transformDocument(data: GraphQLDocument): Document {
+    const doc: Document = {
       id: data.id,
       title: data.title,
       description: data.description,
       content: data.content,
-      category: data.category,
-      language: data.language,
+      category: data.category as DocumentCategory,
+      language: data.language as DocumentLanguage,
       version: data.version ?? 1,
       authorAddress: data.authorAddress,
       createdAt: new Date(data.createdAt),
@@ -609,57 +725,88 @@ export class ValidatorAPIClient {
       isOfficial: data.isOfficial ?? false,
       viewCount: data.viewCount ?? 0,
       rating: data.rating ?? 0,
-      status: data.status ?? 'draft',
+      status: (data.status ?? 'draft') as 'draft' | 'published' | 'archived',
       metadata: data.metadata ?? {},
-      attachments: data.attachments ?? [],
-      ipfsHash: data.ipfsHash,
-      ...(data.publishedAt && { publishedAt: new Date(data.publishedAt) }),
+      attachments: (data.attachments ?? []) as DocumentAttachment[],
     };
+
+    if (data.ipfsHash !== undefined) {
+      doc.ipfsHash = data.ipfsHash;
+    }
+
+    if (data.publishedAt !== undefined) {
+      doc.publishedAt = new Date(data.publishedAt);
+    }
+
+    return doc;
   }
 
   /**
    * Transform GraphQL forum thread response to ForumThread type
+   * @param data - GraphQL forum thread data
+   * @returns Transformed forum thread
    */
-  private transformForumThread(data: any): ForumThread {
-    return {
+  private transformForumThread(data: GraphQLForumThread): ForumThread {
+    const thread: ForumThread = {
       id: data.id,
       title: data.title,
       category: data.category,
       authorAddress: data.authorAddress,
-      authorUsername: data.authorUsername,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      createdAt: new Date(data.createdAt).getTime(),
+      updatedAt: new Date(data.updatedAt).getTime(),
       viewCount: data.viewCount ?? 0,
       replyCount: data.replyCount ?? 0,
-      lastReplyAt: data.lastReplyAt,
+      lastReplyAt: data.lastReplyAt !== undefined ? new Date(data.lastReplyAt).getTime() : Date.now(),
       isPinned: data.isPinned ?? false,
       isLocked: data.isLocked ?? false,
       tags: data.tags ?? [],
-      score: data.score,
       metadata: data.metadata ?? {},
     };
+
+    if (data.authorUsername !== undefined) {
+      thread.authorUsername = data.authorUsername;
+    }
+
+    if (data.score !== undefined) {
+      thread.score = data.score;
+    }
+
+    return thread;
   }
 
   /**
    * Transform GraphQL forum post response to ForumPost type
+   * @param data - GraphQL forum post data
+   * @returns Transformed forum post
    */
-  private transformForumPost(data: any): ForumPost {
-    return {
+  private transformForumPost(data: GraphQLForumPost): ForumPost {
+    const post: ForumPost = {
       id: data.id,
       threadId: data.threadId,
-      parentId: data.parentId,
       authorAddress: data.authorAddress,
-      authorUsername: data.authorUsername,
       content: data.content,
-      createdAt: data.createdAt,
-      editedAt: data.editedAt,
+      createdAt: new Date(data.createdAt).getTime(),
+      editedAt: data.editedAt !== undefined ? new Date(data.editedAt).getTime() : null,
       upvotes: data.upvotes ?? 0,
       downvotes: data.downvotes ?? 0,
-      score: data.score,
       isAcceptedAnswer: data.isAcceptedAnswer ?? false,
       isDeleted: data.isDeleted ?? false,
-      attachments: data.attachments ?? [],
+      attachments: (data.attachments ?? []) as ForumAttachment[],
       metadata: data.metadata ?? {},
     };
+
+    if (data.parentId !== undefined) {
+      post.parentId = data.parentId;
+    }
+
+    if (data.authorUsername !== undefined) {
+      post.authorUsername = data.authorUsername;
+    }
+
+    if (data.score !== undefined) {
+      post.score = data.score;
+    }
+
+    return post;
   }
 }

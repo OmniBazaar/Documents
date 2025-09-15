@@ -1,195 +1,177 @@
-# DOCUMENTS MODULE HANDOFF REPORT - TEST INFRASTRUCTURE UPDATE
+# Documents Module - Handoff Documentation
 
-**Date**: 2025-09-14 19:30 UTC
-**Session Duration**: ~2 hours
-**Mission**: Fix test infrastructure issues and improve test separation
-**Final Status**: **Unit tests 97% passing, Integration tests need database setup**
+**Created**: 2025-09-14 20:42 UTC
+**Previous Developer**: Claude (Assistant)
+**Module Status**: GraphQL Integration In Progress (48% BazaarIntegration tests passing)
 
-## 🏆 SESSION RESULTS SUMMARY
+## Current State Overview
 
-### Test Status Overview
-- **Unit Tests**: 206/213 passing (97%)
-- **Integration Tests**: 0/65 passing (0% - infrastructure required)
-- **Total Tests**: 206/278 passing (74%)
+The Documents module is undergoing GraphQL integration to eliminate direct database access. We've successfully implemented a GraphQLDatabase adapter that translates SQL queries to GraphQL operations, achieving 10/21 passing tests in BazaarIntegration (up from 0).
 
-### Previous vs Current Session
-- **Previous Session (2025-09-07)**: 274/278 tests passing (98.6%)
-- **Current Session**: Different test organization - separated unit from integration
-- **Key Change**: Tests now properly separated by dependency requirements
+## Recent Work Completed
 
----
+### 1. GraphQLDatabase Adapter Implementation
+- **File**: `src/services/database/GraphQLDatabase.ts`
+- Implements the Database interface for backward compatibility
+- Translates SQL queries to GraphQL operations
+- Supports document, forum, and support request operations
+- Added DROP TABLE and CREATE TABLE support for tests
+- Enhanced SQL parsing to handle ILIKE with wildcards
 
-## 🔧 CRITICAL FIXES IMPLEMENTED
+### 2. SQL Query Parsing Improvements
+- Fixed `extractDocumentFilters` method to parse ILIKE conditions
+- Properly extracts search parameters from SQL wildcards (%)
+- Maps snake_case fields to camelCase for GraphQL
+- Converts lowercase SQL enums to uppercase GraphQL enums
 
-### 1. Unit Test Isolation
-**Issue**: Unit tests were using real YugabyteDB connection
-**Solution**: Created `tests/setup/unitTestSetup.ts` with MockDatabase
-**Impact**: Unit tests now run without external dependencies
-**Files**:
-- Created: `/tests/setup/unitTestSetup.ts`
-- Modified: Unit test files to use `setupUnitTestServices()`
+### 3. Test Database Schema Alignment
+- Updated `scripts/create-tables.sql` to match production schema
+- Fixed support_requests table columns:
+  - Changed `id` → `request_id`
+  - Changed `subject` → `initial_message`
+  - Added `language`, `user_score` columns
+  - Changed priority default from 'normal' to 'medium'
+- Added missing support categories
 
-### 2. Test Data Validation Fixes
-**Issues Fixed**:
-- Invalid DocumentCategory enum value: 'guides' → 'getting_started'
-- Wrong property name: 'author' → 'authorAddress'
-**Files**: Various test files with invalid test data
+### 4. Server-Side ID Generation
+- Modified forum thread creation to use server-generated IDs
+- Updated P2PForumService to pass null ID to database
+- Consistent with document creation pattern
 
-### 3. Validator Endpoint Correction
-**Issue**: Integration tests looking for validator on port 8080
-**Solution**: Changed to correct port 4000 in `testSetup.ts`
-**File**: `/tests/setup/testSetup.ts` line 116
+## Current Issues Being Debugged
 
-### 4. Database Connection Method
-**Issue**: Code calling non-existent `db.connect()` method
-**Solution**: Removed call - Documents Database class auto-connects
-**Note**: Documents has its own Database class, not Validator's
+### 1. Search Result NaN Issue (Primary Blocker)
+- **Problem**: `electronicsGuides.total` returns NaN in search results
+- **Test**: "should create category-specific selling guides"
+- **Location**: DocumentationService.searchDocuments method
+- **Next Step**: Check how SearchEngine calculates totals from GraphQL results
 
-### 5. Wallet-OmniCoin Integration (Cross-module)
-**Issue**: Wallet using hardcoded test address instead of deployed contracts
-**Solution**: Created proper integration layer
-**Files**:
-- Created: `/Wallet/src/config/omnicoin-integration.ts`
-- Updated: `/Wallet/src/core/blockchain/OmniCoin.ts`
-- Created: `/Wallet/OMNICOIN_INTEGRATION.md`
-**Result**: All 11 Wallet integration tests now passing
+### 2. Missing Support Categories
+- **Problem**: Foreign key violations for categories like "seller-violation", "general"
+- **Solution**: Need to add more categories to test database setup
 
----
+### 3. Forum Thread Creation
+- **Status**: Partially fixed with server-side ID generation
+- **Remaining**: Some tests still failing due to post creation issues
 
-## 📊 CURRENT TEST BREAKDOWN
+## File Changes Since Last Commit
 
-### Unit Tests (6 suites, 213 tests)
-**Passing (4 suites, 206 tests):**
-- ✅ SearchEngine.test.ts
-- ✅ DocumentationService.test.ts
-- ✅ SupportRouter.test.ts
-- ✅ ValidationService.test.ts
+### Documents Module
+1. `src/services/database/GraphQLDatabase.ts` - Created (main adapter)
+2. `src/services/forum/P2PForumService.ts` - Modified (server-side IDs)
+3. `scripts/create-tables.sql` - Modified (schema alignment)
+4. `GRAPHQL_INTEGRATION_GUIDE.md` - Created (documentation)
+5. `CURRENT_STATUS.md` - Updated
+6. `TODO.md` - Updated
 
-**Failing (2 suites, 7 tests):**
-- ❌ P2PForumService.test.ts (rate limiting test)
-- ❌ VolunteerSupportService.test.ts (points awarding)
+### Validator Module
+1. `.gitignore` - Updated (added .d.ts.map, .js.map patterns)
+2. Removed temporary test-graphql-* files
 
-### Integration Tests (3 suites, 65 tests)
-**All Failing - Require Infrastructure:**
-- ❌ BazaarIntegration.test.ts (21 tests)
-- ❌ ValidatorIntegration.test.ts (21 tests)
-- ❌ DatabaseIntegration.test.ts (23 tests)
+## Integration Test Progress
 
-**Root Cause**: Database schema not created, validator not running
+### BazaarIntegration.test.ts (10/21 passing)
+**Passing Tests**:
+- ✓ Document management operations
+- ✓ Forum thread operations
+- ✓ Support request creation
+- ✓ Basic search functionality
 
----
+**Failing Tests**:
+- ✗ Category-specific selling guides (NaN issue)
+- ✗ Advanced search with filters
+- ✗ Forum post creation
+- ✗ Support request with missing categories
 
-## 🚀 INFRASTRUCTURE REQUIREMENTS
+## Next Developer Action Items
 
-### 1. Database Schema Creation
-```sql
--- Required before integration tests can run:
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TABLE documents (...);
-CREATE TABLE forum_threads (...);
-CREATE TABLE support_volunteers (...);
--- etc.
-```
-
-### 2. Services Required Running
-- **YugabyteDB**: ✅ Running on 127.0.1.1:5433
-- **Redis**: ✅ Running on 127.0.1.1:6379
-- **Validator**: ❌ Needs to be started on port 4000
-
-### 3. Validator Startup
-```bash
-cd /home/rickc/OmniBazaar/Validator
-npm run build
-npm run start
-```
-
----
-
-## 📝 KEY ARCHITECTURAL DISCOVERIES
-
-### 1. Database Classes Are Different
-- Documents module has its own `Database` class wrapping `pg` Pool
-- This is NOT the same as Validator's Database class
-- Documents Database has no `connect()` or `initialize()` methods
-
-### 2. Test Environment Detection
-- Jest config was mocking ethers library for unit tests
-- Created `jest.integration.config.js` for unmocked integration tests
-- Added `npm run test:integration` script
-
-### 3. Network Detection Issues
-- Hardhat runs on chainId 1337, not 31337
-- Ethers v6 has different API for network detection
-- Provider network info structure changed from v5
-
----
-
-## 🎯 RECOMMENDED NEXT STEPS
-
-### Immediate - Fix Integration Tests
-1. **Create Database Migrations**
-   - Write migration scripts for all Documents tables
-   - Enable UUID extension
-   - Run before integration tests
-
-2. **Start Validator Service**
-   - Build and start validator on port 4000
-   - Ensure GraphQL endpoint is accessible
-
-3. **Create Test Setup Script**
-   ```bash
-   #!/bin/bash
-   # Start validator
-   # Run migrations
-   # Seed test data
-   # Run integration tests
+### Immediate Priority
+1. **Fix NaN in Search Results**
+   ```typescript
+   // In DocumentationService.ts, check searchDocuments method
+   // The issue is likely in how totals are calculated from GraphQL results
+   // Look for: electronicsGuides.total returning NaN
    ```
 
-### Optional - Fix Remaining Unit Tests
-1. Fix P2PForumService rate limiting error message
-2. Fix VolunteerSupportService points awarding flow
+2. **Add Missing Support Categories**
+   ```sql
+   -- Add to test database setup:
+   INSERT INTO support_categories (id, name) VALUES
+   ('seller-violation', 'Seller Violation'),
+   ('general', 'General Inquiry');
+   ```
 
-### Future Improvements
-1. Separate npm scripts:
-   - `npm run test:unit` - Only unit tests
-   - `npm run test:integration` - Only integration tests
-   - `npm test` - All tests
+3. **Complete Forum Post Creation Fix**
+   - Posts are trying to find threads that don't exist yet
+   - May need to adjust timing or ensure thread creation completes
 
-2. CI/CD pipeline that handles infrastructure setup
+### Code Locations to Check
+1. `Documents/src/services/documentation/DocumentationService.ts` - searchDocuments method
+2. `Documents/src/services/storage/SearchEngine.ts` - search result processing
+3. `Documents/tests/integration/BazaarIntegration.test.ts` - failing test cases
+4. `Validator/scripts/create-tables.sql` - support categories setup
+
+### Testing Instructions
+```bash
+# In Documents directory:
+cd /home/rickc/OmniBazaar/Documents
+
+# Start GraphQL server (if not running):
+cd ../Validator
+YUGABYTE_HOST=127.0.1.1 node scripts/start-graphql-test.js
+
+# Run integration tests:
+cd ../Documents
+npm test tests/integration/BazaarIntegration.test.ts
+```
+
+## Architecture Context
+
+The GraphQL integration follows this pattern:
+```
+Documents Module → GraphQLDatabase → Apollo Client → Validator GraphQL Server → YugabyteDB
+```
+
+The GraphQLDatabase adapter allows existing services to continue using the Database interface while transparently converting SQL to GraphQL operations.
+
+## Critical Notes
+
+1. **Do NOT modify test expectations** - Fix the implementation instead
+2. **Server generates IDs** - Both documents and forum threads use server-side UUID generation
+3. **Schema must match** - Test database must exactly mirror production schema
+4. **GraphQL enums are uppercase** - SQL lowercase values must be converted
+
+## Current Todo List Status
+- [x] Fix DROP TABLE query support
+- [x] Fix support request creation errors
+- [x] Fix search query parsing issues
+- [ ] Fix forum thread creation errors (partially complete)
+- [ ] Achieve 100% test pass rate (currently 10/21)
+
+## Environment Variables
+```bash
+YUGABYTE_HOST=127.0.1.1
+YUGABYTE_PORT=5433
+YUGABYTE_USER=yugabyte
+YUGABYTE_PASSWORD=yugabyte
+YUGABYTE_DATABASE=omnibazaar_test
+```
+
+## Success Criteria
+- All 21 BazaarIntegration tests passing
+- No TypeScript errors
+- GraphQL pattern documented and ready for other modules
+- Clean commit with updated documentation
+
+## Previous Session Context (2025-09-14 19:30 UTC)
+
+The previous session focused on test infrastructure separation:
+- Separated unit tests from integration tests
+- Created MockDatabase for unit tests
+- Fixed test data validation issues
+- Unit tests achieved 97% pass rate (206/213)
+- Integration tests require full infrastructure setup
 
 ---
 
-## 📦 KEY FILES FOR REFERENCE
-
-### Test Setup Files
-- `/tests/setup/testSetup.ts` - Integration test setup (real DB)
-- `/tests/setup/unitTestSetup.ts` - Unit test setup (mocks)
-- `/jest.config.js` - Main Jest config
-- `/jest.integration.config.js` - Integration test config (if created)
-
-### Database Configuration
-- `/src/services/database/Database.ts` - Documents DB wrapper
-- Test DB config in testSetup.ts uses 127.0.1.1:5433
-
-### Module Integration
-- Validator endpoint: http://localhost:4000
-- Documents depends on validator for participation scoring
-
----
-
-## 🏁 FINAL STATUS
-
-The Documents module has well-structured tests that are properly separated:
-- **Unit tests** run independently with 97% pass rate
-- **Integration tests** require full infrastructure but test real scenarios
-- **Code quality** remains excellent with proper typing and documentation
-
-**Current State**: Unit tests mostly passing, integration tests blocked by infrastructure
-**Production Code**: Ready - test failures are infrastructure, not code issues
-**Next Priority**: Set up database schema and validator service for integration tests
-
----
-
-**Handoff Completed**: 2025-09-14 19:30 UTC
-**Previous Handoff**: 2025-09-07 17:08 UTC (different test organization)
-**Key Achievement**: Proper test separation and cross-module integration fix
+**Remember**: The goal is to prove the GraphQL integration pattern works so it can be replicated across all OmniBazaar modules. Focus on fixing the remaining 11 tests to achieve 100% pass rate.

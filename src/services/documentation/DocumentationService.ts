@@ -10,7 +10,6 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger';
-import { generateUUID } from '../../utils/uuid';
 import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { SearchEngine } from '../search/SearchEngine';
@@ -418,7 +417,7 @@ export class DocumentationService extends EventEmitter {
 
       // Use the server-assigned document
       const createdDocument = result.rows[0];
-      if (!createdDocument) {
+      if (createdDocument === undefined || createdDocument === null) {
         throw new Error('Failed to create document');
       }
 
@@ -1391,14 +1390,14 @@ export class DocumentationService extends EventEmitter {
 
       // Get the document content
       const doc = await this.getDocument(documentId);
-      if (!doc) {
+      if (doc === null || doc === undefined) {
         logger.error('Document not found for publishing', { documentId });
         throw new Error('Document not found');
       }
       
       // Upload to IPFS if available, otherwise generate mock hash
       let ipfsHash: string;
-      if (this.ipfsStorage) {
+      if (this.ipfsStorage !== undefined && this.ipfsStorage !== null) {
         try {
           // Create a JSON representation of the document
           const documentData = JSON.stringify({
@@ -1408,8 +1407,9 @@ export class DocumentationService extends EventEmitter {
             author: doc.authorAddress,
             createdAt: doc.createdAt,
           });
-          
-          const result = await (this.ipfsStorage as any).storeData(
+
+          const storage = this.ipfsStorage as { storeData: (data: Buffer, filename: string, contentType: string, owner: string) => Promise<{ hash: string }> };
+          const result = await storage.storeData(
             Buffer.from(documentData),
             `doc_${documentId}.json`,
             'application/json',
@@ -1918,30 +1918,30 @@ export class DocumentationService extends EventEmitter {
     }
   }
 
-  /**
-   * Gets documents by their IDs
-   * @param ids - Array of document IDs
-   * @returns Array of documents
-   * @private
-   */
-  private async getDocumentsByIds(ids: string[]): Promise<Document[]> {
-    if (ids.length === 0) {
-      return [];
-    }
-
-    try {
-      const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
-      const result = await this.db.query<DocumentRow>(
-        `SELECT * FROM documents WHERE id IN (${placeholders})`,
-        ids,
-      );
-
-      return result.rows.map(row => this.mapRowToDocument(row));
-    } catch (error) {
-      logger.error('Failed to get documents by IDs:', error);
-      return [];
-    }
-  }
+  // /**
+  //  * Gets documents by their IDs
+  //  * @param ids - Array of document IDs
+  //  * @returns Array of documents
+  //  * @private
+  //  */
+  // private async getDocumentsByIds(ids: string[]): Promise<Document[]> {
+  //   if (ids.length === 0) {
+  //     return [];
+  //   }
+  //
+  //   try {
+  //     const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+  //     const result = await this.db.query<DocumentRow>(
+  //       `SELECT * FROM documents WHERE id IN (${placeholders})`,
+  //       ids,
+  //     );
+  //
+  //     return result.rows.map(row => this.mapRowToDocument(row));
+  //   } catch (error) {
+  //     logger.error('Failed to get documents by IDs:', error);
+  //     return [];
+  //   }
+  // }
 
   /**
    * Maps a database row to a Document object
@@ -2074,14 +2074,14 @@ export class DocumentationService extends EventEmitter {
     this.documentCache.clear();
   }
 
-  /**
-   * Generates a unique document ID
-   * @returns Unique document ID
-   * @private
-   */
-  private generateDocumentId(): string {
-    return generateUUID();
-  }
+  // /**
+  //  * Generates a unique document ID
+  //  * @returns Unique document ID
+  //  * @private
+  //  */
+  // private generateDocumentId(): string {
+  //   return generateUUID();
+  // }
 
   /**
    * Generates a unique contribution ID

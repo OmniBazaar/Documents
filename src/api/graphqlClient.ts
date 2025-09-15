@@ -457,11 +457,11 @@ export class DocumentsGraphQLClient {
     }
 
     // Debug logging for getDocument queries
-    if (query.includes('getDocument') && variables?.id) {
+    if (query.includes('getDocument') && variables !== undefined && variables !== null && variables.id !== undefined) {
       logger.debug('GraphQL raw response for getDocument', {
         id: variables.id,
         hasData: result.data !== undefined,
-        dataKeys: result.data ? Object.keys(result.data) : [],
+        dataKeys: result.data !== null && result.data !== undefined ? Object.keys(result.data) : [],
         rawData: JSON.stringify(result.data).substring(0, 200)
       });
     }
@@ -497,7 +497,7 @@ export class DocumentsGraphQLClient {
       logger.debug('GraphQL Client: Document response', {
         hasData: data !== null && data !== undefined,
         hasDocument: data?.getDocument !== null && data?.getDocument !== undefined,
-        dataKeys: data ? Object.keys(data) : [],
+        dataKeys: data !== null && data !== undefined ? Object.keys(data) : [],
         id
       });
       return data.getDocument;
