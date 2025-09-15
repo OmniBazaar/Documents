@@ -10,6 +10,7 @@
 
 import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
+import { generateUUID } from '../../utils/uuid';
 import { ForumConsensus } from './ForumConsensus';
 import { ForumIncentives } from './ForumIncentives';
 import {
@@ -198,11 +199,10 @@ export class P2PForumService extends EventEmitter {
     }
 
     // Create thread in database
-    const threadId = this.generateThreadId();
     const timestamp = Date.now();
 
-    const thread: ForumThread = {
-      id: threadId,
+    // Don't include ID - let GraphQL server generate it
+    const threadData = {
       title: request.title,
       category: request.category,
       authorAddress: request.authorAddress,
@@ -217,29 +217,33 @@ export class P2PForumService extends EventEmitter {
       metadata: request.metadata ?? {},
     };
 
-    // Store thread
-    await this.db.query(
+    // Store thread - the database will return the created thread with server-generated ID
+    const result = await this.db.query(
       `INSERT INTO forum_threads (
         id, title, category, author_address, created_at, updated_at,
         view_count, reply_count, last_reply_at, is_pinned, is_locked,
         tags, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *`,
       [
-        thread.id,
-        thread.title,
-        thread.category,
-        thread.authorAddress,
-        new Date(thread.createdAt),
-        new Date(thread.updatedAt),
-        thread.viewCount,
-        thread.replyCount,
-        new Date(thread.lastReplyAt),
-        thread.isPinned,
-        thread.isLocked,
-        thread.tags,
-        JSON.stringify(thread.metadata),
+        null, // Let the server generate the ID
+        threadData.title,
+        threadData.category,
+        threadData.authorAddress,
+        new Date(threadData.createdAt),
+        new Date(threadData.updatedAt),
+        threadData.viewCount,
+        threadData.replyCount,
+        new Date(threadData.lastReplyAt),
+        threadData.isPinned,
+        threadData.isLocked,
+        threadData.tags,
+        JSON.stringify(threadData.metadata),
       ],
     );
+
+    // Get the created thread from the result
+    const thread = result.rows[0] as ForumThread;
 
     // Create initial post
     if (request.content !== undefined && request.content !== null && request.content !== '') {
@@ -882,7 +886,7 @@ export class P2PForumService extends EventEmitter {
    * @private
    */
   private generateThreadId(): string {
-    return `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateUUID();
   }
 
   /**
@@ -891,7 +895,7 @@ export class P2PForumService extends EventEmitter {
    * @private
    */
   private generatePostId(): string {
-    return `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateUUID();
   }
 
   /**

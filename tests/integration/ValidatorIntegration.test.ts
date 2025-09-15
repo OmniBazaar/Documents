@@ -47,7 +47,7 @@ describe('Validator Integration Tests', () => {
 
   afterAll(async () => {
     await integration.stop();
-    await cleanTestData(services.db);
+    await cleanTestData();
     await teardownTestServices();
   });
 
@@ -94,7 +94,7 @@ describe('Validator Integration Tests', () => {
         data: {
           title: 'Validator Integration Test Doc',
           content: 'Test content from validator',
-          category: 'guides',
+          category: 'getting_started',
           authorAddress: TEST_USERS.alice,
           tags: ['test', 'integration'],
           language: 'en',

@@ -10,12 +10,14 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger';
+import { generateUUID } from '../../utils/uuid';
 import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { SearchEngine } from '../search/SearchEngine';
 import { ValidationService } from '../validation/ValidationService';
-import { IPFSStorageNetwork } from '../../../../Validator/src/services/storage/IPFSStorageNetwork';
-import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
+// These services will be accessed via Validator API
+// import { IPFSStorageNetwork } from '../../../../Validator/src/services/storage/IPFSStorageNetwork';
+// import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
 
 /**
  * Supported documentation languages
@@ -262,7 +264,7 @@ export class DocumentationService extends EventEmitter {
   /** Cache TTL in milliseconds */
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   /** IPFS storage service */
-  private ipfsStorage?: IPFSStorageNetwork;
+  private ipfsStorage?: unknown; // IPFSStorageNetwork - will be accessed via API
 
   /**
    * Creates a new DocumentationService instance
@@ -289,11 +291,12 @@ export class DocumentationService extends EventEmitter {
     
     // Try to get IPFSStorageNetwork from MasterMerkleEngine
     try {
-      const masterMerkleEngine = MasterMerkleEngine.getInstance();
-      if (masterMerkleEngine && masterMerkleEngine.getServices()) {
-        const services = masterMerkleEngine.getServices();
-        this.ipfsStorage = services.ipfsStorage as IPFSStorageNetwork;
-      }
+      // TODO: Access via Validator API
+      // const masterMerkleEngine = MasterMerkleEngine.getInstance();
+      // if (masterMerkleEngine && masterMerkleEngine.getServices()) {
+      //   const services = masterMerkleEngine.getServices();
+      //   this.ipfsStorage = services.ipfsStorage as IPFSStorageNetwork;
+      // }
     } catch (error) {
       // IPFS storage not available - will use mock hashes
       logger.warn('IPFSStorageNetwork not available for DocumentationService', {
@@ -376,12 +379,12 @@ export class DocumentationService extends EventEmitter {
         }
       }
 
-      const id = this.generateDocumentId();
       const now = new Date();
 
-      const newDocument: Document = {
+      // Don't generate ID client-side - let the server handle it
+      const newDocument = {
         ...document,
-        id,
+        id: null as unknown as string, // Server will assign
         createdAt: now,
         updatedAt: now,
         viewCount: 0,
@@ -390,14 +393,14 @@ export class DocumentationService extends EventEmitter {
         status: 'draft',
       };
 
-      // Store in database
-      await this.db.query(
+      // Store in database - the server will assign the ID
+      const result = await this.db.query<Document>(
         `INSERT INTO documents (
           id, title, description, content, category, language, version,
           author_address, tags, is_official, search_vector, status, metadata
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_tsvector('english', $11), $12, $13)`,
         [
-          newDocument.id,
+          null, // Let server generate ID
           newDocument.title,
           newDocument.description,
           newDocument.content,
@@ -413,16 +416,22 @@ export class DocumentationService extends EventEmitter {
         ],
       );
 
-      // Save initial version
+      // Use the server-assigned document
+      const createdDocument = result.rows[0];
+      if (!createdDocument) {
+        throw new Error('Failed to create document');
+      }
+
+      // Save initial version using the server-assigned ID
       await this.db.query(
         `INSERT INTO document_versions (document_id, version, title, content, editor_address, change_description, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
-          newDocument.id,
+          createdDocument.id,
           1,
-          newDocument.title,
-          newDocument.content,
-          newDocument.authorAddress,
+          createdDocument.title,
+          createdDocument.content,
+          createdDocument.authorAddress,
           'Initial version',
           JSON.stringify(newDocument.metadata ?? {}),
         ],
@@ -433,38 +442,41 @@ export class DocumentationService extends EventEmitter {
         // Check if translation link already exists to prevent duplicates
         const existingLink = await this.db.query<{ original_id: string; translation_id: string }>(
           `SELECT * FROM document_translation_links WHERE original_id = $1 AND translation_id = $2`,
-          [options.translationOf, newDocument.id],
+          [options.translationOf, createdDocument.id],
         );
         
         if (existingLink.rows.length === 0) {
           await this.db.query(
             `INSERT INTO document_translation_links (original_id, translation_id)
              VALUES ($1, $2)`,
-            [options.translationOf, newDocument.id],
+            [options.translationOf, createdDocument.id],
           );
         }
       }
 
       // Index in search engine
       this.searchEngine.indexDocument({
-        id: newDocument.id,
+        id: createdDocument.id,
         type: 'documentation',
-        title: newDocument.title,
-        content: newDocument.content,
+        title: createdDocument.title,
+        content: createdDocument.content,
         metadata: {
-          category: newDocument.category,
-          language: newDocument.language,
-          tags: newDocument.tags,
+          category: createdDocument.category,
+          language: createdDocument.language,
+          tags: createdDocument.tags,
         },
       });
 
       // Award PoP points for contribution
-      await this.awardContributionPoints(newDocument.authorAddress, 'create', newDocument);
+      await this.awardContributionPoints(createdDocument.authorAddress, 'create', createdDocument);
 
-      this.emit('documentCreated', newDocument);
-      logger.info(`Document created: ${newDocument.id}`);
+      this.emit('documentCreated', createdDocument);
+      logger.info(`Document created: ${createdDocument.id}`, {
+        returnedId: createdDocument.id,
+        title: createdDocument.title
+      });
 
-      return newDocument;
+      return createdDocument;
     } catch (error) {
       logger.error('Failed to create document:', error);
       throw error;
@@ -589,44 +601,22 @@ export class DocumentationService extends EventEmitter {
       // Sanitize query to prevent potential issues
       const sanitizedQuery = typeof query === 'string' ? query.trim().substring(0, 500) : '';
 
-      // Use search engine for text search
-      if (sanitizedQuery !== '') {
-        const searchFilters: Record<string, unknown> = {};
-        if (category !== null && category !== undefined) searchFilters.category = category;
-        if (language !== null && language !== undefined && language.length > 0)
-          searchFilters.language = language;
-        if (tags.length > 0) searchFilters.tags = tags;
-        if (officialOnly === true) searchFilters.isOfficial = true;
-        if (minRating > 0) searchFilters.minRating = minRating;
-        if (status !== null && status !== undefined && status.length > 0) searchFilters.status = status;
-        // Add custom filters
-        Object.assign(searchFilters, filters);
-
-        const searchResults = this.searchEngine.search({
-          query: sanitizedQuery,
-          type: 'documentation',
-          ...(Object.keys(searchFilters).length > 0 && { filters: searchFilters }),
-          page,
-          pageSize,
-          sortBy,
-          sortDirection,
-        });
-
-        const documentIds = searchResults.results.map(r => r.id);
-        const documents = await this.getDocumentsByIds(documentIds);
-
-        return {
-          items: documents,
-          documents: documents,
-          total: searchResults.total,
-          page: searchResults.page,
-          pageSize: searchResults.pageSize,
-        };
-      }
-
-      // Direct database query for non-text searches
+      // Always use database query for all searches
+      // This ensures consistency with GraphQL-created documents
       const whereConditions: string[] = ['1=1'];
       const queryParams: (string | number | boolean | string[])[] = [];
+
+      // Add text search conditions if query is provided
+      if (sanitizedQuery !== '') {
+        // Search in title, description, and content using ILIKE for case-insensitive search
+        const searchPattern = `%${sanitizedQuery}%`;
+        whereConditions.push(`(
+          title ILIKE $${queryParams.length + 1} OR
+          description ILIKE $${queryParams.length + 1} OR
+          content ILIKE $${queryParams.length + 1}
+        )`);
+        queryParams.push(searchPattern);
+      }
 
       if (category != null) {
         whereConditions.push(`category = $${queryParams.length + 1}`);
@@ -731,8 +721,12 @@ export class DocumentationService extends EventEmitter {
         pageSize,
       };
     } catch (error) {
-      logger.error('Failed to search documents:', error);
-      throw new Error('Document search failed');
+      logger.error('Failed to search documents:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        params,
+      });
+      throw new Error(`Document search failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -1393,9 +1387,12 @@ export class DocumentationService extends EventEmitter {
    */
   async publishDocument(documentId: string, publisherAddress: string): Promise<Document> {
     try {
+      logger.debug('Publishing document', { documentId, publisherAddress });
+
       // Get the document content
       const doc = await this.getDocument(documentId);
       if (!doc) {
+        logger.error('Document not found for publishing', { documentId });
         throw new Error('Document not found');
       }
       
@@ -1412,7 +1409,7 @@ export class DocumentationService extends EventEmitter {
             createdAt: doc.createdAt,
           });
           
-          const result = await this.ipfsStorage.storeData(
+          const result = await (this.ipfsStorage as any).storeData(
             Buffer.from(documentData),
             `doc_${documentId}.json`,
             'application/json',
@@ -1436,6 +1433,9 @@ export class DocumentationService extends EventEmitter {
 
       // Clear cache to ensure we get the updated document
       this.documentCache.delete(documentId);
+
+      // Small delay to ensure database consistency
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const updatedDoc = await this.getDocument(documentId);
       if (updatedDoc === null || updatedDoc === undefined) {
@@ -2080,7 +2080,7 @@ export class DocumentationService extends EventEmitter {
    * @private
    */
   private generateDocumentId(): string {
-    return `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return generateUUID();
   }
 
   /**

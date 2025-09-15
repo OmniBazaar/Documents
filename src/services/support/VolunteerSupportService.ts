@@ -11,6 +11,7 @@ import { EventEmitter } from 'events';
 import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { logger } from '../../utils/logger';
+import { generateUUID } from '../../utils/uuid';
 import { SupportRouter } from './SupportRouter';
 import {
   SupportRequest,
@@ -1088,6 +1089,36 @@ export class VolunteerSupportService extends EventEmitter {
   }
 
   /**
+   * Registers a volunteer and returns the registration (compatibility method for tests)
+   *
+   * @param params - Volunteer registration parameters
+   * @returns Registered volunteer information
+   */
+  async registerVolunteerWithReturn(params: {
+    address: string;
+    displayName: string;
+    languages: string[];
+    expertiseCategories: string[];
+  }): Promise<{
+    address: string;
+    displayName: string;
+    languages: string[];
+    expertiseCategories: string[];
+  }> {
+    await this.registerVolunteer({
+      address: params.address,
+      displayName: params.displayName,
+      status: 'available',
+      languages: params.languages,
+      expertiseCategories: params.expertiseCategories as SupportCategory[],
+      participationScore: 0,
+      maxConcurrentSessions: 3,
+    });
+
+    return params;
+  }
+
+  /**
    * Lists support requests (compatibility method for tests)
    * 
    * @param filters - Optional filters
@@ -1259,7 +1290,7 @@ export class VolunteerSupportService extends EventEmitter {
    * @returns {string} Unique request ID
    */
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateUUID();
   }
 
   /**

@@ -11,8 +11,14 @@
 import { Database } from '../database/Database';
 import { logger } from '../../utils/logger';
 import { DocumentUpdateProposal, Document } from './DocumentationService';
-import { StakingService } from '../../../../Validator/src/services/StakingService';
-import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
+// TODO: Access these services via Validator API
+// import { StakingService } from '../../../../Validator/src/services/StakingService';
+// import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
+
+// Temporary interface until we can import from Validator
+type StakingService = {
+  getStake(address: string): Promise<bigint>;
+};
 
 /**
  * Consensus configuration for documentation updates
@@ -107,7 +113,7 @@ const DEFAULT_CONFIG: ConsensusConfig = {
  * ```
  */
 export class DocumentationConsensus {
-  private stakingService?: StakingService;
+  private stakingService?: unknown; // StakingService - will be accessed via API
   
   /**
    * Creates a new Documentation Consensus instance
@@ -121,11 +127,9 @@ export class DocumentationConsensus {
   ) {
     // Try to get StakingService from MasterMerkleEngine
     try {
-      const masterMerkleEngine = MasterMerkleEngine.getInstance();
-      if (masterMerkleEngine && masterMerkleEngine.getServices()) {
-        const services = masterMerkleEngine.getServices();
-        this.stakingService = services.staking as StakingService;
-      }
+      // TODO: Access via Validator API
+      // For now, staking service is not available
+      this.stakingService = undefined;
     } catch (error) {
       // Staking service not available - will use fallback values
       logger.warn('StakingService not available for DocumentationConsensus', {
@@ -513,7 +517,7 @@ export class DocumentationConsensus {
     // Try to get real stake from StakingService
     if (this.stakingService) {
       try {
-        const stakedAmount = this.stakingService.getStakedAmount(address);
+        const stakedAmount = (this.stakingService as any).getStakedAmount(address);
         // Convert bigint to number (safe for reasonable stake amounts)
         return { stake: Number(stakedAmount) };
       } catch (error) {

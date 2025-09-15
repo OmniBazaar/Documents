@@ -207,7 +207,7 @@ export const testHelpers = {
     expect(thread.id).toBeDefined();
     expect(typeof thread.id).toBe('string');
     expect(thread.title).toBeDefined();
-    expect(thread.content).toBeDefined();
+    // Note: ForumThread doesn't have content field - content is stored as the first post
     expect(thread.category).toBeDefined();
     expect(thread.authorAddress).toBeDefined();
     expect(thread.createdAt).toBeDefined();

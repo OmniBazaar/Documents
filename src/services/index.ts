@@ -14,14 +14,23 @@ import type { VolunteerSupportService } from './support/VolunteerSupportService'
 import type { ParticipationScoreService } from './participation/ParticipationScoreService';
 import type { SearchEngine } from './search/SearchEngine';
 import type { ValidationService } from './validation/ValidationService';
+import type { ValidatorAPIClient } from './validator/ValidatorAPIClient';
 
 // Re-export all services
 
 /**
- * Database service for YugabyteDB connections
+ * Database service for YugabyteDB connections (deprecated - use ValidatorAPIClient)
+ * @deprecated Use {@link ValidatorAPIClient} instead
  * @see {@link Database}
  */
 export { Database, type DatabaseConfig } from './database/Database';
+
+/**
+ * Validator API client for all data operations
+ * @see {@link ValidatorAPIClient}
+ */
+export { ValidatorAPIClient } from './validator/ValidatorAPIClientGraphQL';
+export type { ValidatorAPIConfig } from './validator/ValidatorAPIClientGraphQL';
 
 /**
  * Documentation service for managing and versioning documentation
@@ -126,8 +135,10 @@ export { ForumService } from './ForumService';
  * Configuration for initializing document services
  */
 export interface DocumentServicesConfig {
-  /** Database configuration */
-  database: DatabaseConfig;
+  /** Validator API endpoint */
+  validatorEndpoint: string;
+  /** Optional WebSocket endpoint for subscriptions */
+  validatorWsEndpoint?: string;
   /** Optional cache configuration */
   cache?: {
     /** Cache size limit */
@@ -135,14 +146,16 @@ export interface DocumentServicesConfig {
     /** Cache time-to-live in seconds */
     ttl?: number;
   };
+  /** @deprecated Database configuration (use validatorEndpoint instead) */
+  database?: DatabaseConfig;
 }
 
 /**
  * Initialized document services
  */
 export interface DocumentServices {
-  /** Database instance */
-  db: Database;
+  /** Validator API client instance */
+  apiClient: ValidatorAPIClient;
   /** Documentation service instance */
   documentation: DocumentationService;
   /** Forum service instance */
@@ -155,6 +168,8 @@ export interface DocumentServices {
   participation: ParticipationScoreService;
   /** Validation service instance */
   validation: ValidationService;
+  /** @deprecated Database instance (use apiClient instead) */
+  db?: Database;
 }
 
 /**
@@ -185,6 +200,7 @@ export async function initializeDocumentServices(
   config: DocumentServicesConfig,
 ): Promise<DocumentServices> {
   // Dynamically import constructors to avoid circular dependencies
+  const { ValidatorAPIClient } = await import('./validator/ValidatorAPIClient');
   const { Database } = await import('./database/Database');
   const { DocumentationService } = await import('./documentation/DocumentationService');
   const { P2PForumService } = await import('./forum/P2PForumService');
@@ -193,8 +209,22 @@ export async function initializeDocumentServices(
   const { SearchEngine } = await import('./search/SearchEngine');
   const { ValidationService } = await import('./validation/ValidationService');
 
-  // Initialize database
-  const db: Database = new Database(config.database);
+  // Initialize API client
+  const apiClient = new ValidatorAPIClient({
+    endpoint: config.validatorEndpoint || 'http://localhost:4000',
+    wsEndpoint: config.validatorEndpoint?.replace('http', 'ws') || 'ws://localhost:4000'
+  });
+
+  // Initialize database (create a dummy instance if not provided for backward compatibility)
+  const db = config.database
+    ? new Database(config.database)
+    : new Database({
+        host: 'localhost',
+        port: 5432,
+        database: 'documents_dummy',
+        user: 'dummy',
+        password: 'dummy'
+      });
 
   // Initialize core services
   const validatorEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:8080';
@@ -219,6 +249,7 @@ export async function initializeDocumentServices(
   await support.initialize();
 
   return {
+    apiClient,
     db,
     documentation,
     forum,

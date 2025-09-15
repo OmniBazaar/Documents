@@ -268,7 +268,7 @@ describe('P2PForumService', () => {
         thread.authorAddress
       );
 
-      expect(marked.isSolution).toBe(true);
+      expect(marked.isAcceptedAnswer).toBe(true);
 
       // Should award bonus points to solution author
       const score = await services.participation.getUserScore(TEST_USERS.bob);

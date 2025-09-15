@@ -194,6 +194,7 @@ export class ValidatorIntegration extends EventEmitter {
       } else if (this.config.database != null) {
         // Initialize services if not provided
         const allServices = await initializeDocumentServices({
+          validatorEndpoint: this.config.validatorEndpoint ?? 'http://localhost:4000',
           database: this.config.database,
         });
 
@@ -945,8 +946,9 @@ export class ValidatorIntegration extends EventEmitter {
             this.services.forum.getUserStats(userId),
             // Get documents authored by user
             this.services.documentation.searchDocuments({
-              author: userId,
-              limit: 1000,
+              filters: { authorAddress: userId },
+              page: 1,
+              pageSize: 1000,
             }),
           ]);
 
@@ -958,8 +960,8 @@ export class ValidatorIntegration extends EventEmitter {
             success: true,
             data: {
               documents: documents.items.length,
-              forumThreads: forumStats.threads_created || 0,
-              forumPosts: forumStats.posts_made || 0,
+              forumThreads: forumStats.threadsCreated || 0,
+              forumPosts: forumStats.postsCreated || 0,
               supportSessions,
             },
           };
@@ -1010,14 +1012,14 @@ export class ValidatorIntegration extends EventEmitter {
           return {
             success: true,
             data: {
-              status: consensusStatus.approved ? 'approved' : consensusStatus.rejected ? 'rejected' : 'pending',
+              status: consensusStatus.status === 'approved' ? 'approved' : consensusStatus.status === 'rejected' ? 'rejected' : 'pending',
               documentId: documentId || proposalId,
-              votes: consensusStatus.votesFor + consensusStatus.votesAgainst,
-              votesFor: consensusStatus.votesFor,
-              votesAgainst: consensusStatus.votesAgainst,
-              consensus: consensusStatus.approved,
-              quorumReached: consensusStatus.quorumReached,
-              endTime: consensusStatus.endTime,
+              votes: consensusStatus.yesVotes + consensusStatus.noVotes,
+              votesFor: consensusStatus.yesVotes,
+              votesAgainst: consensusStatus.noVotes,
+              consensus: consensusStatus.status === 'approved',
+              quorumReached: consensusStatus.totalStake > 0,
+              endTime: 0,
             },
           };
         } catch (error) {

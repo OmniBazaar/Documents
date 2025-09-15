@@ -10,10 +10,33 @@
 import { Database } from '../database/Database';
 import { ForumVote, ForumPost, ModerationRequest, ForumAttachment } from './ForumTypes';
 import { logger } from '../../utils/logger';
-import { BlockProductionService } from '../../../../Validator/src/services/BlockProductionService';
-import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
-import { P2PNetwork, MessageType } from '../../../../Validator/src/p2p/P2PNetwork';
+// TODO: Access BlockProductionService via Validator API
+// TODO: Access these via Validator API
+// import { BlockProductionService } from '../../../../Validator/src/services/BlockProductionService';
+// import { MasterMerkleEngine } from '../../../../Validator/src/engines/MasterMerkleEngine';
+// import { P2PNetwork, MessageType } from '../../../../Validator/src/p2p/P2PNetwork';
 import { EventEmitter } from 'events';
+
+// Temporary MessageType enum until we access via API
+enum MessageType {
+  MODERATION_REQUEST = 'moderation_request',
+  MODERATION_VOTE = 'moderation_vote',
+}
+
+// Temporary interfaces until we can import from Validator
+interface BlockProductionService {
+  getActiveValidators(): Promise<Array<{
+    address: string;
+    isActive: boolean;
+    participationScore: number;
+  }>>;
+}
+
+interface P2PNetwork {
+  on(event: string, handler: (data: any) => void): void;
+  broadcast(type: MessageType, data: any): void;
+  getNodeId(): string;
+}
 
 /**
  * Spam detection thresholds
@@ -114,9 +137,9 @@ interface ModerationVote {
  */
 export class ForumConsensus extends EventEmitter {
   private spamThresholds: SpamThresholds;
-  private blockProductionService?: BlockProductionService;
-  private masterMerkleEngine?: MasterMerkleEngine;
-  private p2pNetwork?: P2PNetwork;
+  private blockProductionService?: BlockProductionService; // Will be accessed via API
+  private masterMerkleEngine?: unknown; // MasterMerkleEngine - will be accessed via API
+  private p2pNetwork?: P2PNetwork; // Will be accessed via API
   private pendingVotes: Map<string, Map<string, ModerationVote>> = new Map();
   private voteTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
@@ -144,14 +167,16 @@ export class ForumConsensus extends EventEmitter {
     // Initialize validator services if available
     try {
       // Try to get MasterMerkleEngine instance
-      this.masterMerkleEngine = MasterMerkleEngine.getInstance();
-      if (this.masterMerkleEngine && this.masterMerkleEngine.getServices()) {
-        const services = this.masterMerkleEngine.getServices();
-        this.blockProductionService = services.blockProduction as BlockProductionService;
+      // TODO: Access MasterMerkleEngine via API
+      // this.masterMerkleEngine = MasterMerkleEngine.getInstance();
+      if (this.masterMerkleEngine && (this.masterMerkleEngine as any).getServices) {
+        const services = (this.masterMerkleEngine as any).getServices();
+        this.blockProductionService = services.blockProduction;
         
         // Try to get P2P network instance for voting
         try {
-          this.p2pNetwork = P2PNetwork.getInstance();
+          // TODO: Access P2PNetwork via API
+          // this.p2pNetwork = P2PNetwork.getInstance();
           if (this.p2pNetwork) {
             this.setupP2PVoting();
           }
@@ -1209,7 +1234,7 @@ export class ForumConsensus extends EventEmitter {
         const validators = await this.blockProductionService.getActiveValidators();
         const nodeId = this.masterMerkleEngine?.getNodeId();
         if (nodeId) {
-          const myValidator = validators.find(v => v.nodeId === nodeId);
+          const myValidator = validators.find(v => (v as any).nodeId === nodeId);
           if (myValidator) {
             return myValidator.address;
           }
