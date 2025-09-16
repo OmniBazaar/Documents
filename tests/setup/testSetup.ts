@@ -9,11 +9,14 @@
 
 import { DocumentServices } from '../../src/services';
 import { logger } from '../../src/utils/logger';
-import { ValidatorAPIClient } from '../../src/services/validator/ValidatorAPIClient';
-import { MockValidatorAPIClient } from '../mocks/MockValidatorAPI';
-import { DocumentsGraphQLClient } from '../../src/api/graphqlClient';
-import { Database } from '../../src/services/database/Database';
-import { GraphQLDatabase } from '../../src/services/database/GraphQLDatabase';
+import { createTestServices } from '../../src/initializeDocuments';
+import type { ValidatorServices } from '../../src/integration/DirectValidatorIntegration';
+import {
+  createRealValidatorServices,
+  initializeTestDatabase,
+  cleanTestDatabase,
+  closeTestDatabase
+} from './realValidatorServices';
 
 /**
  * Test Validator API configuration
@@ -69,9 +72,9 @@ export const TEST_USERS = {
 let testServices: DocumentServices | null = null;
 
 /**
- * Global validator API client
+ * Global validator services instance for cleanup
  */
-let validatorClient: ValidatorAPIClient | null = null;
+let validatorServices: ValidatorServices | null = null;
 
 /**
  * Initialize test services
@@ -80,22 +83,21 @@ let validatorClient: ValidatorAPIClient | null = null;
 export async function setupTestServices(): Promise<DocumentServices> {
   // Clean up any existing services
   await teardownTestServices();
-  
+
   try {
     // Set test environment variables
-    process.env.VALIDATOR_API_ENDPOINT = TEST_VALIDATOR_ENDPOINT;
-    process.env.IPFS_API_ENDPOINT = TEST_IPFS_ENDPOINT;
     process.env.NODE_ENV = 'test';
 
-    // Initialize validator API client (use mock for tests)
-    validatorClient = new MockValidatorAPIClient(TEST_VALIDATOR_CONFIG);
+    // Create real validator services for testing
+    validatorServices = await createRealValidatorServices();
 
-    // Initialize services with validator API client
-    testServices = await initializeTestDocumentServices(validatorClient);
+    // Initialize test database schema
+    await initializeTestDatabase(validatorServices.database);
 
-    // No database migrations needed - Validator handles all data
+    // Initialize services using new direct integration approach
+    testServices = await createTestServices(validatorServices);
 
-    logger.info('Test services initialized successfully');
+    logger.info('Test services initialized successfully with real Validator services');
     return testServices;
   } catch (error) {
     logger.error('Failed to initialize test services:', error);
@@ -103,82 +105,6 @@ export async function setupTestServices(): Promise<DocumentServices> {
   }
 }
 
-/**
- * Initialize document services with validator API client for testing
- */
-async function initializeTestDocumentServices(apiClient: ValidatorAPIClient): Promise<DocumentServices> {
-  // Dynamically import constructors to avoid circular dependencies
-  const { DocumentationService } = await import('../../src/services/documentation/DocumentationService');
-  const { P2PForumService } = await import('../../src/services/forum/P2PForumService');
-  const { VolunteerSupportService } = await import('../../src/services/support/VolunteerSupportService');
-  const { ParticipationScoreService } = await import('../../src/services/participation/ParticipationScoreService');
-  const { SearchEngine } = await import('../../src/services/search/SearchEngine');
-  const { ValidationService } = await import('../../src/services/validation/ValidationService');
-
-  // Create GraphQL database for services
-  const db = new GraphQLDatabase({
-    host: process.env.VALIDATOR_API_ENDPOINT?.replace(/^https?:\/\//, '').split(':')[0] ?? 'localhost',
-    port: 4000,
-    database: 'documents',
-    user: 'documents',
-    password: 'documents'
-  });
-
-  // Initialize core services
-  const validatorEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:4000';
-  const participation: ParticipationScoreService = new ParticipationScoreService(validatorEndpoint);
-  const search: SearchEngine = new SearchEngine('documents');
-  const validation: ValidationService = new ValidationService(validatorEndpoint);
-
-  // Initialize documentation service with database adapter
-  const documentation: DocumentationService = new DocumentationService(
-    db as any,
-    search,
-    participation,
-    validation,
-  );
-
-  // Initialize forum service with database adapter
-  const forum: P2PForumService = new P2PForumService(db as any, participation);
-  try {
-    // Wrap forum initialization with timeout to prevent hanging
-    await Promise.race([
-      forum.initialize(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Forum initialization timeout')), 2000)
-      )
-    ]);
-  } catch (error) {
-    // In test environment, forum initialization may fail - continue with mock
-    logger.warn('Forum initialization failed in test environment, using mock:', (error as Error).message);
-  }
-
-  // Initialize support service with database adapter
-  const support: VolunteerSupportService = new VolunteerSupportService(db as any, participation);
-  try {
-    // Wrap support initialization with timeout to prevent hanging
-    await Promise.race([
-      support.initialize(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Support initialization timeout')), 2000)
-      )
-    ]);
-  } catch (error) {
-    // In test environment, support initialization may fail - continue with mock
-    logger.warn('Support initialization failed in test environment, using mock:', (error as Error).message);
-  }
-
-  return {
-    apiClient,
-    db: db as any,
-    documentation,
-    forum,
-    support,
-    participation,
-    search,
-    validation,
-  };
-}
 
 /**
  * Teardown test services
@@ -191,18 +117,21 @@ export async function teardownTestServices(): Promise<void> {
       if (testServices.forum && typeof testServices.forum.stop === 'function') {
         await testServices.forum.stop();
       }
-      
+
       // Stop support service (check if stop method exists)
       if (testServices.support && typeof testServices.support.stop === 'function') {
         await testServices.support.stop();
       }
-      
-      // Clear mock data if using mock client
-      if (validatorClient && validatorClient instanceof MockValidatorAPIClient) {
-        validatorClient.clearMockData();
-      }
-      
+
+      // Services cleanup handled by disposal
       testServices = null;
+
+      // Close database connection if exists
+      if (validatorServices?.database) {
+        await closeTestDatabase(validatorServices.database);
+        validatorServices = null;
+      }
+
       logger.info('Test services torn down successfully');
     } catch (error) {
       logger.error('Error tearing down test services:', error);
@@ -227,43 +156,15 @@ export async function getTestServices(): Promise<DocumentServices> {
 // Basic migrations removed - all data operations go through Validator API
 
 /**
- * Seed test data
- * Creates initial test data for consistent testing
- */
-async function seedTestData(apiClient: ValidatorAPIClient): Promise<void> {
-  // Register test volunteers through API
-  if (apiClient instanceof MockValidatorAPIClient) {
-    try {
-      await apiClient.registerSupportVolunteer({
-        userId: TEST_USERS.volunteer,
-        name: 'Test Volunteer',
-        expertise: ['general', 'technical'],
-        languages: ['en', 'es'],
-      });
-
-      await apiClient.registerSupportVolunteer({
-        userId: TEST_USERS.moderator,
-        name: 'Expert Volunteer',
-        expertise: ['technical'],
-        languages: ['en'],
-      });
-
-      logger.info('Test data seeded');
-    } catch (error) {
-      logger.warn('Failed to seed test data:', error);
-    }
-  }
-}
-
-/**
  * Clean test data
- * Clears all test-related data from mock API
+ * Clears all test-related data
  */
 export async function cleanTestData(): Promise<void> {
-  if (validatorClient && validatorClient instanceof MockValidatorAPIClient) {
-    validatorClient.clearMockData();
-    logger.info('Test data cleaned');
+  // Clean test data from real database
+  if (validatorServices?.database) {
+    await cleanTestDatabase(validatorServices.database);
   }
+  logger.info('Test data cleaned');
 }
 
 /**

@@ -187,27 +187,31 @@ export class VolunteerSupportService extends EventEmitter {
     try {
       await this.db.query(
         `
-        INSERT INTO support_volunteers (
-          address, display_name, status, languages, expertise_categories,
-          participation_score, max_concurrent_sessions, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-        ON CONFLICT (address) DO UPDATE SET
-          display_name = EXCLUDED.display_name,
+        INSERT INTO volunteers (
+          volunteer_address, status, languages, expertise,
+          hours_per_week, experience_level, total_sessions,
+          total_minutes, average_rating, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (volunteer_address) DO UPDATE SET
           status = EXCLUDED.status,
           languages = EXCLUDED.languages,
-          expertise_categories = EXCLUDED.expertise_categories,
-          participation_score = EXCLUDED.participation_score,
-          max_concurrent_sessions = EXCLUDED.max_concurrent_sessions,
-          last_active = NOW()
+          expertise = EXCLUDED.expertise,
+          hours_per_week = EXCLUDED.hours_per_week,
+          experience_level = EXCLUDED.experience_level,
+          updated_at = NOW()
       `,
         [
           volunteer.address,
-          volunteer.displayName,
-          volunteer.status,
+          volunteer.status || 'available',
           volunteer.languages,
           volunteer.expertiseCategories,
-          volunteer.participationScore,
-          volunteer.maxConcurrentSessions,
+          volunteer.hoursPerWeek || 10,
+          volunteer.experienceLevel || 'intermediate',
+          0, // total_sessions
+          0, // total_minutes
+          5.0, // average_rating
+          new Date(),
+          new Date(),
         ],
       );
 
@@ -227,7 +231,7 @@ export class VolunteerSupportService extends EventEmitter {
   async updateVolunteerStatus(address: string, status: VolunteerStatus): Promise<void> {
     try {
       await this.db.query(
-        'UPDATE support_volunteers SET status = $1, last_active = NOW() WHERE address = $2',
+        'UPDATE volunteers SET status = $1, updated_at = NOW() WHERE volunteer_address = $2',
         [status, address],
       );
 
@@ -536,9 +540,9 @@ export class VolunteerSupportService extends EventEmitter {
     try {
       // Active volunteers
       const volunteersResult = await this.db.query(`
-        SELECT COUNT(*) as count 
-        FROM support_volunteers 
-        WHERE status = 'available' AND is_active = true
+        SELECT COUNT(*) as count
+        FROM volunteers
+        WHERE status = 'active'
       `);
 
       // Waiting requests
@@ -567,13 +571,13 @@ export class VolunteerSupportService extends EventEmitter {
 
       // Utilization rate
       const utilizationResult = await this.db.query(`
-        SELECT 
-          COUNT(DISTINCT v.address) as total_volunteers,
+        SELECT
+          COUNT(DISTINCT v.volunteer_address) as total_volunteers,
           COUNT(DISTINCT s.volunteer_address) as active_volunteers
-        FROM support_volunteers v
-        LEFT JOIN support_sessions s ON v.address = s.volunteer_address
+        FROM volunteers v
+        LEFT JOIN support_sessions s ON v.volunteer_address = s.volunteer_address
           AND s.status IN ('assigned', 'active')
-        WHERE v.is_active = true AND v.status = 'available'
+        WHERE v.status = 'active'
       `);
 
       // Health metrics
@@ -660,21 +664,17 @@ export class VolunteerSupportService extends EventEmitter {
     await this.db.query(
       `
       INSERT INTO support_requests (
-        request_id, user_address, category, priority,
-        initial_message, language, user_score, metadata, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        id, user_address, category, priority,
+        status, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     `,
       [
         request.requestId,
         request.userAddress,
         request.category,
-        request.priority,
-        request.initialMessage,
-        request.language,
-        request.userScore,
-        request.metadata !== null && request.metadata !== undefined
-          ? JSON.stringify(request.metadata)
-          : null,
+        request.priority || 'normal',
+        'waiting',
+        request.timestamp,
         request.timestamp,
       ],
     );

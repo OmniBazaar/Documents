@@ -60,7 +60,11 @@
     "db:migrate": "knex migrate:latest",
     "db:seed": "knex seed:run",
     "start": "node dist/api/index.js",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "migrate:internal-routes": "ts-node migrations/migrate-to-internal-routes.ts",
+    "migrate:internal-routes:dry": "ts-node migrations/migrate-to-internal-routes.ts --dry-run",
+    "example:validator": "ts-node examples/validator-integration-example.ts",
+    "test:direct-integration": "jest tests/integration/direct-integration.test.ts"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",

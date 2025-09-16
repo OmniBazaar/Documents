@@ -87,6 +87,31 @@ export const MODULE_INFO = {
 };
 
 /**
+ * Export new direct integration components
+ */
+export { LazyServiceLoader } from './services/LazyServiceLoader';
+export type { ServiceInitializer, ServiceRegistration } from './services/LazyServiceLoader';
+
+export { DirectServiceCaller } from './services/DirectServiceCaller';
+export type { QueryResult, ServiceResponse } from './services/DirectServiceCaller';
+
+export { setupInternalRoutes } from './routes/internalRoutes';
+
+export {
+  initializeDocumentsModule,
+  setupStaticServing,
+  createTestServices
+} from './initializeDocuments';
+export type { DirectInitConfig } from './initializeDocuments';
+
+/**
+ * Export frontend API client
+ * @see {@link module:frontend}
+ */
+export { DocumentsAPIClient } from './frontend/DocumentsAPIClient';
+export * as frontend from './frontend';
+
+/**
  * Quick start function for Validator integration
  *
  * @param config - Integration configuration

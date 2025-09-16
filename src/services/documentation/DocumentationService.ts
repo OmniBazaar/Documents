@@ -10,6 +10,7 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger';
+import { generateUUID } from '../../utils/uuid';
 import { Database } from '../database/Database';
 import { ParticipationScoreService } from '../participation/ParticipationScoreService';
 import { SearchEngine } from '../search/SearchEngine';
@@ -380,10 +381,10 @@ export class DocumentationService extends EventEmitter {
 
       const now = new Date();
 
-      // Don't generate ID client-side - let the server handle it
+      // Generate ID for the document
       const newDocument = {
         ...document,
-        id: null as unknown as string, // Server will assign
+        id: generateUUID(),
         createdAt: now,
         updatedAt: now,
         viewCount: 0,
@@ -392,14 +393,15 @@ export class DocumentationService extends EventEmitter {
         status: 'draft',
       };
 
-      // Store in database - the server will assign the ID
+      // Store in database with generated ID
       const result = await this.db.query<Document>(
         `INSERT INTO documents (
           id, title, description, content, category, language, version,
           author_address, tags, is_official, search_vector, status, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_tsvector('english', $11), $12, $13)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_tsvector('english', $11), $12, $13)
+        RETURNING *`,
         [
-          null, // Let server generate ID
+          newDocument.id,
           newDocument.title,
           newDocument.description,
           newDocument.content,
@@ -415,8 +417,8 @@ export class DocumentationService extends EventEmitter {
         ],
       );
 
-      // Use the server-assigned document
-      const createdDocument = result.rows[0];
+      // Map the created document from the database result
+      const createdDocument = result.rows[0] ? this.mapRowToDocument(result.rows[0]) : newDocument;
       if (createdDocument === undefined || createdDocument === null) {
         throw new Error('Failed to create document');
       }
@@ -430,7 +432,7 @@ export class DocumentationService extends EventEmitter {
           1,
           createdDocument.title,
           createdDocument.content,
-          createdDocument.authorAddress,
+          createdDocument.authorAddress || newDocument.authorAddress,
           'Initial version',
           JSON.stringify(newDocument.metadata ?? {}),
         ],

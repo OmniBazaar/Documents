@@ -171,6 +171,64 @@ npm run content:backup     # Backup documentation content
 npm run content:restore    # Restore from backup
 ```
 
+## Frontend API Integration
+
+The Documents module provides a comprehensive frontend API client for easy integration with browser-based applications. This API handles documentation, forum, and support services through a unified interface.
+
+### Quick Start
+
+```typescript
+import { DocumentsAPIClient } from '@omnibazaar/documents/frontend';
+
+const documentsAPI = new DocumentsAPIClient('http://localhost:3000');
+
+// Search documents
+const docs = await documentsAPI.searchDocuments({ query: 'wallet setup' });
+
+// Create forum thread
+const thread = await documentsAPI.createForumThread({
+  title: 'Need help with staking',
+  content: 'How do I stake XOM tokens?',
+  category: 'support',
+  authorAddress: '0x...'
+});
+
+// Request support
+const session = await documentsAPI.requestSupport({
+  userAddress: '0x...',
+  category: 'technical_issue',
+  initialMessage: 'Cannot access my wallet'
+});
+```
+
+### Key Features
+
+- **Type-Safe API**: Full TypeScript support with comprehensive type definitions
+- **Unified Interface**: Single client for all Documents module services
+- **Error Handling**: Built-in error handling with proper status codes
+- **Documentation Service**: Create, read, update, search documents
+- **Forum Service**: Threads, posts, voting, and search functionality
+- **Support Service**: Real-time support sessions with volunteer matching
+- **Search Service**: Unified search across all content types
+- **Participation Tracking**: User participation score integration
+
+### Documentation
+
+For detailed frontend API documentation and examples:
+- [Frontend API Guide](FRONTEND_API_GUIDE.md) - Comprehensive guide with all methods
+- [Frontend Usage Examples](examples/frontend-usage.ts) - Real-world usage patterns
+- [API Client Source](src/frontend/DocumentsAPIClient.ts) - Full implementation
+
+### Frontend Development
+
+When building frontend applications:
+
+1. **Initialize Once**: Create a single API client instance and reuse it
+2. **Handle Errors**: Always wrap API calls in try-catch blocks
+3. **Use Types**: Import types for better IDE support and type safety
+4. **Pagination**: Use pagination for large result sets
+5. **Caching**: Implement client-side caching for frequently accessed data
+
 ## Project Structure
 
 ```

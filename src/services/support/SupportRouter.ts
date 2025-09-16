@@ -9,6 +9,7 @@
 
 import { Database } from '../database/Database';
 import { logger } from '../../utils/logger';
+import { generateUUID } from '../../utils/uuid';
 import {
   SupportRequest,
   SupportVolunteer,
@@ -361,24 +362,18 @@ export class SupportRouter {
     await this.db.query(
       `
       INSERT INTO support_sessions (
-        session_id, request_id, user_address, volunteer_address,
-        category, priority, status, start_time, assignment_time,
-        initial_message, language, user_score
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        id, session_id, user_address, volunteer_address,
+        status, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     `,
       [
+        generateUUID(),
         sessionId,
-        request.requestId,
         request.userAddress,
         volunteer !== undefined ? volunteer.address : null,
-        request.category,
-        request.priority,
         session.status,
         now,
-        volunteer !== undefined ? now : null,
-        request.initialMessage,
-        request.language,
-        request.userScore,
+        now,
       ],
     );
 
@@ -394,14 +389,14 @@ export class SupportRouter {
   private async queueRequest(request: SupportRequest): Promise<SupportSession> {
     const session = await this.createSession(request);
 
-    // Add to waiting queue
-    await this.db.query(
-      `
-      INSERT INTO support_queue (session_id, priority, created_at)
-      VALUES ($1, $2, NOW())
-    `,
-      [session.sessionId, request.priority],
-    );
+    // TODO: Add to waiting queue when support_queue table is available
+    // await this.db.query(
+    //   `
+    //   INSERT INTO support_queue (session_id, priority, created_at)
+    //   VALUES ($1, $2, NOW())
+    // `,
+    //   [session.sessionId, request.priority],
+    // );
 
     logger.info(`Request ${request.requestId} added to queue`);
     return session;

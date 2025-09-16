@@ -87,6 +87,7 @@ The Documents module is undergoing GraphQL integration to eliminate direct datab
 
 ### Immediate Priority
 1. **Fix NaN in Search Results**
+
    ```typescript
    // In DocumentationService.ts, check searchDocuments method
    // The issue is likely in how totals are calculated from GraphQL results
@@ -94,6 +95,7 @@ The Documents module is undergoing GraphQL integration to eliminate direct datab
    ```
 
 2. **Add Missing Support Categories**
+
    ```sql
    -- Add to test database setup:
    INSERT INTO support_categories (id, name) VALUES
@@ -112,6 +114,7 @@ The Documents module is undergoing GraphQL integration to eliminate direct datab
 4. `Validator/scripts/create-tables.sql` - support categories setup
 
 ### Testing Instructions
+
 ```bash
 # In Documents directory:
 cd /home/rickc/OmniBazaar/Documents
@@ -128,7 +131,8 @@ npm test tests/integration/BazaarIntegration.test.ts
 ## Architecture Context
 
 The GraphQL integration follows this pattern:
-```
+
+```text
 Documents Module → GraphQLDatabase → Apollo Client → Validator GraphQL Server → YugabyteDB
 ```
 
@@ -149,6 +153,7 @@ The GraphQLDatabase adapter allows existing services to continue using the Datab
 - [ ] Achieve 100% test pass rate (currently 10/21)
 
 ## Environment Variables
+
 ```bash
 YUGABYTE_HOST=127.0.1.1
 YUGABYTE_PORT=5433

@@ -14,23 +14,21 @@ import type { VolunteerSupportService } from './support/VolunteerSupportService'
 import type { ParticipationScoreService } from './participation/ParticipationScoreService';
 import type { SearchEngine } from './search/SearchEngine';
 import type { ValidationService } from './validation/ValidationService';
-import type { ValidatorAPIClient } from './validator/ValidatorAPIClientGraphQL';
-
 // Re-export all services
 
 /**
- * Database service for YugabyteDB connections (deprecated - use ValidatorAPIClient)
- * @deprecated Use {@link ValidatorAPIClient} instead
+ * Database service for YugabyteDB connections (deprecated - use DirectServiceCaller)
+ * @deprecated Use {@link DirectServiceCaller} instead
  * @see {@link Database}
  */
 export { Database, type DatabaseConfig } from './database/Database';
 
 /**
- * Validator API client for all data operations
- * @see {@link ValidatorAPIClient}
+ * Direct service caller for all data operations
+ * @see {@link DirectServiceCaller}
  */
-export { ValidatorAPIClient } from './validator/ValidatorAPIClientGraphQL';
-export type { ValidatorAPIConfig } from './validator/ValidatorAPIClientGraphQL';
+export { DirectServiceCaller } from './DirectServiceCaller';
+export type { QueryResult, ServiceResponse } from './DirectServiceCaller';
 
 /**
  * Documentation service for managing and versioning documentation
@@ -157,8 +155,6 @@ export interface DocumentServicesConfig {
  * Initialized document services
  */
 export interface DocumentServices {
-  /** Validator API client instance */
-  apiClient: ValidatorAPIClient;
   /** Documentation service instance */
   documentation: DocumentationService;
   /** Forum service instance */
@@ -172,8 +168,12 @@ export interface DocumentServices {
   /** Validation service instance */
   validation: ValidationService;
   /**
-   * Database instance (use apiClient instead)
-   * @deprecated Use apiClient for API-based communication
+   * Direct service caller (optional, used in direct integration mode)
+   */
+  serviceCaller?: DirectServiceCaller;
+  /**
+   * Database instance (deprecated)
+   * @deprecated Use serviceCaller for direct integration
    */
   db?: Database;
 }
@@ -206,7 +206,6 @@ export async function initializeDocumentServices(
   config: DocumentServicesConfig,
 ): Promise<DocumentServices> {
   // Dynamically import constructors to avoid circular dependencies
-  const { ValidatorAPIClient } = await import('./validator/ValidatorAPIClientGraphQL');
   const { Database } = await import('./database/Database');
   const { DocumentationService } = await import('./documentation/DocumentationService');
   const { P2PForumService } = await import('./forum/P2PForumService');
@@ -215,16 +214,10 @@ export async function initializeDocumentServices(
   const { SearchEngine } = await import('./search/SearchEngine');
   const { ValidationService } = await import('./validation/ValidationService');
 
-  // Initialize API client
-  const validatorEndpoint = config.validatorEndpoint !== undefined && config.validatorEndpoint !== '' ? config.validatorEndpoint : 'http://localhost:4000';
-  const apiClient = new ValidatorAPIClient({
-    endpoint: validatorEndpoint,
-    wsEndpoint: config.validatorWsEndpoint !== undefined && config.validatorWsEndpoint !== ''
-      ? config.validatorWsEndpoint
-      : (config.validatorEndpoint !== undefined && config.validatorEndpoint !== '' ? config.validatorEndpoint.replace('http', 'ws') : 'ws://localhost:4000')
-  });
+  // Note: This function is deprecated in favor of initializeDocumentsModule
+  // which provides direct integration support
 
-  // Initialize database (create a dummy instance if not provided for backward compatibility)
+  // Initialize database
   const db = config.database !== undefined && config.database !== null
     ? new Database(config.database)
     : new Database({
@@ -236,7 +229,7 @@ export async function initializeDocumentServices(
       });
 
   // Initialize core services
-  const validatorApiEndpoint: string = process.env.VALIDATOR_API_ENDPOINT ?? 'http://localhost:8080';
+  const validatorApiEndpoint: string = config.validatorEndpoint ?? 'http://localhost:8080';
   const participation: ParticipationScoreService = new ParticipationScoreService(validatorApiEndpoint);
   const search: SearchEngine = new SearchEngine('documents');
   const validation: ValidationService = new ValidationService(validatorApiEndpoint);
@@ -258,14 +251,13 @@ export async function initializeDocumentServices(
   await support.initialize();
 
   return {
-    apiClient,
-    db,
     documentation,
     forum,
     support,
     search,
     participation,
     validation,
+    db,
   };
 }
 

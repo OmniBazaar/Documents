@@ -226,7 +226,7 @@ export class P2PForumService extends EventEmitter {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
-        null, // Let the server generate the ID
+        generateUUID(), // Generate ID for the thread
         threadData.title,
         threadData.category,
         threadData.authorAddress,
@@ -242,8 +242,8 @@ export class P2PForumService extends EventEmitter {
       ],
     );
 
-    // Get the created thread from the result
-    const thread = result.rows[0] as ForumThread;
+    // Get the created thread from the result and map it properly
+    const thread = this.mapThreadRow(result.rows[0] as QueryResult);
 
     // Create initial post
     if (request.content !== undefined && request.content !== null && request.content !== '') {
