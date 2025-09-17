@@ -418,7 +418,7 @@ export class DocumentationService extends EventEmitter {
       );
 
       // Map the created document from the database result
-      const createdDocument = result.rows[0] ? this.mapRowToDocument(result.rows[0]) : newDocument;
+      const createdDocument = result.rows[0] !== null && result.rows[0] !== undefined ? this.mapRowToDocument(result.rows[0] as unknown as DocumentRow) : newDocument;
       if (createdDocument === undefined || createdDocument === null) {
         throw new Error('Failed to create document');
       }
@@ -432,7 +432,7 @@ export class DocumentationService extends EventEmitter {
           1,
           createdDocument.title,
           createdDocument.content,
-          createdDocument.authorAddress || newDocument.authorAddress,
+          createdDocument.authorAddress !== null && createdDocument.authorAddress !== undefined && createdDocument.authorAddress !== '' ? createdDocument.authorAddress : newDocument.authorAddress,
           'Initial version',
           JSON.stringify(newDocument.metadata ?? {}),
         ],
@@ -469,15 +469,19 @@ export class DocumentationService extends EventEmitter {
       });
 
       // Award PoP points for contribution
-      await this.awardContributionPoints(createdDocument.authorAddress, 'create', createdDocument);
+      const mappedDoc = result.rows[0] !== null && result.rows[0] !== undefined ? this.mapRowToDocument(result.rows[0] as unknown as DocumentRow) : null;
+      const docForPoints = mappedDoc !== null && mappedDoc !== undefined ? mappedDoc : newDocument;
+      await this.awardContributionPoints(docForPoints.authorAddress, 'create', docForPoints as Document);
 
-      this.emit('documentCreated', createdDocument);
-      logger.info(`Document created: ${createdDocument.id}`, {
-        returnedId: createdDocument.id,
-        title: createdDocument.title
+      const finalDocument = mappedDoc !== null && mappedDoc !== undefined ? mappedDoc : newDocument;
+
+      this.emit('documentCreated', finalDocument);
+      logger.info(`Document created: ${finalDocument.id}`, {
+        returnedId: finalDocument.id,
+        title: finalDocument.title
       });
 
-      return createdDocument;
+      return finalDocument as Document;
     } catch (error) {
       logger.error('Failed to create document:', error);
       throw error;

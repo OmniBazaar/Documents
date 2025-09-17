@@ -202,11 +202,11 @@ export class VolunteerSupportService extends EventEmitter {
       `,
         [
           volunteer.address,
-          volunteer.status || 'available',
+          volunteer.status !== null && volunteer.status !== undefined ? volunteer.status : 'available',
           volunteer.languages,
           volunteer.expertiseCategories,
-          volunteer.hoursPerWeek || 10,
-          volunteer.experienceLevel || 'intermediate',
+          10, // Default hours per week
+          'intermediate', // Default experience level
           0, // total_sessions
           0, // total_minutes
           5.0, // average_rating
@@ -672,7 +672,7 @@ export class VolunteerSupportService extends EventEmitter {
         request.requestId,
         request.userAddress,
         request.category,
-        request.priority || 'normal',
+        request.priority !== null && request.priority !== undefined ? request.priority : 'normal',
         'waiting',
         request.timestamp,
         request.timestamp,

@@ -10,9 +10,7 @@
 
 import type {
   Document,
-  DocumentCategory,
-  DocumentSearchParams,
-  DocumentMetadata
+  DocumentSearchParams
 } from '../services/documentation/DocumentationService';
 import type {
   ForumThread,
@@ -98,7 +96,7 @@ export class DocumentsAPIClient {
     const url = new URL(`${this.baseUrl}${path}`);
 
     // Add query parameters
-    if (query) {
+    if (query !== null && query !== undefined) {
       Object.entries(query).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           url.searchParams.append(key, String(value));
@@ -113,18 +111,18 @@ export class DocumentsAPIClient {
       }
     };
 
-    if (body && (method === 'POST' || method === 'PUT')) {
+    if (body !== undefined && body !== null && (method === 'POST' || method === 'PUT')) {
       options.body = JSON.stringify(body);
     }
 
     const response = await fetch(url.toString(), options);
-    const result: APIResponse<T> = await response.json();
+    const result = await response.json() as APIResponse<T>;
 
     if (!response.ok || !result.success) {
-      throw new Error(result.error || `Request failed: ${response.statusText}`);
+      throw new Error(result.error !== null && result.error !== undefined && result.error !== '' ? result.error : `Request failed: ${response.statusText}`);
     }
 
-    if (!result.data) {
+    if (result.data === null || result.data === undefined) {
       throw new Error('No data in response');
     }
 
@@ -146,14 +144,14 @@ export class DocumentsAPIClient {
     pageSize: number;
   }> {
     const query: Record<string, string | number> = {
-      page: params.page || 1,
-      pageSize: params.pageSize || 20
+      page: params.page !== null && params.page !== undefined && params.page !== 0 ? params.page : 1,
+      pageSize: params.pageSize !== null && params.pageSize !== undefined && params.pageSize !== 0 ? params.pageSize : 20
     };
 
-    if (params.query) query.query = params.query;
-    if (params.filters?.category) query.category = params.filters.category;
-    if (params.filters?.authorAddress) query.authorAddress = params.filters.authorAddress;
-    if (params.filters?.language) query.language = params.filters.language;
+    if (params.query !== null && params.query !== undefined && params.query !== '') query.query = params.query;
+    if (params.filters?.category !== null && params.filters?.category !== undefined) query.category = params.filters.category as string;
+    if (params.filters?.authorAddress !== null && params.filters?.authorAddress !== undefined) query.authorAddress = params.filters.authorAddress as string;
+    if (params.filters?.language !== null && params.filters?.language !== undefined) query.language = params.filters.language as string;
 
     return this.request('/internal/documents', 'GET', undefined, query);
   }
@@ -227,7 +225,9 @@ export class DocumentsAPIClient {
     page: number = 1,
     category?: string
   ): Promise<ForumThread[]> {
-    return this.request('/internal/forum/threads', 'GET', undefined, { limit, page, category });
+    const query: Record<string, string | number | boolean> = { limit, page };
+    if (category !== undefined) query.category = category;
+    return this.request('/internal/forum/threads', 'GET', undefined, query);
   }
 
   /**
@@ -274,7 +274,7 @@ export class DocumentsAPIClient {
    * @returns Search results
    */
   async searchForum(options: ForumSearchOptions): Promise<ForumSearchResult> {
-    return this.request('/internal/forum/search', 'GET', undefined, options as any);
+    return this.request('/internal/forum/search', 'GET', undefined, options as Record<string, string | number | boolean>);
   }
 
   /**
@@ -402,8 +402,8 @@ export class DocumentsAPIClient {
    * @returns Search results from all services
    */
   async unifiedSearch(query: string, type: 'all' | 'documents' | 'forum' = 'all'): Promise<{
-    documents?: any;
-    forum?: any;
+    documents?: unknown;
+    forum?: unknown;
   }> {
     return this.request('/internal/search', 'GET', undefined, { query, type });
   }

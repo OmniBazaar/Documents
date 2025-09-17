@@ -11,8 +11,8 @@
 import { logger } from '../utils/logger';
 import type { ValidatorServices } from '../integration/DirectValidatorIntegration';
 import type { Document, DocumentSearchParams } from './documentation/DocumentationService';
-import type { ForumThread, ForumPost } from './forum/ForumTypes';
-import type { SupportRequest, SupportSession } from './support/SupportTypes';
+import type { ForumThread } from './forum/ForumTypes';
+// import type { SupportRequest } from './support/SupportTypes'; // Currently unused
 
 /**
  * Query result type matching database interface
@@ -94,7 +94,7 @@ export class DirectServiceCaller {
       return {
         rows: Array.isArray(result) ? result : [result],
         rowCount: Array.isArray(result) ? result.length : 1,
-        command: query.split(' ')[0].toUpperCase()
+        command: (query.split(' ')[0] ?? 'SELECT').toUpperCase()
       };
     } catch (error) {
       logger.error('Direct database query failed', {
@@ -241,17 +241,21 @@ export class DirectServiceCaller {
       document.title,
       document.content,
       document.category,
-      document.tags || [],
-      document.language || 'en',
+      document.tags !== null && document.tags !== undefined ? document.tags : [],
+      document.language !== null && document.language !== undefined ? document.language : 'en',
       document.authorAddress,
-      document.version || 1,
-      document.status || 'draft',
-      document.createdAt || now,
-      document.updatedAt || now
+      document.version !== null && document.version !== undefined && document.version !== 0 ? document.version : 1,
+      document.status !== null && document.status !== undefined ? document.status : 'draft',
+      document.createdAt !== null && document.createdAt !== undefined ? document.createdAt : now,
+      document.updatedAt !== null && document.updatedAt !== undefined ? document.updatedAt : now
     ];
 
     const result = await this.queryDatabase<Document>(query, params);
-    return result.rows[0];
+    const createdDoc = result.rows[0];
+    if (createdDoc === null || createdDoc === undefined) {
+      throw new Error('Failed to create document - no result returned');
+    }
+    return createdDoc;
   }
 
   /**
@@ -304,11 +308,11 @@ export class DirectServiceCaller {
     // Count total
     const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
     const countResult = await this.queryDatabase<{ count: string }>(countQuery, queryParams);
-    const total = parseInt(countResult.rows[0].count, 10);
+    const total = parseInt(countResult.rows[0]?.count !== null && countResult.rows[0]?.count !== undefined && countResult.rows[0]?.count !== '' ? countResult.rows[0].count : '0', 10);
 
     // Add pagination
-    const page = params.page || 1;
-    const pageSize = params.pageSize || 20;
+    const page = params.page !== null && params.page !== undefined && params.page !== 0 ? params.page : 1;
+    const pageSize = params.pageSize !== null && params.pageSize !== undefined && params.pageSize !== 0 ? params.pageSize : 20;
     const offset = (page - 1) * pageSize;
 
     paramCount++;
@@ -349,16 +353,20 @@ export class DirectServiceCaller {
     const params = [
       thread.id,
       thread.title,
-      thread.content,
-      thread.category || 'general',
+      '', // ForumThread doesn't have content property
+      thread.category !== null && thread.category !== undefined && thread.category !== '' ? thread.category : 'general',
       thread.authorAddress,
-      thread.status || 'active',
-      thread.createdAt || now,
-      thread.updatedAt || now
+      'active', // status is not a property of ForumThread
+      thread.createdAt !== null && thread.createdAt !== undefined ? thread.createdAt : now,
+      thread.updatedAt !== null && thread.updatedAt !== undefined ? thread.updatedAt : now
     ];
 
     const result = await this.queryDatabase<ForumThread>(query, params);
-    return result.rows[0];
+    const createdThread = result.rows[0];
+    if (createdThread === null || createdThread === undefined) {
+      throw new Error('Failed to create forum thread - no result returned');
+    }
+    return createdThread;
   }
 
   /**
@@ -388,6 +396,9 @@ export class DirectServiceCaller {
 
   /**
    * Type guard for QueryResult
+   *
+   * @param value - Value to check
+   * @returns True if value is a QueryResult
    */
   private isQueryResult<T>(value: unknown): value is QueryResult<T> {
     return (
@@ -395,15 +406,18 @@ export class DirectServiceCaller {
       value !== null &&
       'rows' in value &&
       'rowCount' in value &&
-      Array.isArray((value as any).rows)
+      Array.isArray((value as { rows: unknown }).rows)
     );
   }
 
   /**
    * Records a metric
+   *
+   * @param key - Metric key
+   * @param duration - Duration in ms
    */
   private recordMetric(key: string, duration: number): void {
-    const current = this.callMetrics.get(key) || { count: 0, totalTime: 0 };
+    const current = this.callMetrics.get(key) ?? { count: 0, totalTime: 0 };
     current.count++;
     current.totalTime += duration;
     this.callMetrics.set(key, current);

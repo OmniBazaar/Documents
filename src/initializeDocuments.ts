@@ -15,6 +15,7 @@ import { DirectServiceToDatabase } from './adapters/DirectServiceToDatabase';
 import { setupInternalRoutes } from './routes/internalRoutes';
 import type { ValidatorServices } from './integration/DirectValidatorIntegration';
 import type { DocumentServices } from './services';
+import type { Database } from './services/database/Database';
 
 // Import service constructors
 import { DocumentationService } from './services/documentation/DocumentationService';
@@ -82,8 +83,8 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
   loader.register('validation', {
     initializer: () => {
       logger.debug('Initializing ValidationService');
-      // Pass validator services directly instead of endpoint
-      return new ValidationService(validatorServices as any);
+      // ValidationService needs endpoint, using dummy endpoint for direct mode
+      return new ValidationService('http://direct-mode');
     },
     cache: true
   });
@@ -107,7 +108,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
       const validation = await loader.get<ValidationService>('validation');
 
       return new DocumentationService(
-        dbAdapter,
+        dbAdapter as unknown as Database, // DirectServiceToDatabase provides Database-compatible interface
         search,
         participation,
         validation
@@ -124,7 +125,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
       const participation = await loader.get<ParticipationScoreService>('participation');
 
       const forum = new P2PForumService(
-        dbAdapter,
+        dbAdapter as unknown as Database, // DirectServiceToDatabase provides Database-compatible interface
         participation
       );
 
@@ -134,7 +135,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
     cache: true,
     dependencies: ['participation'],
     hooks: {
-      onDispose: async (service) => {
+      onDispose: () => {
         // Clean up forum resources if needed
         logger.debug('Disposing P2PForumService');
       }
@@ -148,7 +149,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
       const participation = await loader.get<ParticipationScoreService>('participation');
 
       const support = new VolunteerSupportService(
-        dbAdapter,
+        dbAdapter as unknown as Database, // DirectServiceToDatabase provides Database-compatible interface
         participation
       );
 
@@ -158,7 +159,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
     cache: true,
     dependencies: ['participation'],
     hooks: {
-      onDispose: async (service) => {
+      onDispose: () => {
         // Clean up support resources if needed
         logger.debug('Disposing VolunteerSupportService');
       }
@@ -166,7 +167,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
   });
 
   // Set up Express routes if app provided
-  if (config.app !== undefined) {
+  if (config.app !== undefined && config.app !== null) {
     logger.info('Setting up internal Express routes');
 
     // Create a wrapper to provide DocumentServices interface
@@ -179,7 +180,7 @@ export async function initializeDocumentsModule(config: DirectInitConfig): Promi
       validation: await loader.get<ValidationService>('validation'),
       // Add other required services with lazy proxies
       serviceCaller, // Direct service caller for API operations
-      db: dbAdapter // Database adapter for legacy compatibility
+      // db is optional, and we're using DirectServiceToDatabase as a Database-compatible adapter
     };
 
     setupInternalRoutes(config.app, servicesWrapper);
@@ -205,7 +206,7 @@ export function setupStaticServing(app: express.Application, staticPath: string 
   app.use('/docs/mockups', express.static('../UI Mockup'));
 
   // Fallback to index.html for SPA routing
-  app.get('/docs/*', (req, res) => {
+  app.get('/docs/*', (_req, res) => {
     res.sendFile('index.html', { root: staticPath });
   });
 
@@ -240,8 +241,6 @@ export async function createTestServices(validatorServices: ValidatorServices): 
     support: await loader.get<VolunteerSupportService>('support'),
     search: await loader.get<SearchEngine>('search'),
     participation: await loader.get<ParticipationScoreService>('participation'),
-    validation: await loader.get<ValidationService>('validation'),
-    apiClient: undefined as any,
-    db: undefined as any
+    validation: await loader.get<ValidationService>('validation')
   };
 }

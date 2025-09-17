@@ -82,7 +82,15 @@ export class LazyServiceLoader {
   /** Service registry */
   private services: Map<string, ServiceMetadata> = new Map();
   /** Service initialization order for dependency resolution */
-  private initOrder: string[] = [];
+  private _initOrder: string[] = []; // Used in updateInitOrder method
+
+  private get initOrder(): string[] {
+    return this._initOrder;
+  }
+
+  private set initOrder(order: string[]) {
+    this._initOrder = order;
+  }
   /** Disposal handlers */
   private disposalHandlers: Array<() => Promise<void>> = [];
 
@@ -109,8 +117,7 @@ export class LazyServiceLoader {
 
     this.services.set(name, {
       registration: registration as ServiceRegistration<unknown>,
-      initialized: false,
-      cache: registration.cache !== false // Default to true
+      initialized: false
     });
 
     // Update initialization order
@@ -218,7 +225,7 @@ export class LazyServiceLoader {
     const services = Array.from(this.services.entries()).map(([name, metadata]) => ({
       name,
       initialized: metadata.initialized,
-      initializedAt: metadata.initializedAt
+      ...(metadata.initializedAt !== null && metadata.initializedAt !== undefined ? { initializedAt: metadata.initializedAt } : {})
     }));
 
     return {
@@ -266,6 +273,10 @@ export class LazyServiceLoader {
 
   /**
    * Initializes a service
+   *
+   * @param name - Service name
+   * @param metadata - Service metadata
+   * @returns Initialized service instance
    */
   private async initializeService<T>(name: string, metadata: ServiceMetadata): Promise<T> {
     logger.debug(`Initializing service '${name}'`);
@@ -286,18 +297,22 @@ export class LazyServiceLoader {
 
       logger.info(`Service '${name}' initialized successfully`);
 
-      return instance;
+      return instance as T;
     } catch (error) {
       // Clear failed initialization
-      metadata.initPromise = undefined;
+      delete metadata.initPromise;
       throw new Error(`Failed to initialize service '${name}': ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
    * Performs the actual service initialization
+   *
+   * @param _name - Service name (unused)
+   * @param metadata - Service metadata
+   * @returns Initialized service instance
    */
-  private async performInitialization<T>(name: string, metadata: ServiceMetadata): Promise<T> {
+  private async performInitialization<T>(_name: string, metadata: ServiceMetadata): Promise<T> {
     const registration = metadata.registration;
 
     // Initialize dependencies first
@@ -323,7 +338,9 @@ export class LazyServiceLoader {
     // Register disposal handler
     if (registration.hooks?.onDispose !== undefined) {
       this.disposalHandlers.push(async () => {
-        await registration.hooks!.onDispose!(instance);
+        if (registration.hooks?.onDispose !== undefined) {
+          await registration.hooks.onDispose(instance);
+        }
       });
     }
 
@@ -364,26 +381,27 @@ export class LazyServiceLoader {
   /**
    * Creates a service proxy that initializes on first access
    *
-   * @param name - Service name
+   * @param _name - Service name (unused)
    * @returns Proxy that lazy-loads the service
    */
-  createProxy<T extends object>(name: string): T {
-    const loader = this;
+  createProxy<T extends object>(_name: string): T {
+    // const loader = this;  // Currently unused
     let instance: T | undefined;
 
     return new Proxy({} as T, {
-      get(target, prop) {
+      get(_target, prop) {
         if (instance === undefined) {
           // Block on initialization (not ideal but works for proxy)
           throw new Error('Async initialization required. Use loader.get() instead of proxy for async services.');
         }
-        return (instance as any)[prop];
+        return (instance as T & Record<string, unknown>)[prop as string];
       },
-      set(target, prop, value) {
+      set(_target, prop, value) {
         if (instance === undefined) {
           throw new Error('Service not initialized');
         }
-        (instance as any)[prop] = value;
+        const obj = instance as Record<string, unknown>;
+        obj[prop as string] = value;
         return true;
       }
     });

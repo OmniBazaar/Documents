@@ -8,10 +8,24 @@
  */
 
 /**
- * Re-export all services from the services module
+ * Re-export specific services to avoid duplicate exports
  * @see {@link module:services}
  */
-export * from './services';
+export {
+  Database,
+  type DatabaseConfig,
+  DirectServiceCaller,
+  DocumentationService,
+  DocumentationConsensus,
+  P2PForumService,
+  VolunteerSupportService,
+  ParticipationScoreService,
+  SearchEngine,
+  ValidationService,
+  type DocumentServicesConfig,
+  type DocumentServices,
+  initializeDocumentServices
+} from './services';
 
 /**
  * Re-export all integration utilities
@@ -92,7 +106,7 @@ export const MODULE_INFO = {
 export { LazyServiceLoader } from './services/LazyServiceLoader';
 export type { ServiceInitializer, ServiceRegistration } from './services/LazyServiceLoader';
 
-export { DirectServiceCaller } from './services/DirectServiceCaller';
+// DirectServiceCaller is already exported from ./services
 export type { QueryResult, ServiceResponse } from './services/DirectServiceCaller';
 
 export { setupInternalRoutes } from './routes/internalRoutes';

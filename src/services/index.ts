@@ -14,6 +14,7 @@ import type { VolunteerSupportService } from './support/VolunteerSupportService'
 import type { ParticipationScoreService } from './participation/ParticipationScoreService';
 import type { SearchEngine } from './search/SearchEngine';
 import type { ValidationService } from './validation/ValidationService';
+import type { DirectServiceCaller } from './DirectServiceCaller';
 // Re-export all services
 
 /**

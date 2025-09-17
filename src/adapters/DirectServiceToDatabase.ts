@@ -7,7 +7,7 @@
  * @module adapters/DirectServiceToDatabase
  */
 
-import type { Database } from '../services/database/Database';
+import type { TypedQueryResult } from '../services/database/Database';
 import type { DirectServiceCaller } from '../services/DirectServiceCaller';
 import { logger } from '../utils/logger';
 
@@ -20,7 +20,7 @@ import { logger } from '../utils/logger';
  * const forum = new P2PForumService(dbAdapter, participationService);
  * ```
  */
-export class DirectServiceToDatabase implements Database {
+export class DirectServiceToDatabase {
   /**
    * Creates adapter instance
    *
@@ -33,53 +33,21 @@ export class DirectServiceToDatabase implements Database {
   /**
    * Execute a database query
    *
-   * @param sql - SQL query string
+   * @param text - SQL query string
    * @param params - Query parameters
    * @returns Query results
    */
-  async query<T = unknown>(sql: string, params?: unknown[]): Promise<{ rows: T[]; rowCount: number }> {
-    const result = await this.serviceCaller.queryDatabase<T>(sql, params);
+  async query<T = unknown>(text: string, params?: unknown[]): Promise<TypedQueryResult<T>> {
+    const result = await this.serviceCaller.queryDatabase<T>(text, params);
+
+    // Return a TypedQueryResult compatible object
     return {
       rows: result.rows,
-      rowCount: result.rowCount
+      rowCount: result.rowCount,
+      command: result.command !== null && result.command !== undefined && result.command !== '' ? result.command : 'SELECT',
+      oid: 0,
+      fields: []
     };
-  }
-
-  /**
-   * Connect to database (no-op for direct integration)
-   *
-   * @returns Resolves when connected
-   */
-  async connect(): Promise<void> {
-    // No-op - connection managed by validator
-    logger.debug('Database connect called (no-op in direct mode)');
-  }
-
-  /**
-   * Disconnect from database (no-op for direct integration)
-   *
-   * @returns Resolves when disconnected
-   */
-  async disconnect(): Promise<void> {
-    // No-op - connection managed by validator
-    logger.debug('Database disconnect called (no-op in direct mode)');
-  }
-
-  /**
-   * Execute multiple queries in a transaction
-   *
-   * @param queries - Array of SQL queries with optional parameters
-   * @returns Combined results
-   */
-  async transaction(queries: Array<{ sql: string; params?: unknown[] }>): Promise<unknown[]> {
-    // For now, execute queries sequentially
-    // In a real implementation, this would use a database transaction
-    const results = [];
-    for (const query of queries) {
-      const result = await this.query(query.sql, query.params);
-      results.push(result);
-    }
-    return results;
   }
 
   /**
@@ -96,10 +64,22 @@ export class DirectServiceToDatabase implements Database {
    *
    * @returns Database statistics
    */
-  async getStats(): Promise<{ connections: number; queries: number }> {
+  getStats(): {
+    totalConnections: number;
+    idleConnections: number;
+    waitingConnections: number;
+  } {
     return {
-      connections: 1, // Always 1 in direct mode
-      queries: 0 // Would need to track in serviceCaller
+      totalConnections: 1, // Always 1 in direct mode
+      idleConnections: 0,
+      waitingConnections: 0
     };
+  }
+
+  /**
+   * Close database connections (no-op in direct mode)
+   */
+  close(): void {
+    logger.debug('Database close called (no-op in direct mode)');
   }
 }

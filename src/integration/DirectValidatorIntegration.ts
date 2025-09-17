@@ -12,8 +12,7 @@ import { EventEmitter } from 'events';
 import { logger } from '../utils/logger';
 import type {
   DocumentationService,
-  Document,
-  DocumentSearchParams,
+  Document
 } from '../services/documentation/DocumentationService';
 import type { P2PForumService, ForumThread, ForumPost } from '../services/forum';
 import type { VolunteerSupportService, SupportRequest } from '../services/support';
@@ -110,7 +109,7 @@ export class DirectValidatorIntegration extends EventEmitter {
   private documentServices: DocumentServices;
   private validatorServices?: ValidatorServices;
   private config: DirectIntegrationConfig;
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval: NodeJS.Timeout | undefined;
   private serviceHealthMap: Map<string, ServiceHealth> = new Map();
 
   /**
@@ -132,7 +131,7 @@ export class DirectValidatorIntegration extends EventEmitter {
     this.initializeHealthTracking();
 
     // Set up event bridges if enabled
-    if (this.config.enableEventBridge) {
+    if (this.config.enableEventBridge === true) {
       this.setupEventBridges();
     }
   }
@@ -443,9 +442,9 @@ export class DirectValidatorIntegration extends EventEmitter {
     const created = await this.documentServices.documentation.createDocument(document);
 
     // Update participation score if validator services available
-    if (this.hasValidatorServices()) {
+    if (this.hasValidatorServices() && this.validatorServices !== undefined) {
       try {
-        await this.validatorServices!.participationScore.updateScore(authorAddress, 10);
+        await this.validatorServices.participationScore.updateScore(authorAddress, 10);
       } catch (error) {
         logger.error('Failed to update participation score', { error, authorAddress });
       }
