@@ -1,0 +1,207 @@
+[
+  {
+    "id": "thread-008-reply-2",
+    "thread_id": "thread-008",
+    "content": "I use pXOM for larger marketplace purchases. The 0.3% fee is worth it for financial privacy."
+  },
+  {
+    "id": "thread-003-reply-1",
+    "thread_id": "thread-003",
+    "content": "Use the DEX for token swaps! Here's how:\n\n1. Go to the \"Trade\" section\n2. Click \"Swap\"\n3. Select XOM as the source token\n4. Select AVAX as the destination\n5. Enter the amount\n6. Review the price and click \"Swap\"\n\nThe trade executes in under 2 seconds. The DEX uses both order books and AMM pools to get you the best price automatically.\n\nThe marketplace is for physical goods and services, not token trading."
+  },
+  {
+    "id": "thread-006-reply-1",
+    "thread_id": "thread-006",
+    "content": "Great question! The 1% fee supports the infrastructure that makes P2P possible:\n\nFee breakdown:\n• 0.50% Transaction Fee - Funds ODDAO (platform development)\n• 0.25% Referral Fee - Rewards who referred you\n• 0.25% Listing Fee - Pays the node storing your listing\n\nCompare to traditional platforms:\n• eBay: 12.9% + $0.30\n• Amazon: 15% + subscription\n• Etsy: 6.5% + payment processing\n\nOmniBazaar's 1% is the seller's ONLY cost - no payment processing fees, no monthly subscriptions, no surprise charges.\n\nThe validators who process transactions are paid through block rewards, which is why you don't pay gas fees!"
+  },
+  {
+    "id": "thread-005-reply-1",
+    "thread_id": "thread-005",
+    "content": "Proof of Participation (PoP) is how OmniBazaar measures your contribution to the community. Your PoP score (0-100 points) determines certain benefits.\n\nScore Components:\n• KYC verification: 0-20 points\n• Marketplace reputation: -10 to +10 points\n• Staking XOM: 2-36 points\n• Referrals: 0-10 points (1 per referral)\n• Creating listings: 0-4 points\n• Forum activity: 0-5 points\n• Community policing: 0-5 points\n• Reliability: -5 to +5 points\n\nWhy it matters:\n• 25+ points: Qualify as a Listing Node (earn fees)\n• 50+ points: Qualify as a Validator (requires staking too)\n• Higher scores = better platform privileges\n\nCheck your score in your profile dashboard!"
+  },
+  {
+    "id": "thread-018-reply-2",
+    "thread_id": "thread-018",
+    "content": "I fell for a similar scam on another platform and lost $3,000. NEVER EVER share your seed phrase. Not worth learning this lesson the expensive way."
+  },
+  {
+    "id": "thread-016-reply-2",
+    "thread_id": "thread-016",
+    "content": "I've been through 3 arbitrations (2 as seller, 1 as buyer). The process is fair - I won both times as seller with good evidence and lost as buyer when I was in the wrong. System works!"
+  },
+  {
+    "id": "thread-004-reply-1",
+    "thread_id": "thread-004",
+    "content": "Yes! OmniWallet supports standard BIP39 seed phrases, so you can import your MetaMask wallet.\n\nSteps:\n1. Click \"Import Wallet\" on the setup screen\n2. Choose \"Seed Phrase\"\n3. Enter your 12 or 24 word phrase\n4. Set a password for OmniWallet\n5. Done!\n\nIMPORTANT: Your seed phrase gives full access to your funds. Never share it with anyone. OmniWallet encrypts it locally - it never leaves your device.\n\nAfter importing, you'll see all your Ethereum assets plus access to 70+ other blockchains!"
+  },
+  {
+    "id": "thread-020-reply-2",
+    "thread_id": "thread-020",
+    "content": "I sell Photoshop templates as digital downloads. Made 50 sales in my first month. The instant delivery and low fees make this perfect for digital products!"
+  },
+  {
+    "id": "thread-021-reply-2",
+    "thread_id": "thread-021",
+    "content": "I had this issue - turned out I didn't actually click \"Follow\" on Telegram, just joined the channel. Once I followed the official account, bonus arrived in 30 seconds."
+  },
+  {
+    "id": "thread-016-reply-1",
+    "thread_id": "thread-016",
+    "content": "Arbitration helps resolve disputes fairly:\n\n**Process:**\n1. Either party opens a dispute in the transaction\n2. Both parties present evidence (photos, messages, tracking)\n3. An arbitrator is assigned (experienced community member)\n4. Arbitrator reviews all evidence\n5. Decision is made within 48 hours\n6. Escrow funds are released per decision\n\n**Arbitrator Requirements:**\n• PoP score 50+\n• Completed arbitrator training\n• Good track record\n• No conflicts of interest\n\n**Fees:**\n• 5% of disputed amount (split 50/50 buyer/seller)\n• Winner often gets their fee portion refunded\n\n**Your Situation:**\nSince you have proof the item was properly packaged:\n1. Gather evidence: Photos of packaging, shipping confirmation\n2. Export your chat messages with the buyer\n3. Provide tracking showing \"delivered\" status\n4. If you have photos of the item before shipping, include those\n\nArbitrators look at: Seller reputation, buyer reputation, evidence quality, chat history, and past disputes.\n\nWith good evidence, you should win. The arbitration fee is annoying but prevents false claims."
+  },
+  {
+    "id": "thread-013-reply-2",
+    "thread_id": "thread-013",
+    "content": "I went from 12 to 30 points in one week using the KYC + staking method. Totally worth it - listing node fees have already paid back my initial effort."
+  },
+  {
+    "id": "thread-002-reply-1",
+    "thread_id": "thread-002",
+    "content": "If you used escrow (recommended for all sales), the buyer's payment is already held in the escrow contract. You'll receive it automatically when you mark the item as shipped.\n\nIf you DIDN'T use escrow:\n1. Contact the buyer through OmniBazaar chat\n2. Give them 48 hours to respond\n3. If no response, you can cancel the order\n4. Report if this becomes a pattern - affects their reputation\n\nFor future sales, always use escrow! It protects both buyer and seller."
+  },
+  {
+    "id": "thread-014-reply-1",
+    "thread_id": "thread-014",
+    "content": "Yes, but validators have strict requirements!\n\n**Hardware Requirements:**\n• CPU: 8+ cores (modern i7/Ryzen 7 minimum)\n• RAM: 16GB minimum, 32GB recommended\n• Storage: 500GB SSD minimum\n• Network: 1Gbps connection, static IP required\n• Uptime: Must maintain 95%+ uptime\n\n**Qualification Requirements:**\n• PoP Score: 50+ points\n• KYC: Level 4 (full verification with video call)\n• Stake: 1,000,000 XOM minimum\n• Agreement: Validator Code of Conduct\n\n**Earnings:**\n• Block rewards (share of 15.602 XOM per block)\n• Transaction fees\n• Staking pool distributions\n• Chat hosting fees\n• Listing fees\n\n**If your setup doesn't meet these:**\nConsider becoming a Listing Node instead:\n• Lower requirements (25+ PoP, no KYC required)\n• Can run behind CGNAT (no static IP needed)\n• Earn listing fees\n• No minimum stake\n\nA gaming PC is great for a listing node! For a validator, you'd need to upgrade your internet connection to have a static IP."
+  },
+  {
+    "id": "thread-019-reply-1",
+    "thread_id": "thread-019",
+    "content": "Great question! The infrastructure is unique:\n\n**Current Deployment (Fuji Testnet):**\n• OmniCoin runs on Avalanche Subnet-EVM (Layer 1 blockchain)\n• It's a custom blockchain with full EVM compatibility\n• Built on Avalanche infrastructure (not Ethereum)\n• Uses Snowman consensus (1-2 second finality)\n\n**Why Avalanche?**\n• Much faster than Ethereum (1-2s vs 12s blocks)\n• Lower costs for validators\n• Can customize the blockchain for OmniBazaar's needs\n• Subnet isolation (our own chain, our own rules)\n\n**Technical Details:**\n• Chain ID: 131313\n• Block time: 2 seconds\n• Consensus: Avalanche Snowman (not Ethereum PoW/PoS)\n• VM: Subnet-EVM (fully EVM-compatible for Solidity contracts)\n\n**For Users:**\nYou don't need to understand the infrastructure - just know:\n• Transactions are fast (1-2 seconds)\n• Fees are low (validators absorb gas costs)\n• It's secure (Avalanche-grade consensus)\n• Smart contracts work like Ethereum (same tools)\n\n**Future:**\nProduction deployment will be on Avalanche mainnet with the same architecture."
+  },
+  {
+    "id": "thread-010-reply-1",
+    "thread_id": "thread-010",
+    "content": "I've shipped to 15 countries. Here's what I've learned:\n\nShipping Tips:\n• Always use tracked shipping with insurance\n• Declare the actual value on customs forms (required by law)\n• Include your contact info inside the package\n• Add 2-3 days to estimated delivery for customs processing\n\nPayment:\n• Cryptocurrency makes international payments easy (no currency conversion!)\n• Use escrow for international orders (protects both parties)\n• Buyer pays shipping - add it to the item price or offer calculated shipping\n\nCustoms:\n• Buyer is responsible for customs fees in their country\n• State this clearly in your listing\n• Some countries have limits on item values ($800 in US)\n\nPro tip: Offer combined shipping for multiple items - international buyers love to save on shipping!"
+  },
+  {
+    "id": "thread-012-reply-2",
+    "thread_id": "thread-012",
+    "content": "I use limit orders for about 80% of my trades. Patience saves money! But when the market is moving fast, market orders are the way to go."
+  },
+  {
+    "id": "thread-009-reply-2",
+    "thread_id": "thread-009",
+    "content": "I had this happen once - turned out my browser extension wasn't connected to the right validator. Switching to a different validator in settings fixed it immediately."
+  },
+  {
+    "id": "thread-015-reply-1",
+    "thread_id": "thread-015",
+    "content": "Essential security practices for crypto:\n\n**Must Do:**\n1. Write down your seed phrase on paper (never digital!)\n2. Store seed phrase in a safe place (fireproof safe ideal)\n3. NEVER share your seed phrase with anyone (not even support)\n4. Use a strong unique password for OmniWallet\n5. Enable biometric login if available\n\n**Highly Recommended:**\n1. Use a hardware wallet (Ledger/Trezor) for large amounts\n2. Keep only spending money in hot wallet\n3. Verify all recipient addresses before sending\n4. Double-check website URL (phishing is common)\n5. Keep your device's OS and antivirus updated\n\n**Advanced:**\n1. Use a dedicated device for crypto (old phone/laptop)\n2. Consider multi-sig for very large amounts\n3. Test send with small amount first\n4. Use privacy mode (pXOM) for sensitive transactions\n\n**Red Flags - SCAM ALERTS:**\n❌ Anyone asking for your seed phrase\n❌ \"Support\" asking you to validate your wallet\n❌ Too-good-to-be-true investment opportunities\n❌ Urgent messages requiring immediate action\n\nRemember: Crypto transactions are irreversible. Take your time and verify everything!"
+  },
+  {
+    "id": "thread-006-reply-2",
+    "thread_id": "thread-006",
+    "content": "As a seller with 100+ sales, that 1% has saved me thousands compared to eBay. Plus you can earn bonus XOM for your first sale which more than covers early fees."
+  },
+  {
+    "id": "thread-007-reply-1",
+    "thread_id": "thread-007",
+    "content": "Staking XOM is simple and earns you 5-12% APR depending on amount and commitment.\n\nSteps to stake:\n1. Go to \"Stake\" in the main menu\n2. Enter the amount you want to stake\n3. Choose a duration (optional, but earns bonus APR):\n   - No commitment: 5% APR\n   - 1 month: +1% bonus\n   - 6 months: +2% bonus\n   - 2 years: +3% bonus\n4. Confirm the transaction\n\nYour 5,000 XOM qualifies for Tier 1 (5% base APR). If you commit for 6 months, you'd earn 7% APR total.\n\nCalculation: 5,000 XOM × 7% = 350 XOM per year\n\nBONUS: Staked XOM is automatically used for DEX liquidity, so you also earn trading fees on top of staking rewards!\n\nEarly withdrawal has penalties, so only stake what you won't need short-term."
+  },
+  {
+    "id": "thread-012-reply-1",
+    "thread_id": "thread-012",
+    "content": "Understanding order types is key to successful trading!\n\n**Market Order:**\n• Executes immediately at current best price\n• Guaranteed to fill\n• Use when: You want to buy/sell RIGHT NOW\n• Risk: Price might move slightly (slippage)\n\n**Limit Order:**\n• Sets your specific price\n• Only executes if market reaches your price\n• Use when: You can wait for your target price\n• Risk: Might not fill if price doesn't reach your limit\n\n**Stop-Loss Order:**\n• Automatically sells if price drops to your stop price\n• Protects you from large losses\n• Use when: You want downside protection\n• Essential for: Leveraged positions\n\n**Example:**\nBTC is at $50,000\n• Market Buy: Buy now at ~$50,000\n• Limit Buy at $48,000: Only buy if price drops to $48,000\n• Stop-Loss at $45,000: Auto-sell if price drops to $45,000\n\nStart with market orders until you're comfortable, then explore limit orders for better prices."
+  },
+  {
+    "id": "thread-007-reply-2",
+    "thread_id": "thread-007",
+    "content": "I've been staking 10,000 XOM for 3 months. The rewards come automatically and I'm earning about 50 XOM per month. Very hands-off once it's set up."
+  },
+  {
+    "id": "thread-018-reply-3",
+    "thread_id": "thread-018",
+    "content": "Report these scammers! I've reported 5 so far and they all got banned. Community policing actually works and you earn PoP points for accurate reports."
+  },
+  {
+    "id": "thread-004-reply-2",
+    "thread_id": "thread-004",
+    "content": "I imported from MetaMask last month. Works perfectly and now I can manage my Bitcoin and Solana from the same wallet!"
+  },
+  {
+    "id": "thread-020-reply-1",
+    "thread_id": "thread-020",
+    "content": "Absolutely! Digital products work great on OmniBazaar.\n\n**How to Sell Digital Products:**\n1. Create your listing as normal\n2. In \"Product Type\", select \"Digital Download\"\n3. Upload your file to IPFS (encrypted)\n4. Set your price\n5. When someone buys, they get automatic access to download\n\n**Benefits for Digital Sellers:**\n• No shipping costs or logistics\n• Instant delivery after payment\n• Files stored on IPFS (distributed, permanent)\n• Can sell the same file unlimited times\n• Buyers can re-download anytime\n\n**Supported File Types:**\n• Images (JPG, PNG, SVG, etc.)\n• Documents (PDF, DOCX, etc.)\n• Audio (MP3, WAV, FLAC)\n• Video (MP4, MOV)\n• Software (ZIP, EXE)\n• 3D models (STL, OBJ, FBX)\n\n**NFT Option:**\nFor unique digital art, consider minting as an NFT:\n• Proves authenticity and ownership\n• Can resell on secondary markets\n• Integrated with OmniWallet NFT gallery\n\n**Pro Tip:**\nOffer a preview/sample version for free to build trust. Digital products have zero marginal cost, so free samples are great marketing!"
+  },
+  {
+    "id": "thread-001-reply-1",
+    "thread_id": "thread-001",
+    "content": "Welcome to OmniBazaar! Creating listings is easy and FREE - you don't need XOM to get started.\n\nSteps to list your first item:\n1. Click \"Sell\" in the navigation menu\n2. Choose a category for your item\n3. Add photos (up to 10 images)\n4. Write a clear title and description\n5. Set your price\n6. Click \"Publish Listing\"\n\nYour listing is stored on IPFS (distributed storage) so there are NO gas fees. The only fee is 1% when your item sells. Good luck with your first sale!"
+  },
+  {
+    "id": "thread-003-reply-2",
+    "thread_id": "thread-003",
+    "content": "Pro tip: For large swaps, check both \"Market\" and \"Limit\" order options. Sometimes a limit order gets you a better price if you're willing to wait a few minutes."
+  },
+  {
+    "id": "thread-019-reply-2",
+    "thread_id": "thread-019",
+    "content": "Coming from Ethereum, the 1-2 second finality is amazing. No more waiting minutes for confirmations!"
+  },
+  {
+    "id": "thread-010-reply-2",
+    "thread_id": "thread-010",
+    "content": "Add \"international shipping available\" to your title - it helps with search visibility. I saw a 30% increase in views after doing this."
+  },
+  {
+    "id": "thread-015-reply-2",
+    "thread_id": "thread-015",
+    "content": "I learned the hard way - my seed phrase was in a photo on my phone. Phone got hacked, lost everything. Now I only keep it on paper in my home safe. Don't make my mistake!"
+  },
+  {
+    "id": "thread-001-reply-2",
+    "thread_id": "thread-001",
+    "content": "I made my first sale last week and it was super easy! Make sure you add good photos - items with clear pictures sell much faster."
+  },
+  {
+    "id": "thread-011-reply-1",
+    "thread_id": "thread-011",
+    "content": "The referral system rewards both you and your friends!\n\nHow it works:\n1. Share your unique referral link (in Profile → Referrals)\n2. Friend signs up and completes verification\n3. You BOTH get bonuses!\n\nYour friend gets:\n• Welcome Bonus: Up to 10,000 XOM (decreases as more users join)\n• First Sale Bonus: Up to 500 XOM when they make their first sale\n\nYou get:\n• Signing Bonus: Up to 2,500 XOM per referral\n• Referral Fee: 0.175% of every sale your friend makes (forever!)\n\nTwo-Level System:\n• You earn 0.175% of your direct referrals' sales\n• You earn 0.05% of your referrals' referrals' sales\n\nExample: You refer Alice, Alice refers Bob\n• Alice makes a $1000 sale → You earn 0.175% = $1.75 in XOM\n• Bob makes a $1000 sale → You earn 0.05% = $0.50 in XOM\n\nThe more active sellers you refer, the more passive income you earn!"
+  },
+  {
+    "id": "thread-021-reply-1",
+    "thread_id": "thread-021",
+    "content": "Welcome bonuses are usually instant, but let's troubleshoot:\n\n**Verification Requirements:**\nAll three must be completed:\n1. ✓ Email verification (click link in email)\n2. ✓ Phone verification (enter code)\n3. ✓ Social media (follow on Twitter and Telegram)\n\n**Check Your Status:**\n• Go to Profile → Rewards\n• Look for \"Welcome Bonus Status\"\n• Should show \"Completed\" with transaction hash\n\n**Common Issues:**\n• Social media follow not detected (may need to re-connect accounts)\n• Multiple accounts from same computer (only 1 bonus per computer)\n• Verification incomplete (check all 3 steps)\n• Already claimed on another account\n\n**Current Bonus Amount:**\nThe bonus decreases as more users join. Currently:\n• Users 1-1,000: 10,000 XOM\n• Users 1,001-10,000: 5,000 XOM\n• Users 10,001-100,000: 2,500 XOM\n\n**If Still Missing:**\nContact support with:\n• Your wallet address\n• Verification completion timestamp\n• Screenshots of completed steps\n\nThey can manually verify and credit if there was a technical issue."
+  },
+  {
+    "id": "thread-018-reply-1",
+    "thread_id": "thread-018",
+    "content": "🚨 YES, THIS IS 100% A SCAM! 🚨\n\n**NEVER SHARE YOUR SEED PHRASE WITH ANYONE - EVER!**\n\nThere is NO legitimate reason anyone would need your seed phrase:\n❌ Not for \"validation\"\n❌ Not for \"verification\"\n❌ Not for \"airdrops\"\n❌ Not for \"upgrades\"\n❌ Not for \"support\"\n\n**What to do:**\n1. DO NOT respond or engage\n2. Block the scammer\n3. Report them: Profile → Report User → Scam Attempt\n4. Check if they messaged you through OmniBazaar chat or external (Discord/Telegram scams are common)\n\n**Important:**\n• Real OmniBazaar support NEVER contacts you first\n• We never ask for seed phrases, private keys, or passwords\n• All official support happens through the Support Center\n\nIf you already shared your seed phrase:\n1. IMMEDIATELY create a new wallet\n2. Transfer ALL assets to the new wallet ASAP\n3. The old wallet is compromised - assume funds will be stolen\n4. Report to authorities if you lost funds\n\nThank you for being smart and asking before acting!"
+  },
+  {
+    "id": "thread-009-reply-1",
+    "thread_id": "thread-009",
+    "content": "OmniCoin transactions should finalize in 1-2 seconds. If it's been 10 minutes, let's troubleshoot:\n\n1. Check the transaction hash in the Block Explorer\n2. Verify you're connected to the correct network (Fuji testnet currently)\n3. Check if your wallet is synced\n\nCommon causes:\n• Network congestion (rare on Avalanche)\n• Wallet not fully synced\n• Incorrect RPC endpoint\n\nCan you share the transaction hash? I can look it up in the explorer.\n\nIf it's truly stuck, the transaction will eventually timeout after 30 minutes and XOM returns to your wallet."
+  },
+  {
+    "id": "thread-002-reply-2",
+    "thread_id": "thread-002",
+    "content": "This is why escrow is so important. I've done 50+ sales with escrow and never had an issue. The 0.25% escrow fee is totally worth the peace of mind."
+  },
+  {
+    "id": "thread-005-reply-2",
+    "thread_id": "thread-005",
+    "content": "I started at 5 points (just email verification). After doing KYC Level 2 and making 10 sales, I'm now at 35 points! It's actually pretty easy to build up."
+  },
+  {
+    "id": "thread-017-reply-1",
+    "thread_id": "thread-017",
+    "content": "Yes, block rewards decrease gradually - this is intentional tokenomics!\n\n**Emission Schedule:**\n• Starting reward: 15.602 XOM per block\n• Reduction: 1% every 6,311,520 blocks (~4 months)\n• Total emission: 6.089 billion XOM over 40 years\n• End: Rewards reach zero after 631,152,000 blocks\n\n**Current Status:**\nYou've noticed the first reduction. The network has passed 6.3M blocks, triggering the first 1% decrease.\n\n**Why This Model?**\n• Early participants get higher rewards (incentive to start early)\n• Gradual reduction prevents supply shocks\n• 40-year timeline ensures long-term sustainability\n• After 40 years, validators earn from fees only\n\n**Your Validator Earnings:**\nBlock rewards are just one income source. You also earn:\n• Transaction fees (70% to ODDAO, 20% to you, 10% staking pool)\n• Chat hosting fees\n• Listing fees\n• Staking pool distributions\n\nEven with decreasing block rewards, total validator income often increases as network usage grows!"
+  },
+  {
+    "id": "thread-013-reply-1",
+    "thread_id": "thread-013",
+    "content": "Here's the fastest path from 10 to 25+ points:\n\n**Immediate Actions (Same Day):**\n1. Complete KYC Level 2 (+10 points) - Takes 1 hour with ID upload\n2. Stake 1,000,000 XOM for 1 month (+6 points) - Instant\n   • Total so far: 10 + 10 + 6 = 26 points ✅\n\n**Alternative if you can't stake that much:**\n1. Complete KYC Level 2 (+10 points)\n2. Refer 5 friends (+5 points)\n3. Create 100 listings (+1 point)\n   • Total: 10 + 10 + 5 + 1 = 26 points ✅\n\n**Build Long-Term:**\n• Active forum participation (up to +5)\n• High marketplace ratings (up to +10)\n• Report bad listings (up to +5)\n\nKYC + small staking is the fastest route. Good luck becoming a listing node!"
+  },
+  {
+    "id": "thread-017-reply-2",
+    "thread_id": "thread-017",
+    "content": "My total earnings have gone UP despite the reward decrease because transaction volume doubled. Don't focus only on block rewards!"
+  },
+  {
+    "id": "thread-008-reply-1",
+    "thread_id": "thread-008",
+    "content": "pXOM is the privacy version of XOM, powered by COTI's privacy technology.\n\nKey differences:\n• XOM: Normal token, all transactions visible on blockchain\n• pXOM: Privacy token, amounts and recipients are hidden\n\nWhen to use pXOM:\n✓ Large purchases where you want privacy\n✓ Salary payments (hide amounts)\n✓ Donations (stay anonymous)\n✓ Any time you don't want others seeing your balance\n\nConversion:\n• XOM → pXOM: 0.3% fee (going private)\n• pXOM → XOM: 0.3% fee (going public)\n• Swap in the Wallet section under \"Privacy\"\n\nNote: You can't stake pXOM (only regular XOM), so convert back before staking."
+  }
+]

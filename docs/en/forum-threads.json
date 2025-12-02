@@ -1,0 +1,128 @@
+[
+  {
+    "id": "thread-009",
+    "title": "Help! My transaction is pending for 10 minutes",
+    "content": "I sent XOM to another address 10 minutes ago and it's still showing as \"pending\". Is something wrong? The validator shows it's healthy.",
+    "category": "technical"
+  },
+  {
+    "id": "thread-014",
+    "title": "Can I run a validator on my home computer?",
+    "content": "I have a decent gaming PC that's on 24/7. Can I use it to run a validator and earn rewards? What are the requirements?",
+    "category": "validators"
+  },
+  {
+    "id": "thread-011",
+    "title": "How does the referral bonus system work?",
+    "content": "I want to refer friends to OmniBazaar. How much do we each earn and how does the two-level system work?",
+    "category": "rewards"
+  },
+  {
+    "id": "thread-008",
+    "title": "What is pXOM and when should I use it?",
+    "content": "I see there's XOM and pXOM (private XOM). What's the difference and is there a reason to use privacy mode?",
+    "category": "privacy"
+  },
+  {
+    "id": "thread-006",
+    "title": "Why is there a 1% fee if it's peer-to-peer?",
+    "content": "I thought peer-to-peer meant no fees? Why does OmniBazaar charge 1% on sales?",
+    "category": "marketplace"
+  },
+  {
+    "id": "thread-007",
+    "title": "How do I stake XOM tokens?",
+    "content": "I have 5,000 XOM and want to start earning staking rewards. What's the process and what returns can I expect?",
+    "category": "staking"
+  },
+  {
+    "id": "thread-017",
+    "title": "Why are validator rewards decreasing?",
+    "content": "I noticed block rewards went from 15.602 XOM to 15.445 XOM. Are rewards decreasing? How does this work?",
+    "category": "validators"
+  },
+  {
+    "id": "thread-020",
+    "title": "Can I sell digital products on OmniBazaar?",
+    "content": "I create digital art and want to sell downloads. Does OmniBazaar support digital products or is it only for physical items?",
+    "category": "marketplace"
+  },
+  {
+    "id": "thread-015",
+    "title": "Security best practices for wallet?",
+    "content": "What are the most important security steps I should take to protect my OmniWallet and crypto assets?",
+    "category": "wallet"
+  },
+  {
+    "id": "thread-021",
+    "title": "Welcome Bonus not received after verification?",
+    "content": "I completed email and phone verification 2 days ago but haven't received my welcome bonus XOM yet. Is there a delay?",
+    "category": "rewards"
+  },
+  {
+    "id": "thread-003",
+    "title": "How do I swap XOM for AVAX?",
+    "content": "I have some XOM tokens and want to convert them to AVAX. Do I use the DEX or the marketplace? What's the difference?",
+    "category": "dex"
+  },
+  {
+    "id": "thread-001",
+    "title": "How do I list my first item for sale?",
+    "content": "I just joined OmniBazaar and want to sell some items. Where do I start? Do I need XOM tokens to create a listing?",
+    "category": "marketplace"
+  },
+  {
+    "id": "thread-002",
+    "title": "What happens if a buyer doesn't pay?",
+    "content": "I sold an item 3 days ago and the buyer hasn't sent payment yet. What are my options? Can I cancel the sale?",
+    "category": "marketplace"
+  },
+  {
+    "id": "thread-005",
+    "title": "What is Proof of Participation scoring?",
+    "content": "I keep seeing references to \"PoP score\" and \"participation score\". What is this and why does it matter?",
+    "category": "platform"
+  },
+  {
+    "id": "thread-019",
+    "title": "What blockchain is OmniCoin built on?",
+    "content": "Is OmniCoin its own blockchain or does it run on Ethereum? I'm confused about the infrastructure.",
+    "category": "platform"
+  },
+  {
+    "id": "thread-013",
+    "title": "How to increase my participation score quickly?",
+    "content": "I want to become a listing node (need 25 points). I currently have 10 points. What's the fastest way to increase my PoP score?",
+    "category": "platform"
+  },
+  {
+    "id": "thread-018",
+    "title": "How to handle a scam attempt?",
+    "content": "Someone contacted me offering to \"validate my wallet\" and asking for my seed phrase. This is a scam, right? What should I do?",
+    "category": "security"
+  },
+  {
+    "id": "thread-004",
+    "title": "Can I import my existing wallet from MetaMask?",
+    "content": "I already have a MetaMask wallet with some tokens. Can I use the same seed phrase in OmniWallet?",
+    "category": "wallet"
+  },
+  {
+    "id": "thread-010",
+    "title": "Best practices for shipping items internationally?",
+    "content": "I've been selling locally but want to start shipping internationally. What should I know about customs, shipping costs, and international payments?",
+    "category": "marketplace"
+  },
+  {
+    "id": "thread-012",
+    "title": "Difference between Market and Limit orders?",
+    "content": "I'm new to DEX trading. When should I use a market order versus a limit order? What about stop-loss?",
+    "category": "dex"
+  },
+  {
+    "id": "thread-016",
+    "title": "How does arbitration work for disputes?",
+    "content": "I have a dispute with a buyer who claims the item arrived damaged (it didn't). How does the arbitration process work?",
+    "category": "marketplace"
+  }
+]

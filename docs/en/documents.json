@@ -1,0 +1,380 @@
+[
+  {
+    "id": "shipping-integration",
+    "title": "Shipping Integration",
+    "description": "\nStreamlined Shipping\nPrint labels, track packages, and manage shipping all from your dashboard.\nSupported Carriers\n\n  USPS, UPS, FedEx (USA)\n  Royal Mail, DH",
+    "content": "\n<h2>Streamlined Shipping</h2>\n<p>Print labels, track packages, and manage shipping all from your dashboard.</p>\n<h3>Supported Carriers</h3>\n<ul>\n  <li>USPS, UPS, FedEx (USA)</li>\n  <li>Royal Mail, DHL (International)</li>\n  <li>Local couriers in major markets</li>\n</ul>\n<h3>Features</h3>\n<ul>\n  <li>Compare shipping rates</li>\n  <li>Print labels directly</li>\n  <li>Automatic tracking updates</li>\n  <li>Buyer notifications</li>\n</ul>\n<h3>International Shipping</h3>\n<p>Customs forms are automatically generated for international orders.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "how-to-take-great-product-photos",
+    "title": "How to Take Great Product Photos",
+    "description": "\nProfessional Photos Sell More\nGreat photos make your listings stand out and build buyer confidence.\nEquipment You Need\n\n  Smartphone camera (newest models work great)",
+    "content": "\n<h2>Professional Photos Sell More</h2>\n<p>Great photos make your listings stand out and build buyer confidence.</p>\n<h3>Equipment You Need</h3>\n<ul>\n  <li>Smartphone camera (newest models work great)</li>\n  <li>Clean white background (poster board works)</li>\n  <li>Natural daylight or bright lamps</li>\n  <li>Tripod or stable surface (optional)</li>\n</ul>\n<h3>Lighting Setup</h3>\n<ul>\n  <li>Best: Shoot near window with indirect sunlight</li>\n  <li>Avoid direct harsh sunlight</li>\n  <li>Use lamps if needed (daylight-balanced bulbs)</li>\n  <li>Eliminate shadows with lights from multiple angles</li>\n</ul>\n<h3>Photo Composition</h3>\n<ol>\n  <li><strong>Main Photo:</strong> Full item on white background, slightly angled</li>\n  <li><strong>Detail Shots:</strong> Close-ups of important features</li>\n  <li><strong>Scale Photo:</strong> Show size with common object (coin, ruler)</li>\n  <li><strong>All Angles:</strong> Front, back, sides, top, bottom</li>\n  <li><strong>In Use (if applicable):</strong> Show item being used</li>\n  <li><strong>Packaging:</strong> Show what's included</li>\n  <li><strong>Defects:</strong> Clearly show any wear or damage</li>\n</ol>\n<h3>Camera Settings</h3>\n<ul>\n  <li>Use highest resolution</li>\n  <li>Enable HDR mode</li>\n  <li>Turn off flash (use natural light instead)</li>\n  <li>Focus on the item (tap to focus on phone)</li>\n  <li>Keep camera steady</li>\n</ul>\n<h3>Editing Tips</h3>\n<ul>\n  <li>Crop to remove excess background</li>\n  <li>Adjust brightness slightly if needed</li>\n  <li>Enhance colors slightly (don't overdo it)</li>\n  <li>Straighten if tilted</li>\n  <li>Don't use filters that misrepresent item</li>\n</ul>\n<h3>What NOT to Do</h3>\n<ul>\n  <li>Don't use stock photos (violates policy)</li>\n  <li>Don't use blurry or dark photos</li>\n  <li>Don't hide defects</li>\n  <li>Don't include watermarks</li>\n  <li>Don't add text over photos</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-open-and-resolve-a-dispute",
+    "title": "How to Open and Resolve a Dispute",
+    "description": "\nResolve Transaction Problems\nIf something goes wrong with a transaction, the dispute system helps resolve it fairly.\nWhen to Open a Dispute\n\n  Item never arrived",
+    "content": "\n<h2>Resolve Transaction Problems</h2>\n<p>If something goes wrong with a transaction, the dispute system helps resolve it fairly.</p>\n<h3>When to Open a Dispute</h3>\n<ul>\n  <li>Item never arrived</li>\n  <li>Item significantly different from description</li>\n  <li>Item damaged in shipping</li>\n  <li>Wrong item received</li>\n  <li>Seller unresponsive after payment</li>\n</ul>\n<h3>Step 1: Try to Resolve Directly</h3>\n<p>Message the seller first. Many issues can be resolved through communication.</p>\n<h3>Step 2: Open Dispute</h3>\n<p>If the seller doesn't respond or won't resolve, go to your order and click \"Open Dispute.\"</p>\n<h3>Step 3: Provide Evidence</h3>\n<ul>\n  <li>Upload photos of the item/problem</li>\n  <li>Include tracking information</li>\n  <li>Copy of product description</li>\n  <li>Screenshots of messages with seller</li>\n  <li>Any other relevant evidence</li>\n</ul>\n<h3>Step 4: Seller Response</h3>\n<p>The seller has 48 hours to respond with their side of the story and evidence.</p>\n<h3>Step 5: Arbitrator Review</h3>\n<p>An independent arbitrator reviews both sides. They may ask follow-up questions.</p>\n<h3>Step 6: Decision</h3>\n<p>Within 5-7 days, the arbitrator issues a binding decision:</p>\n<ul>\n  <li>Full refund to buyer</li>\n  <li>Partial refund</li>\n  <li>No refund (favor seller)</li>\n  <li>Split decision</li>\n</ul>\n<h3>Step 7: Automatic Execution</h3>\n<p>The smart contract automatically executes the decision. No one can override it.</p>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "wallet-recovery",
+    "title": "Wallet Recovery",
+    "description": "\nRecover Your Wallet Anytime\nLost your device? Your 12-word recovery phrase lets you restore your wallet on any device.\nWhat Is Backed Up\n\n  All your wallet addresses ",
+    "content": "\n<h2>Recover Your Wallet Anytime</h2>\n<p>Lost your device? Your 12-word recovery phrase lets you restore your wallet on any device.</p>\n<h3>What Is Backed Up</h3>\n<ul>\n  <li>All your wallet addresses across 70+ blockchains</li>\n  <li>Your private keys</li>\n  <li>Your transaction history</li>\n  <li>Your contacts and preferences</li>\n</ul>\n<h3>Recovery Process</h3>\n<ol>\n  <li>Install OmniBazaar on new device</li>\n  <li>Click \"Restore Wallet\"</li>\n  <li>Enter your 12-word phrase</li>\n  <li>Set a new password</li>\n  <li>Your wallet is restored!</li>\n</ol>\n<h3>Critical Warning</h3>\n<p>Anyone with your recovery phrase can access your funds. Keep it safe and never share it!</p>\n",
+    "category": "wallet"
+  },
+  {
+    "id": "api-access-for-developers",
+    "title": "API Access for Developers",
+    "description": "\nBuild on OmniBazaar\nDevelopers can integrate with OmniBazaar using our comprehensive APIs.\nAvailable APIs\n\n  GraphQL API for queries\n  WebSocket for real-tim",
+    "content": "\n<h2>Build on OmniBazaar</h2>\n<p>Developers can integrate with OmniBazaar using our comprehensive APIs.</p>\n<h3>Available APIs</h3>\n<ul>\n  <li>GraphQL API for queries</li>\n  <li>WebSocket for real-time updates</li>\n  <li>REST endpoints for actions</li>\n  <li>DEX trading API</li>\n  <li>Marketplace listing API</li>\n  <li>Wallet integration API</li>\n</ul>\n<h3>Use Cases</h3>\n<p>Build custom trading bots, alternative interfaces, analytics dashboards, or integrate OmniBazaar into your existing app.</p>\n<h3>Documentation</h3>\n<p>Full API documentation is available with code examples in multiple languages.</p>\n",
+    "category": "api"
+  },
+  {
+    "id": "categories-and-organization",
+    "title": "Categories and Organization",
+    "description": "\nWell-Organized Marketplace\nBrowse thousands of listings through our intuitive category system.\nMain Categories\n\n  Electronics & Computers\n  Fashion & Accesso",
+    "content": "\n<h2>Well-Organized Marketplace</h2>\n<p>Browse thousands of listings through our intuitive category system.</p>\n<h3>Main Categories</h3>\n<ul>\n  <li>Electronics & Computers</li>\n  <li>Fashion & Accessories</li>\n  <li>Home & Garden</li>\n  <li>Sports & Outdoors</li>\n  <li>Collectibles & Art</li>\n  <li>Vehicles & Parts</li>\n  <li>Books, Movies & Music</li>\n  <li>Toys & Games</li>\n  <li>Health & Beauty</li>\n  <li>Business & Industrial</li>\n</ul>\n<h3>Subcategories</h3>\n<p>Each main category has detailed subcategories to help buyers find exactly what they need.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "wallet-setup",
+    "title": "Setting Up Your Wallet",
+    "description": "How to create and secure your OmniWallet",
+    "content": "<h2>Create Your Wallet</h2>\n<p>Your OmniWallet gives you access to 70+ blockchains from one secure place.</p>\n<h3>Multi-Chain Support</h3>\n<p>Manage Bitcoin, Ethereum, Solana, Polkadot, and 65+ other blockchains.</p>\n<h3>Security First</h3>\n<p>Your private keys are encrypted and never leave your device.</p>",
+    "category": "wallet"
+  },
+  {
+    "id": "how-to-handle-returns",
+    "title": "How to Handle Returns",
+    "description": "\nProcess Returns Professionally\nHandling returns well builds your reputation and encourages future sales.\nWhen a Return Request Comes In\n\n  You'll receive a notificati",
+    "content": "\n<h2>Process Returns Professionally</h2>\n<p>Handling returns well builds your reputation and encourages future sales.</p>\n<h3>When a Return Request Comes In</h3>\n<ol>\n  <li>You'll receive a notification</li>\n  <li>Go to your seller dashboard</li>\n  <li>Click on the return request</li>\n  <li>Read the buyer's reason</li>\n  <li>Review any photos they provided</li>\n</ol>\n<h3>Your Options</h3>\n<ul>\n  <li><strong>Approve:</strong> Accept the return as requested</li>\n  <li><strong>Partial Refund:</strong> Offer partial refund to keep item</li>\n  <li><strong>Replacement:</strong> Offer to send a replacement</li>\n  <li><strong>Decline:</strong> Deny return with explanation</li>\n</ul>\n<h3>Approval Process</h3>\n<p>If you approve the return:</p>\n<ol>\n  <li>Click \"Approve Return\"</li>\n  <li>Specify who pays return shipping</li>\n  <li>Provide return address</li>\n  <li>Set deadline for return (usually 14 days)</li>\n  <li>Buyer ships item back with tracking</li>\n</ol>\n<h3>Receiving the Return</h3>\n<ol>\n  <li>Inspect returned item carefully</li>\n  <li>Take photos of condition</li>\n  <li>Compare to original condition</li>\n  <li>Check if all parts are included</li>\n</ol>\n<h3>Issuing Refund</h3>\n<p>If item is acceptable:</p>\n<ol>\n  <li>Click \"Issue Refund\"</li>\n  <li>Enter refund amount</li>\n  <li>Deduct return shipping if policy allows</li>\n  <li>Deduct restocking fee if applicable</li>\n  <li>Confirm refund</li>\n  <li>Buyer receives refund within 1-3 business days</li>\n</ol>\n<h3>If Return Item Is Damaged</h3>\n<ul>\n  <li>Document with photos</li>\n  <li>Contact buyer immediately</li>\n  <li>Offer partial refund</li>\n  <li>If dispute can't be resolved, open arbitration</li>\n</ul>\n<h3>Best Practices</h3>\n<ul>\n  <li>Respond to return requests within 24 hours</li>\n  <li>Be professional and courteous</li>\n  <li>Try to resolve without arbitration</li>\n  <li>Learn from returns to improve listings</li>\n  <li>Update descriptions if same issue occurs multiple times</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "what-is-omnibazaar",
+    "title": "What is OmniBazaar?",
+    "description": "Introduction to the OmniBazaar decentralized marketplace platform",
+    "content": "<h2>Welcome to OmniBazaar</h2>\n<p>OmniBazaar is the world's first unified decentralized marketplace that combines shopping, trading, and secure wallet management in one powerful platform.</p>\n<h3>Four Amazing Features in One</h3>\n<ul>\n  <li><strong>Marketplace</strong> - Buy and sell anything peer-to-peer with zero fees and complete privacy</li>\n  <li><strong>DEX Trading</strong> - Trade cryptocurrencies at lightning speed with over 10,000 orders per second</li>\n  <li><strong>Multi-Chain Wallet</strong> - Manage assets across 70+ blockchains from one secure wallet</li>\n  <li><strong>Private Messaging</strong> - Chat directly with buyers and sellers using encrypted communication</li>\n</ul>",
+    "category": "getting-started"
+  },
+  {
+    "id": "how-to-use-privacy-mode-pxom",
+    "title": "How to Use Privacy Mode (pXOM)",
+    "description": "\nComplete Transaction Privacy\nConvert XOM to pXOM for untraceable transactions.\nStep 1: Open Privacy Converter\nIn your wallet, click \"Privacy\" tab, then \"Convert to pXOM\"</",
+    "content": "\n<h2>Complete Transaction Privacy</h2>\n<p>Convert XOM to pXOM for untraceable transactions.</p>\n<h3>Step 1: Open Privacy Converter</h3>\n<p>In your wallet, click \"Privacy\" tab, then \"Convert to pXOM\"</p>\n<h3>Step 2: Enter Amount</h3>\n<p>Enter how much XOM you want to convert to private pXOM. The 0.3% conversion fee is shown.</p>\n<h3>Step 3: Confirm Conversion</h3>\n<p>Review the details and click \"Convert\". Confirm in your wallet.</p>\n<h3>Step 4: Wait for Confirmation</h3>\n<p>Conversion usually takes 10-30 seconds. Your pXOM balance will update.</p>\n<h3>Step 5: Use pXOM</h3>\n<p>Send pXOM just like regular XOM:</p>\n<ul>\n  <li>Click \"Send\"</li>\n  <li>Select pXOM from token dropdown</li>\n  <li>Enter recipient address</li>\n  <li>Enter amount</li>\n  <li>Send</li>\n</ul>\n<h3>Privacy Features</h3>\n<p>pXOM transactions hide:</p>\n<ul>\n  <li>Transaction amounts</li>\n  <li>Sender address</li>\n  <li>Receiver address</li>\n  <li>Transaction history links</li>\n</ul>\n<h3>Converting Back to XOM</h3>\n<p>When you need transparent XOM:</p>\n<ol>\n  <li>Click \"Convert to XOM\"</li>\n  <li>Enter pXOM amount</li>\n  <li>Pay 0.3% fee</li>\n  <li>Receive XOM</li>\n</ol>\n<h3>When to Use pXOM</h3>\n<ul>\n  <li>Large transactions you want private</li>\n  <li>Business payments</li>\n  <li>Salary payments</li>\n  <li>Protecting personal financial privacy</li>\n</ul>\n<h3>When NOT to Use pXOM</h3>\n<ul>\n  <li>Marketplace purchases (XOM required)</li>\n  <li>Staking (requires transparent XOM)</li>\n  <li>DEX trading (most pairs require XOM)</li>\n  <li>Validator operations</li>\n</ul>\n<h3>Legal Notice</h3>\n<p>pXOM is for legitimate privacy protection. Do not use for illegal activities. You're responsible for complying with your local laws.</p>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-track-your-participation-score",
+    "title": "How to Track Your Participation Score",
+    "description": "\nMonitor and Improve Your Score\nYour participation score determines rewards and privileges.\nStep 1: View Your Score\nGo to Profile > Participation Score\nScore Breakd",
+    "content": "\n<h2>Monitor and Improve Your Score</h2>\n<p>Your participation score determines rewards and privileges.</p>\n<h3>Step 1: View Your Score</h3>\n<p>Go to Profile > Participation Score</p>\n<h3>Score Breakdown</h3>\n<p>See points from each category:</p>\n<ul>\n  <li><strong>KYC Level (0-20):</strong> Current tier and next steps</li>\n  <li><strong>Reputation (-10 to +10):</strong> Your star rating</li>\n  <li><strong>Staking (0-24):</strong> Based on amount and duration</li>\n  <li><strong>Referrals (0-10):</strong> Users you've referred</li>\n  <li><strong>Publishing (0-4):</strong> Marketplace listings</li>\n  <li><strong>Forum (0-5):</strong> Helpful contributions</li>\n  <li><strong>Activity (0-5):</strong> Buy/sell transactions</li>\n  <li><strong>Policing (0-5):</strong> Accurate reports</li>\n  <li><strong>Reliability (0-5):</strong> Performance metrics</li>\n</ul>\n<h3>Total Score</h3>\n<p>Maximum possible: 100 points</p>\n<h3>Improving Your Score</h3>\n\n<p><strong>Quick Wins:</strong></p>\n<ul>\n  <li>Complete KYC Tier 2 (+10 points)</li>\n  <li>Refer 10 friends (+10 points)</li>\n  <li>Stake XOM (+3-24 points)</li>\n</ul>\n\n<p><strong>Long-term Growth:</strong></p>\n<ul>\n  <li>Build marketplace reputation</li>\n  <li>Be active in forums</li>\n  <li>Help moderate content</li>\n  <li>Maintain reliability</li>\n</ul>\n\n<h3>Score Benefits</h3>\n<ul>\n  <li>50+: Qualify to become validator</li>\n  <li>75+: Priority support</li>\n  <li>90+: Governance proposal discounts</li>\n  <li>Higher scores = better staking rates</li>\n</ul>\n\n<h3>Score Decay</h3>\n<p>Some components decay if inactive:</p>\n<ul>\n  <li>Forum activity decays over 3 months</li>\n  <li>Marketplace activity decays over 6 months</li>\n  <li>Policing decays over 3 months</li>\n  <li>Stay active to maintain score!</li>\n</ul>\n\n<h3>Historical Tracking</h3>\n<p>View score history chart to see progress over time and identify areas for improvement.</p>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "block-explorer",
+    "title": "Block Explorer",
+    "description": "\nExplore the Blockchain\nOur block explorer lets you view any transaction, address, or block on the OmniBazaar blockchain.\nSearch By\n\n  Transaction hash\n  Bloc",
+    "content": "\n<h2>Explore the Blockchain</h2>\n<p>Our block explorer lets you view any transaction, address, or block on the OmniBazaar blockchain.</p>\n<h3>Search By</h3>\n<ul>\n  <li>Transaction hash</li>\n  <li>Block number</li>\n  <li>Wallet address</li>\n  <li>Contract address</li>\n</ul>\n<h3>Transaction Details</h3>\n<p>See sender, receiver, amount, fees, timestamp, and confirmations for any transaction.</p>\n<h3>Address Analytics</h3>\n<p>View complete transaction history, current balance, and token holdings for any address.</p>\n",
+    "category": "platform"
+  },
+  {
+    "id": "mev-protection",
+    "title": "MEV Protection",
+    "description": "\nProtected from Front-Running\nMEV (Maximal Extractable Value) is when bots front-run your trades to profit at your expense. OmniBazaar protects you.\nHow We Protect You\n\n  ",
+    "content": "\n<h2>Protected from Front-Running</h2>\n<p>MEV (Maximal Extractable Value) is when bots front-run your trades to profit at your expense. OmniBazaar protects you.</p>\n<h3>How We Protect You</h3>\n<ul>\n  <li>Encrypted transaction mempool</li>\n  <li>Fair ordering of transactions</li>\n  <li>No preferential treatment</li>\n  <li>Slippage protection</li>\n</ul>\n<h3>What This Means</h3>\n<p>Your trades execute at the price you expect, without bots stealing your profits.</p>\n",
+    "category": "dex"
+  },
+  {
+    "id": "listing-analytics",
+    "title": "Listing Analytics",
+    "description": "\nUnderstand Your Performance\nTrack views, favorites, and conversions for each listing.\nKey Metrics\n\n  Total views\n  Unique visitors\n  Favorites/Saves",
+    "content": "\n<h2>Understand Your Performance</h2>\n<p>Track views, favorites, and conversions for each listing.</p>\n<h3>Key Metrics</h3>\n<ul>\n  <li>Total views</li>\n  <li>Unique visitors</li>\n  <li>Favorites/Saves</li>\n  <li>Conversion rate</li>\n  <li>Average time on listing</li>\n  <li>Search keywords that found your item</li>\n</ul>\n<h3>Optimization Insights</h3>\n<p>See which photos get clicked most, which descriptions perform best, and optimize accordingly.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "username-registry-ens-style",
+    "title": "Username Registry (ENS-Style)",
+    "description": "\nHuman-Readable Addresses\nRegister a username like \"alice.omni\" instead of sharing long wallet addresses.\nHow It Works\nSimilar to ENS on Ethereum, our username registry map",
+    "content": "\n<h2>Human-Readable Addresses</h2>\n<p>Register a username like \"alice.omni\" instead of sharing long wallet addresses.</p>\n<h3>How It Works</h3>\n<p>Similar to ENS on Ethereum, our username registry maps easy-to-remember names to your wallet address.</p>\n<h3>Registration</h3>\n<p>Users with higher participation scores get priority access to register usernames. First come, first served!</p>\n<h3>Uses</h3>\n<ul>\n  <li>Receive payments at yourname.omni</li>\n  <li>Display name on marketplace listings</li>\n  <li>Professional identity in forums</li>\n  <li>Easy-to-share payment addresses</li>\n</ul>\n",
+    "category": "platform"
+  },
+  {
+    "id": "ipfs-distributed-storage",
+    "title": "IPFS Distributed Storage",
+    "description": "\nDistributed Storage with IPFS\nOmniBazaar uses IPFS (InterPlanetary File System) to store your marketplace listings, keeping data distributed and censorship-resistant.\nWhat is IPFS",
+    "content": "\n<h2>Distributed Storage with IPFS</h2>\n<p>OmniBazaar uses IPFS (InterPlanetary File System) to store your marketplace listings, keeping data distributed and censorship-resistant.</p>\n<h3>What is IPFS?</h3>\n<p>IPFS is a peer-to-peer network for storing and sharing data. Unlike centralized servers, your content is distributed across many nodes worldwide.</p>\n<h3>Benefits for Users</h3>\n<ul>\n  <li>Your listings load fast from nearby nodes</li>\n  <li>No single point of failure</li>\n  <li>Censorship-resistant content</li>\n  <li>Lower costs than centralized hosting</li>\n</ul>\n<h3>How It Works</h3>\n<p>When you create a listing, your photos and description are uploaded to IPFS. Multiple validators store copies, ensuring your content stays available even if some nodes go offline.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "liquidity-pools",
+    "title": "Liquidity Pools",
+    "description": "\nEarn Fees as a Liquidity Provider\nProvide liquidity to trading pairs and earn a share of trading fees.\nHow It Works\nDeposit equal values of two tokens into a pool. Traders",
+    "content": "\n<h2>Earn Fees as a Liquidity Provider</h2>\n<p>Provide liquidity to trading pairs and earn a share of trading fees.</p>\n<h3>How It Works</h3>\n<p>Deposit equal values of two tokens into a pool. Traders use your liquidity, and you earn fees on every trade.</p>\n<h3>Staked XOM Provides Liquidity</h3>\n<p>When you stake XOM, it's automatically used for DEX liquidity. You earn both staking rewards AND trading fees!</p>\n<h3>Impermanent Loss</h3>\n<p>Be aware that if prices change significantly, you might lose some value compared to just holding. This is called impermanent loss.</p>\n",
+    "category": "dex"
+  },
+  {
+    "id": "how-to-use-escrow",
+    "title": "How to Use Escrow",
+    "description": "\nProtect Your Purchase with Escrow\nFor high-value purchases, escrow ensures you're protected until the item arrives.\nStep 1: Enable Escrow at Checkout\nWhen buying an item, ",
+    "content": "\n<h2>Protect Your Purchase with Escrow</h2>\n<p>For high-value purchases, escrow ensures you're protected until the item arrives.</p>\n<h3>Step 1: Enable Escrow at Checkout</h3>\n<p>When buying an item, check the \"Use Escrow Protection\" box before completing payment.</p>\n<h3>Step 2: Funds Are Held</h3>\n<p>Your payment goes into a smart contract escrow instead of directly to the seller. The 0.25% escrow fee is added.</p>\n<h3>Step 3: Seller Ships Item</h3>\n<p>The seller sees that payment is secured in escrow and ships your item with tracking.</p>\n<h3>Step 4: Track Delivery</h3>\n<p>Monitor the tracking number. You'll receive notifications when the item is in transit and delivered.</p>\n<h3>Step 5: Inspect the Item</h3>\n<p>Once delivered, carefully inspect the item to ensure it matches the description.</p>\n<h3>Step 6: Release Payment</h3>\n<p>If everything is good, click \"Release Escrow\" in your order details. Payment goes to seller immediately.</p>\n<h3>Step 7: If There's a Problem</h3>\n<p>If the item is wrong or damaged:</p>\n<ol>\n  <li>Take photos as evidence</li>\n  <li>Click \"Open Dispute\"</li>\n  <li>Explain the issue</li>\n  <li>Upload photos</li>\n  <li>An arbitrator will review and decide</li>\n</ol>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "search-and-discovery",
+    "title": "Search and Discovery",
+    "description": "\nFind Exactly What You Need\nOur advanced search engine makes finding products fast and easy.\nSearch Features\n\n  Full-text search across titles and descriptions\n  ",
+    "content": "\n<h2>Find Exactly What You Need</h2>\n<p>Our advanced search engine makes finding products fast and easy.</p>\n<h3>Search Features</h3>\n<ul>\n  <li>Full-text search across titles and descriptions</li>\n  <li>Category browsing</li>\n  <li>Price range filters</li>\n  <li>Location-based results</li>\n  <li>Seller rating filters</li>\n  <li>Condition filters (new, used, refurbished)</li>\n</ul>\n<h3>Sorting Options</h3>\n<p>Sort by relevance, price (low to high), price (high to low), newest first, or closest location.</p>\n<h3>Saved Searches</h3>\n<p>Save your searches and get notified when new matching items are listed.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "how-to-become-a-validator",
+    "title": "How to Become a Validator",
+    "description": "\nRun Your Own Validator Node\nBecoming a validator lets you earn block rewards while helping secure the network.\nPrerequisites\n\n  Minimum 1,000,000 XOM to stake\n  ",
+    "content": "\n<h2>Run Your Own Validator Node</h2>\n<p>Becoming a validator lets you earn block rewards while helping secure the network.</p>\n<h3>Prerequisites</h3>\n<ul>\n  <li>Minimum 1,000,000 XOM to stake</li>\n  <li>Participation score of 50+</li>\n  <li>Level 4 KYC verification</li>\n  <li>Dedicated server (not home computer)</li>\n  <li>Technical knowledge of Linux/networking</li>\n</ul>\n<h3>Step 1: Server Setup</h3>\n<p>Rent a VPS or dedicated server with:</p>\n<ul>\n  <li>8+ CPU cores</li>\n  <li>32+ GB RAM</li>\n  <li>1TB+ SSD storage</li>\n  <li>100+ Mbps bandwidth</li>\n  <li>Static IP address</li>\n</ul>\n<h3>Step 2: Install Software</h3>\n<p>Follow the validator setup guide to install:</p>\n<ul>\n  <li>avalanchego</li>\n  <li>OmniBazaar validator software</li>\n  <li>YugabyteDB</li>\n  <li>IPFS</li>\n</ul>\n<h3>Step 3: Stake Your XOM</h3>\n<p>In your wallet, go to Staking > Become Validator and stake at least 1M XOM.</p>\n<h3>Step 4: Register on Blockchain</h3>\n<p>Run the validator registration command with your server details.</p>\n<h3>Step 5: Sync and Validate</h3>\n<p>Your node will sync the blockchain (may take hours). Once synced, you'll start validating!</p>\n<h3>Step 6: Monitor Performance</h3>\n<p>Check your validator dashboard daily to ensure everything runs smoothly.</p>\n<h3>Earnings</h3>\n<p>You'll earn from block rewards, transaction fees, and service fees. Typical validator earns 15-25% APR.</p>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-bridge-tokens-between-chains",
+    "title": "How to Bridge Tokens Between Chains",
+    "description": "\nMove Assets Between Blockchains\nUse bridges to transfer tokens from one blockchain to another.\nStep 1: Access Bridge\nIn your wallet, click \"Bridge\" tab\nStep 2: Sel",
+    "content": "\n<h2>Move Assets Between Blockchains</h2>\n<p>Use bridges to transfer tokens from one blockchain to another.</p>\n<h3>Step 1: Access Bridge</h3>\n<p>In your wallet, click \"Bridge\" tab</p>\n<h3>Step 2: Select Route</h3>\n<p>Choose:</p>\n<ul>\n  <li><strong>Source Chain:</strong> Where your tokens are now</li>\n  <li><strong>Destination Chain:</strong> Where you want them</li>\n  <li><strong>Token:</strong> What you're bridging</li>\n</ul>\n<h3>Step 3: Check Route Details</h3>\n<p>Review:</p>\n<ul>\n  <li>Bridge fee (usually 0.1-0.3%)</li>\n  <li>Estimated time (5-20 minutes typically)</li>\n  <li>Minimum/maximum amounts</li>\n  <li>Gas fees on both chains</li>\n</ul>\n<h3>Step 4: Enter Amount</h3>\n<p>Enter how much you want to bridge. Calculator shows you'll receive on destination chain (after fees).</p>\n<h3>Step 5: Approve Token</h3>\n<p>First transaction: Approve the bridge contract to spend your tokens. Confirm in wallet.</p>\n<h3>Step 6: Start Bridge</h3>\n<p>Second transaction: Actually bridge the tokens. Confirm in wallet.</p>\n<h3>Step 7: Wait for Confirmations</h3>\n<p>Your tokens are:</p>\n<ol>\n  <li>Locked on source chain (wait for confirmations)</li>\n  <li>Verified by bridge validators</li>\n  <li>Minted on destination chain</li>\n  <li>Sent to your address</li>\n</ol>\n<h3>Step 8: Verify Receipt</h3>\n<p>Check your wallet on destination chain. Tokens should arrive in 5-20 minutes.</p>\n<h3>Common Routes</h3>\n<ul>\n  <li>Ethereum → Polygon (cheap, fast)</li>\n  <li>Ethereum → Arbitrum (very cheap)</li>\n  <li>BSC → Polygon</li>\n  <li>Avalanche → Ethereum</li>\n</ul>\n<h3>Troubleshooting</h3>\n<p>If tokens don't arrive:</p>\n<ol>\n  <li>Check bridge status page</li>\n  <li>Verify transaction on source chain explorer</li>\n  <li>Wait full estimated time</li>\n  <li>Add destination token to wallet (might not show automatically)</li>\n  <li>Contact bridge support if still missing after 1 hour</li>\n</ol>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-ship-items-safely",
+    "title": "How to Ship Items Safely",
+    "description": "\nShip Like a Pro\nProper shipping protects your items and leads to better ratings.\nStep 1: Choose Packaging\n\n  Box should be slightly larger than item\n  Use ne",
+    "content": "\n<h2>Ship Like a Pro</h2>\n<p>Proper shipping protects your items and leads to better ratings.</p>\n<h3>Step 1: Choose Packaging</h3>\n<ul>\n  <li>Box should be slightly larger than item</li>\n  <li>Use new or like-new boxes</li>\n  <li>Avoid reusing damaged boxes</li>\n  <li>Consider branded packaging for professional look</li>\n</ul>\n<h3>Step 2: Protect the Item</h3>\n<ul>\n  <li>Wrap item in bubble wrap or foam</li>\n  <li>Fill empty space with packing material</li>\n  <li>Make sure item can't move inside box</li>\n  <li>Use \"Fragile\" stickers if applicable</li>\n</ul>\n<h3>Step 3: Seal Properly</h3>\n<ul>\n  <li>Use quality packing tape</li>\n  <li>Seal all seams and edges</li>\n  <li>Reinforce corners</li>\n  <li>Cover any old labels/barcodes</li>\n</ul>\n<h3>Step 4: Print Label</h3>\n<p>In your OmniBazaar seller dashboard:</p>\n<ol>\n  <li>Go to the order</li>\n  <li>Click \"Print Shipping Label\"</li>\n  <li>Choose carrier and service level</li>\n  <li>Print label</li>\n</ol>\n<h3>Step 5: Attach Label</h3>\n<p>Place label on largest flat surface. Make sure barcode is clearly visible and not wrinkled.</p>\n<h3>Step 6: Get Receipt</h3>\n<p>Drop off at carrier and get receipt with tracking number. This is your proof of shipment.</p>\n<h3>Step 7: Update Buyer</h3>\n<p>Mark the order as \"Shipped\" and tracking is automatically sent to buyer.</p>\n<h3>Pro Tips</h3>\n<ul>\n  <li>Ship within 24 hours for best ratings</li>\n  <li>Always include tracking</li>\n  <li>Add insurance for valuable items</li>\n  <li>Include packing slip inside box</li>\n  <li>Consider including thank-you note</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "gas-free-transactions",
+    "title": "Gas-Free Transactions",
+    "description": "\nSend XOM Without Gas Fees\nUnlike Ethereum where you pay gas fees for every transaction, sending XOM on OmniBazaar is completely free.\nHow Is This Possible?\nValidators abso",
+    "content": "\n<h2>Send XOM Without Gas Fees</h2>\n<p>Unlike Ethereum where you pay gas fees for every transaction, sending XOM on OmniBazaar is completely free.</p>\n<h3>How Is This Possible?</h3>\n<p>Validators absorb the cost of processing transactions. They earn rewards from block production and other fees, so they don't need to charge you gas.</p>\n<h3>What About Other Tokens?</h3>\n<p>When trading other cryptocurrencies on our DEX, small trading fees apply but are much lower than traditional exchanges.</p>\n",
+    "category": "wallet"
+  },
+  {
+    "id": "transaction-settlement",
+    "title": "Transaction Settlement",
+    "description": "\nHow Transactions Settle\nOmniBazaar settles transactions on the Avalanche blockchain with 1-2 second finality, making trades nearly instant.\nSettlement Process\n\n  Your",
+    "content": "\n<h2>How Transactions Settle</h2>\n<p>OmniBazaar settles transactions on the Avalanche blockchain with 1-2 second finality, making trades nearly instant.</p>\n<h3>Settlement Process</h3>\n<ol>\n  <li>Your trade is matched off-chain for speed</li>\n  <li>Settlement batch is created every 2 seconds</li>\n  <li>Batch is submitted to blockchain</li>\n  <li>Consensus is reached via Snowman protocol</li>\n  <li>Your funds are transferred</li>\n</ol>\n<h3>Why This Matters</h3>\n<p>Fast settlement means you can trade confidently, knowing your transactions will complete quickly and securely.</p>\n",
+    "category": "dex"
+  },
+  {
+    "id": "marketplace-fees-explained",
+    "title": "Marketplace Fees Explained",
+    "description": "Understanding the 1% marketplace fee and how it is distributed",
+    "content": "<h2>Low 1% Seller Fee</h2>\n<p>OmniBazaar charges just 1% when you sell an item - far less than eBay (13%), Amazon (15%), or Etsy (6.5%).</p>\n<h3>Fee Breakdown</h3>\n<ul>\n  <li>0.50% Transaction Fee (70% ODDAO, 20% Validator, 10% Staking Pool)</li>\n  <li>0.25% Referral Fee (rewards the person who referred you)</li>\n  <li>0.25% Listing Fee (pays the listing node storing your listing)</li>\n</ul>",
+    "category": "marketplace"
+  },
+  {
+    "id": "biometric-authentication",
+    "title": "Biometric Authentication",
+    "description": "\nLogin with Fingerprint or Face ID\nUse your device's biometric sensors for quick, secure access to your wallet.\nSupported Methods\n\n  Fingerprint (Touch ID, Windows Hel",
+    "content": "\n<h2>Login with Fingerprint or Face ID</h2>\n<p>Use your device's biometric sensors for quick, secure access to your wallet.</p>\n<h3>Supported Methods</h3>\n<ul>\n  <li>Fingerprint (Touch ID, Windows Hello)</li>\n  <li>Face recognition (Face ID)</li>\n  <li>Iris scanning (supported devices)</li>\n</ul>\n<h3>How It's Secure</h3>\n<p>Your biometric data never leaves your device. It's used only to unlock your locally-encrypted wallet.</p>\n<h3>Fallback Options</h3>\n<p>Always have your password available as a backup in case biometrics fail.</p>\n",
+    "category": "wallet"
+  },
+  {
+    "id": "reputation-system",
+    "title": "Reputation System",
+    "description": "\nBuild Your Seller Reputation\nYour reputation score is your most valuable asset on OmniBazaar. Build it carefully through honest trading.\nHow Ratings Work\nAfter each transa",
+    "content": "\n<h2>Build Your Seller Reputation</h2>\n<p>Your reputation score is your most valuable asset on OmniBazaar. Build it carefully through honest trading.</p>\n<h3>How Ratings Work</h3>\n<p>After each transaction, buyers rate sellers on a 1-5 star scale. Your average rating is displayed publicly.</p>\n<h3>Rating Categories</h3>\n<ul>\n  <li>Item as described</li>\n  <li>Communication quality</li>\n  <li>Shipping speed</li>\n  <li>Packaging quality</li>\n  <li>Overall experience</li>\n</ul>\n<h3>Impact on Participation</h3>\n<p>Your marketplace reputation affects your participation score, which influences rewards and privileges.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "understanding-the-marketplace",
+    "title": "Understanding the Marketplace",
+    "description": "Learn how to buy and sell on the OmniBazaar marketplace",
+    "content": "<h2>The OmniBazaar Marketplace</h2>\n<p>Buy and sell products directly with other users, without any middleman taking a cut.</p>\n<h3>Zero On-Chain Storage</h3>\n<p>Your product listings are stored on IPFS, meaning no gas fees for listing items.</p>",
+    "category": "marketplace"
+  },
+  {
+    "id": "security-best-practices",
+    "title": "Security Best Practices",
+    "description": "\nStay Safe on OmniBazaar\nFollow these guidelines to protect yourself and your funds.\nWallet Security\n\n  Never share your recovery phrase\n  Use strong, unique ",
+    "content": "\n<h2>Stay Safe on OmniBazaar</h2>\n<p>Follow these guidelines to protect yourself and your funds.</p>\n<h3>Wallet Security</h3>\n<ul>\n  <li>Never share your recovery phrase</li>\n  <li>Use strong, unique passwords</li>\n  <li>Enable 2FA and biometric security</li>\n  <li>Verify all transaction details</li>\n  <li>Keep software updated</li>\n</ul>\n<h3>Trading Safety</h3>\n<ul>\n  <li>Check seller ratings before buying</li>\n  <li>Use escrow for high-value items</li>\n  <li>Watch for deals too good to be true</li>\n  <li>Communicate only through OmniBazaar</li>\n  <li>Report suspicious activity</li>\n</ul>\n<h3>Recognizing Scams</h3>\n<p>Be wary of fake support contacts, phishing websites, and sellers asking for payment outside the platform.</p>\n",
+    "category": "getting-started"
+  },
+  {
+    "id": "how-to-build-seller-reputation",
+    "title": "How to Build Seller Reputation",
+    "description": "\nGrow Your Marketplace Business\nA strong reputation leads to more sales and higher prices.\nStart Strong\n\n  Begin with lower-priced items to get initial ratings\n  ",
+    "content": "\n<h2>Grow Your Marketplace Business</h2>\n<p>A strong reputation leads to more sales and higher prices.</p>\n<h3>Start Strong</h3>\n<ul>\n  <li>Begin with lower-priced items to get initial ratings</li>\n  <li>Price competitively to attract early buyers</li>\n  <li>Provide exceptional service for first 10 sales</li>\n  <li>Respond to messages within 1 hour if possible</li>\n</ul>\n<h3>Product Quality</h3>\n<ul>\n  <li>Only sell items in the condition you describe</li>\n  <li>Be extremely accurate in descriptions</li>\n  <li>Use high-quality photos</li>\n  <li>Include all relevant details</li>\n  <li>Disclose any defects clearly</li>\n</ul>\n<h3>Communication Excellence</h3>\n<ul>\n  <li>Answer questions quickly (within 24 hours)</li>\n  <li>Be friendly and professional</li>\n  <li>Provide additional photos if requested</li>\n  <li>Set clear expectations about shipping</li>\n  <li>Follow up after delivery</li>\n</ul>\n<h3>Shipping Excellence</h3>\n<ul>\n  <li>Ship within 24 hours of payment</li>\n  <li>Use quality packaging</li>\n  <li>Always include tracking</li>\n  <li>Update buyer with tracking info</li>\n  <li>Consider free shipping to stand out</li>\n</ul>\n<h3>Going Above and Beyond</h3>\n<ul>\n  <li>Include thank-you note</li>\n  <li>Add small free gift with purchase</li>\n  <li>Include extra batteries or accessories</li>\n  <li>Pack items with care and attention</li>\n  <li>Follow up to ensure satisfaction</li>\n</ul>\n<h3>Handling Problems</h3>\n<ul>\n  <li>If issue arises, address it immediately</li>\n  <li>Offer solutions before buyer complains</li>\n  <li>Be generous with refunds when appropriate</li>\n  <li>Turn negative into positive with excellent service</li>\n</ul>\n<h3>Encouraging Reviews</h3>\n<ul>\n  <li>After delivery, politely ask for review</li>\n  <li>Make it easy (include direct link)</li>\n  <li>Don't offer incentives for positive reviews</li>\n  <li>Thank buyers who leave reviews</li>\n</ul>\n<h3>Long-Term Growth</h3>\n<ul>\n  <li>Consistently list new items</li>\n  <li>Specialize in a niche</li>\n  <li>Build brand recognition</li>\n  <li>Offer bundled deals</li>\n  <li>Create loyal repeat customers</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-vote-in-governance",
+    "title": "How to Vote in Governance",
+    "description": "\nParticipate in Platform Governance\nUse your XOM to vote on proposals that shape OmniBazaar's future.\nStep 1: Access Governance\nClick \"Governance\" in main menu\nStep",
+    "content": "\n<h2>Participate in Platform Governance</h2>\n<p>Use your XOM to vote on proposals that shape OmniBazaar's future.</p>\n<h3>Step 1: Access Governance</h3>\n<p>Click \"Governance\" in main menu</p>\n<h3>Step 2: Browse Proposals</h3>\n<p>See all active proposals:</p>\n<ul>\n  <li>Title and summary</li>\n  <li>Current vote tallies</li>\n  <li>Time remaining</li>\n  <li>Your voting power</li>\n</ul>\n<h3>Step 3: Read Full Proposal</h3>\n<p>Click any proposal to see:</p>\n<ul>\n  <li>Detailed description</li>\n  <li>Rationale</li>\n  <li>Expected impact</li>\n  <li>Implementation timeline</li>\n  <li>Discussion thread</li>\n</ul>\n<h3>Step 4: Join Discussion</h3>\n<p>Before voting, participate in discussion:</p>\n<ul>\n  <li>Read other perspectives</li>\n  <li>Ask questions</li>\n  <li>Share your views</li>\n  <li>Consider all angles</li>\n</ul>\n<h3>Step 5: Cast Your Vote</h3>\n<ol>\n  <li>Click \"Vote\" button</li>\n  <li>Choose \"For\", \"Against\", or \"Abstain\"</li>\n  <li>Your voting power is shown (1 XOM = 1 vote, staked XOM = 2 votes)</li>\n  <li>Optionally add comment explaining your vote</li>\n  <li>Click \"Submit Vote\"</li>\n  <li>Confirm transaction in wallet</li>\n</ol>\n<h3>Step 6: Track Proposal</h3>\n<p>After voting:</p>\n<ul>\n  <li>Watch vote progress</li>\n  <li>See updated tallies in real-time</li>\n  <li>Get notified when voting ends</li>\n  <li>See final results</li>\n</ul>\n<h3>Proposal Types</h3>\n<ul>\n  <li><strong>Standard:</strong> Requires 50% approval</li>\n  <li><strong>Major Changes:</strong> Requires 66% supermajority</li>\n  <li><strong>Emergency:</strong> Shorter voting period</li>\n  <li><strong>Treasury:</strong> Fund allocation proposals</li>\n</ul>\n<h3>Quorum Requirements</h3>\n<p>For vote to be valid:</p>\n<ul>\n  <li>At least 10% of total XOM must participate</li>\n  <li>If quorum not met, proposal fails regardless of vote split</li>\n</ul>\n<h3>Creating Proposals</h3>\n<p>To submit your own proposal:</p>\n<ol>\n  <li>Must hold minimum 100,000 XOM</li>\n  <li>Draft proposal in forum first</li>\n  <li>Get community feedback</li>\n  <li>Submit formal proposal</li>\n  <li>Pay proposal fee (refunded if passes)</li>\n</ol>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "bulk-listing-tools",
+    "title": "Bulk Listing Tools",
+    "description": "\nList Multiple Items Quickly\nSelling many items? Use our bulk tools to save time.\nCSV Import\nCreate a spreadsheet with all your products and import them in one click.\n<",
+    "content": "\n<h2>List Multiple Items Quickly</h2>\n<p>Selling many items? Use our bulk tools to save time.</p>\n<h3>CSV Import</h3>\n<p>Create a spreadsheet with all your products and import them in one click.</p>\n<h3>Template System</h3>\n<p>Create listing templates for similar items. Just fill in the specifics for each one.</p>\n<h3>Photo Batch Upload</h3>\n<p>Upload all your photos at once, then assign them to listings.</p>\n<h3>Scheduled Listings</h3>\n<p>Set listings to go live at specific times to maximize visibility.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "transaction-history-and-export",
+    "title": "Transaction History and Export",
+    "description": "\nTrack All Your Transactions\nView complete transaction history across all blockchains, and export for tax reporting.\nWhat's Tracked\n\n  All sends and receives\n  <l",
+    "content": "\n<h2>Track All Your Transactions</h2>\n<p>View complete transaction history across all blockchains, and export for tax reporting.</p>\n<h3>What's Tracked</h3>\n<ul>\n  <li>All sends and receives</li>\n  <li>DEX trades</li>\n  <li>Marketplace purchases</li>\n  <li>Staking rewards</li>\n  <li>Gas fees paid</li>\n</ul>\n<h3>Export Formats</h3>\n<p>Export your history as CSV, Excel, or PDF for easy tax reporting and accounting.</p>\n<h3>Tax Calculation</h3>\n<p>Our exports include cost basis calculations to help with capital gains reporting.</p>\n",
+    "category": "wallet"
+  },
+  {
+    "id": "featured-listings",
+    "title": "Featured Listings",
+    "description": "\nPromote Your Listings\nPay a priority fee (0-3%) to feature your listing at the top of search results.\nHow It Works\nFeatured listings appear above regular results. The more",
+    "content": "\n<h2>Promote Your Listings</h2>\n<p>Pay a priority fee (0-3%) to feature your listing at the top of search results.</p>\n<h3>How It Works</h3>\n<p>Featured listings appear above regular results. The more you pay, the higher you rank.</p>\n<h3>When to Use</h3>\n<ul>\n  <li>New product launches</li>\n  <li>Clearing inventory</li>\n  <li>Competitive categories</li>\n  <li>High-value items</li>\n</ul>\n<h3>ROI Tracking</h3>\n<p>See how many extra views and sales your promoted listings generate.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "how-to-stay-safe-online",
+    "title": "How to Stay Safe Online",
+    "description": "\nProtect Yourself from Scams\nLearn to recognize and avoid common crypto and marketplace scams.\nCommon Scams to Watch For\n\n1. Phishing Websites\n\n  <",
+    "content": "\n<h2>Protect Yourself from Scams</h2>\n<p>Learn to recognize and avoid common crypto and marketplace scams.</p>\n<h3>Common Scams to Watch For</h3>\n\n<p><strong>1. Phishing Websites</strong></p>\n<ul>\n  <li>Fake websites that look like OmniBazaar</li>\n  <li>Steal your password or recovery phrase</li>\n  <li><strong>Prevention:</strong> Always check URL is correct</li>\n</ul>\n\n<p><strong>2. Fake Support</strong></p>\n<ul>\n  <li>Scammers pretending to be OmniBazaar support</li>\n  <li>Ask for your recovery phrase or password</li>\n  <li><strong>Prevention:</strong> Real support NEVER asks for these</li>\n</ul>\n\n<p><strong>3. Too Good to Be True</strong></p>\n<ul>\n  <li>Items priced far below market value</li>\n  <li>Seller asks for payment outside platform</li>\n  <li><strong>Prevention:</strong> Always use OmniBazaar payment system</li>\n</ul>\n\n<p><strong>4. Advance Fee Fraud</strong></p>\n<ul>\n  <li>\"Pay small fee to receive large reward\"</li>\n  <li>Fake lottery winnings, unclaimed funds, etc.</li>\n  <li><strong>Prevention:</strong> No legitimate service asks for fees upfront</li>\n</ul>\n\n<p><strong>5. Impersonation</strong></p>\n<ul>\n  <li>Scammers using photos/descriptions from real listings</li>\n  <li>Pretending to be known sellers</li>\n  <li><strong>Prevention:</strong> Check seller ratings and history</li>\n</ul>\n\n<h3>Red Flags</h3>\n<ul>\n  <li>Urgency (\"act now or miss out!\")</li>\n  <li>Requests to move conversation off-platform</li>\n  <li>Unwilling to use escrow</li>\n  <li>Poor grammar and spelling</li>\n  <li>New account with no history</li>\n  <li>Requests for gift cards or wire transfers</li>\n</ul>\n\n<h3>Safe Trading Practices</h3>\n<ul>\n  <li>Use escrow for high-value items</li>\n  <li>Keep all communication on OmniBazaar</li>\n  <li>Verify seller's rating and history</li>\n  <li>Ask questions before buying</li>\n  <li>Get additional photos if needed</li>\n  <li>Use tracking for all shipments</li>\n  <li>Document everything</li>\n</ul>\n\n<h3>Wallet Security</h3>\n<ul>\n  <li>Never share recovery phrase with anyone</li>\n  <li>Use hardware wallet for large amounts</li>\n  <li>Enable all security features (2FA, biometric)</li>\n  <li>Don't click suspicious links</li>\n  <li>Verify transaction details before confirming</li>\n</ul>\n\n<h3>If You Suspect a Scam</h3>\n<ol>\n  <li>Don't proceed with transaction</li>\n  <li>Take screenshots</li>\n  <li>Report to OmniBazaar</li>\n  <li>Warn other users if appropriate</li>\n  <li>Contact authorities if money was lost</li>\n</ol>\n\n<h3>Recovery</h3>\n<p>If you fall victim to a scam:</p>\n<ul>\n  <li>Report immediately</li>\n  <li>Change passwords</li>\n  <li>Open dispute if within platform</li>\n  <li>File police report for large losses</li>\n  <li>Learn from experience</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "perpetual-futures-trading",
+    "title": "Perpetual Futures Trading",
+    "description": "\nTrade with Up to 100x Leverage\nPerpetual futures let you amplify your trading position using leverage, but they come with significant risk.\nWhat Are Perpetuals?\nFutures co",
+    "content": "\n<h2>Trade with Up to 100x Leverage</h2>\n<p>Perpetual futures let you amplify your trading position using leverage, but they come with significant risk.</p>\n<h3>What Are Perpetuals?</h3>\n<p>Futures contracts that never expire. You can hold positions indefinitely while paying/receiving funding rates.</p>\n<h3>Leverage Levels</h3>\n<p>Choose from 1x to 100x leverage. Higher leverage = higher potential profits AND losses.</p>\n<h3>Funding Rates</h3>\n<p>Every 8 hours, longs and shorts exchange funding payments based on market conditions.</p>\n<h3>Liquidation Risk</h3>\n<p>If the market moves against you, your position can be liquidated. Only use leverage you understand!</p>\n",
+    "category": "dex"
+  },
+  {
+    "id": "how-to-export-for-tax-reporting",
+    "title": "How to Export for Tax Reporting",
+    "description": "\nPrepare for Tax Season\nExport all your transaction data for easy tax reporting.\nStep 1: Access Tax Center\nGo to Wallet > Tax Reporting\nStep 2: Select Tax Year",
+    "content": "\n<h2>Prepare for Tax Season</h2>\n<p>Export all your transaction data for easy tax reporting.</p>\n<h3>Step 1: Access Tax Center</h3>\n<p>Go to Wallet > Tax Reporting</p>\n<h3>Step 2: Select Tax Year</h3>\n<p>Choose the year you need to report (calendar year or custom date range)</p>\n<h3>Step 3: Choose Report Type</h3>\n<ul>\n  <li><strong>Simple Report:</strong> Basic transaction list</li>\n  <li><strong>Detailed Report:</strong> Includes cost basis calculations</li>\n  <li><strong>Capital Gains:</strong> Shows gains/losses per transaction</li>\n  <li><strong>Income Report:</strong> Staking rewards, airdrops, etc.</li>\n</ul>\n<h3>Step 4: Select Chains</h3>\n<p>Include transactions from:</p>\n<ul>\n  <li>All chains</li>\n  <li>Specific chains only</li>\n  <li>OmniCoin only</li>\n</ul>\n<h3>Step 5: Configure Options</h3>\n<ul>\n  <li><strong>Cost Basis Method:</strong> FIFO, LIFO, or Highest Cost</li>\n  <li><strong>Currency:</strong> USD, EUR, or other fiat</li>\n  <li><strong>Include:</strong> Fees, internal transfers, etc.</li>\n</ul>\n<h3>Step 6: Generate Report</h3>\n<p>Click \"Generate Report\" and wait for processing (may take 1-2 minutes)</p>\n<h3>Step 7: Review Report</h3>\n<p>Check the preview to ensure everything looks correct</p>\n<h3>Step 8: Download</h3>\n<p>Download in your preferred format:</p>\n<ul>\n  <li><strong>CSV:</strong> For Excel or other tools</li>\n  <li><strong>PDF:</strong> For printing and records</li>\n  <li><strong>TurboTax:</strong> Direct import format</li>\n  <li><strong>CryptoTrader.Tax:</strong> Direct import format</li>\n</ul>\n<h3>What's Included</h3>\n<ul>\n  <li>Date and time of each transaction</li>\n  <li>Transaction type (buy, sell, trade, income)</li>\n  <li>Amount and asset</li>\n  <li>Cost basis (what you paid)</li>\n  <li>Proceeds (what you received)</li>\n  <li>Gain or loss calculation</li>\n  <li>Holding period (short/long term)</li>\n</ul>\n<h3>Tax Tips</h3>\n<ul>\n  <li>Export reports early before tax deadline</li>\n  <li>Keep copies for your records</li>\n  <li>Consult tax professional for advice</li>\n  <li>Different countries have different rules</li>\n  <li>Track everything throughout the year</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-connect-hardware-wallet",
+    "title": "How to Connect Hardware Wallet",
+    "description": "\nMaximum Security with Hardware Wallet\nConnect your Ledger or Trezor for the highest level of security.\nStep 1: Prepare Hardware Wallet\n\n  Unbox and set up your device",
+    "content": "\n<h2>Maximum Security with Hardware Wallet</h2>\n<p>Connect your Ledger or Trezor for the highest level of security.</p>\n<h3>Step 1: Prepare Hardware Wallet</h3>\n<ul>\n  <li>Unbox and set up your device</li>\n  <li>Write down recovery phrase</li>\n  <li>Set device PIN</li>\n  <li>Update firmware to latest version</li>\n</ul>\n<h3>Step 2: Install Required Apps</h3>\n<p>On your hardware wallet, install:</p>\n<ul>\n  <li>Ethereum app (for EVM chains)</li>\n  <li>Bitcoin app</li>\n  <li>Solana app</li>\n  <li>Polkadot app</li>\n  <li>Any other chains you use</li>\n</ul>\n<h3>Step 3: Connect to OmniBazaar</h3>\n<ol>\n  <li>Open OmniBazaar wallet</li>\n  <li>Click \"Connect Hardware Wallet\"</li>\n  <li>Plug in your device via USB</li>\n  <li>Unlock device with PIN</li>\n  <li>Select wallet type (Ledger/Trezor)</li>\n</ol>\n<h3>Step 4: Grant Permissions</h3>\n<ul>\n  <li>Your browser will ask for USB device permission</li>\n  <li>Click \"Allow\"</li>\n  <li>On device screen, approve connection</li>\n</ul>\n<h3>Step 5: Select Accounts</h3>\n<p>OmniBazaar will show available accounts from your device. Select which ones to import.</p>\n<h3>Step 6: Start Using</h3>\n<p>Your hardware wallet accounts now appear in OmniBazaar. Use them like any other wallet.</p>\n<h3>Making Transactions</h3>\n<p>When you send funds:</p>\n<ol>\n  <li>Fill out transaction in OmniBazaar</li>\n  <li>Click \"Send\"</li>\n  <li>Transaction details appear on device screen</li>\n  <li>Verify all details carefully</li>\n  <li>Approve on device</li>\n  <li>Transaction is broadcast</li>\n</ol>\n<h3>Security Tips</h3>\n<ul>\n  <li>Always verify transaction details on device screen</li>\n  <li>Never approve transactions you don't recognize</li>\n  <li>Keep device firmware updated</li>\n  <li>Store recovery phrase securely offline</li>\n  <li>Disconnect device when not in use</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "mobile-app",
+    "title": "Mobile App",
+    "description": "\nOmniBazaar on Your Phone\nTake the full OmniBazaar experience anywhere with our native mobile app (coming soon).\nPlanned Features\n\n  Full marketplace access\n  <li",
+    "content": "\n<h2>OmniBazaar on Your Phone</h2>\n<p>Take the full OmniBazaar experience anywhere with our native mobile app (coming soon).</p>\n<h3>Planned Features</h3>\n<ul>\n  <li>Full marketplace access</li>\n  <li>Mobile wallet with biometric security</li>\n  <li>DEX trading on the go</li>\n  <li>Push notifications for messages and orders</li>\n  <li>QR code payments</li>\n  <li>Camera integration for listing photos</li>\n</ul>\n<h3>Availability</h3>\n<p>iOS and Android apps are in development. Sign up for early access notifications.</p>\n",
+    "category": "getting-started"
+  },
+  {
+    "id": "how-to-use-stop-loss-orders",
+    "title": "How to Use Stop-Loss Orders",
+    "description": "\nProtect Your Trades with Stop-Loss\nStop-loss orders automatically sell your position if the price drops, limiting your losses.\nStep 1: Open the DEX\nGo to DEX > Trading and",
+    "content": "\n<h2>Protect Your Trades with Stop-Loss</h2>\n<p>Stop-loss orders automatically sell your position if the price drops, limiting your losses.</p>\n<h3>Step 1: Open the DEX</h3>\n<p>Go to DEX > Trading and select your trading pair.</p>\n<h3>Step 2: Select Stop-Loss Order Type</h3>\n<p>Click on the order type dropdown and choose \"Stop-Loss\" or \"Stop-Limit\"</p>\n<h3>Step 3: Set Your Stop Price</h3>\n<p>Enter the price at which you want the order to trigger. For example, if you bought at $100 and want to limit loss to 10%, set stop at $90.</p>\n<h3>Step 4: Set Limit Price (Stop-Limit Only)</h3>\n<p>For stop-limit orders, also set the limit price (the minimum price you'll accept).</p>\n<h3>Step 5: Enter Amount</h3>\n<p>Enter how much you want to sell when triggered (can be your full position or partial).</p>\n<h3>Step 6: Place Order</h3>\n<p>Click \"Place Stop-Loss Order\" and confirm in your wallet.</p>\n<h3>What Happens Next</h3>\n<p>If price drops to your stop price:</p>\n<ul>\n  <li><strong>Stop-Loss:</strong> Sells immediately at market price</li>\n  <li><strong>Stop-Limit:</strong> Places a limit order at your specified price</li>\n</ul>\n<h3>Pro Tips</h3>\n<ul>\n  <li>Set stop-loss 5-10% below entry price</li>\n  <li>Don't set it too tight (normal volatility might trigger it)</li>\n  <li>Adjust stop-loss as price moves in your favor</li>\n  <li>Consider using trailing stop-loss for trending markets</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-complete-kyc-verification",
+    "title": "How to Complete KYC Verification",
+    "description": "\nVerify Your Identity Step-by-Step\nComplete KYC verification to unlock higher limits and earn more participation points.\nStep 1: Start Verification\nGo to Settings > KYC Ver",
+    "content": "\n<h2>Verify Your Identity Step-by-Step</h2>\n<p>Complete KYC verification to unlock higher limits and earn more participation points.</p>\n<h3>Step 1: Start Verification</h3>\n<p>Go to Settings > KYC Verification and click \"Start Verification\"</p>\n<h3>Step 2: Tier 1 - Basic Info</h3>\n<ol>\n  <li>Verify your email address (check inbox for code)</li>\n  <li>Verify your phone number (SMS code)</li>\n  <li>Follow OmniBazaar on Twitter and Telegram</li>\n</ol>\n<h3>Step 3: Tier 2 - ID Upload</h3>\n<ol>\n  <li>Take a clear photo of government ID (passport, driver's license)</li>\n  <li>Make sure all text is readable</li>\n  <li>Upload the photo</li>\n  <li>Wait for automated verification (usually 1-5 minutes)</li>\n</ol>\n<h3>Step 4: Tier 3 - Enhanced</h3>\n<ol>\n  <li>Upload proof of address (utility bill, bank statement)</li>\n  <li>Take a selfie holding your ID next to your face</li>\n  <li>Make sure your face and ID are both clearly visible</li>\n  <li>Submit for review (24-48 hours)</li>\n</ol>\n<h3>Step 5: Tier 4 - Full Verification</h3>\n<ol>\n  <li>Schedule a video call with verification team</li>\n  <li>Have your ID ready during the call</li>\n  <li>Answer a few security questions</li>\n  <li>Verification completes instantly after call</li>\n</ol>\n<h3>Tips for Success</h3>\n<ul>\n  <li>Use good lighting for photos</li>\n  <li>Documents must be current (not expired)</li>\n  <li>Address on proof must match ID</li>\n  <li>Have originals ready, not photocopies</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "network-statistics",
+    "title": "Network Statistics",
+    "description": "\nTransparent Network Metrics\nView real-time statistics about the OmniBazaar network.\nAvailable Data\n\n  Total transactions processed\n  Active validators count<",
+    "content": "\n<h2>Transparent Network Metrics</h2>\n<p>View real-time statistics about the OmniBazaar network.</p>\n<h3>Available Data</h3>\n<ul>\n  <li>Total transactions processed</li>\n  <li>Active validators count</li>\n  <li>Total XOM staked</li>\n  <li>Current block height</li>\n  <li>Average block time</li>\n  <li>Network hash rate</li>\n  <li>Total marketplace listings</li>\n  <li>Trading volume (24h, 7d, 30d)</li>\n</ul>\n<h3>Historical Charts</h3>\n<p>See how the network has grown over time with interactive charts.</p>\n",
+    "category": "platform"
+  },
+  {
+    "id": "dex-trading-guide",
+    "title": "DEX Trading Guide",
+    "description": "How to trade cryptocurrencies on OmniDEX",
+    "content": "<h2>Trade on OmniDEX</h2>\n<p>Lightning-fast cryptocurrency trading with 10,000+ orders per second.</p>\n<h3>Advanced Order Types</h3>\n<p>Market orders, limit orders, stop-loss, and more - all with sub-second execution.</p>\n<h3>Low Fees</h3>\n<p>Trade with minimal fees that go directly to validators and staking rewards.</p>",
+    "category": "trading"
+  },
+  {
+    "id": "return-policy-management",
+    "title": "Return Policy Management",
+    "description": "\nFlexible Return Policies\nSellers can set their own return policies, from \"no returns\" to \"30-day money back guarantee.\"\nPolicy Options\n\n  No returns accepted\n  <",
+    "content": "\n<h2>Flexible Return Policies</h2>\n<p>Sellers can set their own return policies, from \"no returns\" to \"30-day money back guarantee.\"</p>\n<h3>Policy Options</h3>\n<ul>\n  <li>No returns accepted</li>\n  <li>Returns accepted within X days</li>\n  <li>Full refund or exchange</li>\n  <li>Who pays return shipping</li>\n  <li>Restocking fees</li>\n</ul>\n<h3>Return Process</h3>\n<p>If a buyer wants to return, they initiate a return request. You can approve, counter-offer, or decline with reason.</p>\n<h3>Best Practice</h3>\n<p>Generous return policies increase buyer confidence and often lead to more sales.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "price-oracles",
+    "title": "Price Oracles",
+    "description": "\nAccurate Price Feeds\nOmniBazaar uses multiple oracle sources to ensure accurate, manipulation-resistant prices.\nOracle Aggregation\nWe combine data from Chainlink, Band Pro",
+    "content": "\n<h2>Accurate Price Feeds</h2>\n<p>OmniBazaar uses multiple oracle sources to ensure accurate, manipulation-resistant prices.</p>\n<h3>Oracle Aggregation</h3>\n<p>We combine data from Chainlink, Band Protocol, and other trusted sources, then calculate the median price.</p>\n<h3>Why Multiple Sources?</h3>\n<p>If one oracle is compromised or experiences downtime, the others keep prices accurate.</p>\n<h3>Used For</h3>\n<ul>\n  <li>Futures liquidation prices</li>\n  <li>Cross-chain bridge rates</li>\n  <li>Portfolio valuations</li>\n  <li>Staking APR calculations</li>\n</ul>\n",
+    "category": "dex"
+  },
+  {
+    "id": "marketplace-guide",
+    "title": "Understanding the Marketplace",
+    "description": "Learn how to buy and sell on the OmniBazaar marketplace",
+    "content": "<h2>The OmniBazaar Marketplace</h2>\n<p>Buy and sell products directly with other users, without any middleman taking a cut.</p>\n<h3>Zero On-Chain Storage</h3>\n<p>Your product listings are stored on IPFS, meaning no gas fees for listing items.</p>\n<h3>Safe Transactions</h3>\n<p>Every purchase is protected by optional escrow services and community arbitration.</p>",
+    "category": "marketplace"
+  },
+  {
+    "id": "how-to-write-effective-descriptions",
+    "title": "How to Write Effective Descriptions",
+    "description": "\nDescriptions That Sell\nA great description answers all buyer questions and builds confidence.\nStructure Your Description\n\n  Opening: One-sentence sum",
+    "content": "\n<h2>Descriptions That Sell</h2>\n<p>A great description answers all buyer questions and builds confidence.</p>\n<h3>Structure Your Description</h3>\n<ol>\n  <li><strong>Opening:</strong> One-sentence summary of the item</li>\n  <li><strong>Key Features:</strong> Bullet list of main features</li>\n  <li><strong>Detailed Description:</strong> Full details</li>\n  <li><strong>Condition Report:</strong> Honest condition assessment</li>\n  <li><strong>What's Included:</strong> List everything in the sale</li>\n  <li><strong>Shipping Info:</strong> Handling time and methods</li>\n  <li><strong>Return Policy:</strong> Your return policy</li>\n</ol>\n<h3>Key Features Section</h3>\n<p>Use bullet points for easy scanning:</p>\n<ul>\n  <li>Brand and model</li>\n  <li>Main specifications</li>\n  <li>Key benefits</li>\n  <li>Unique selling points</li>\n  <li>Condition summary</li>\n</ul>\n<h3>Detailed Description</h3>\n<p>Write 2-3 paragraphs covering:</p>\n<ul>\n  <li>What the item is and what it does</li>\n  <li>Why it's great (features and benefits)</li>\n  <li>Your experience with it</li>\n  <li>Why you're selling</li>\n  <li>Any relevant history</li>\n</ul>\n<h3>Condition Report</h3>\n<p>Be extremely honest:</p>\n<ul>\n  <li>Use standard terms (New, Like New, Used-Excellent, Used-Good, Used-Fair)</li>\n  <li>Describe any wear, scratches, or defects</li>\n  <li>Note if anything doesn't work</li>\n  <li>Mention if parts are missing</li>\n  <li>Refer to photos for visual proof</li>\n</ul>\n<h3>Writing Style Tips</h3>\n<ul>\n  <li>Write in clear, simple language</li>\n  <li>Use short sentences and paragraphs</li>\n  <li>Be enthusiastic but honest</li>\n  <li>Use active voice</li>\n  <li>Proofread for typos</li>\n  <li>Format with bullet points and spacing</li>\n</ul>\n<h3>SEO Keywords</h3>\n<p>Naturally include terms buyers might search:</p>\n<ul>\n  <li>Brand names</li>\n  <li>Model numbers</li>\n  <li>Product types</li>\n  <li>Common misspellings</li>\n  <li>Compatible items</li>\n</ul>\n<h3>What to Avoid</h3>\n<ul>\n  <li>Don't use ALL CAPS (looks spammy)</li>\n  <li>Don't exaggerate or lie</li>\n  <li>Don't include contact info (use messaging)</li>\n  <li>Don't copy manufacturer descriptions verbatim</li>\n  <li>Don't write in all lowercase</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-provide-liquidity",
+    "title": "How to Provide Liquidity",
+    "description": "\nEarn Fees as a Liquidity Provider\nProvide liquidity to earn a share of trading fees.\nStep 1: Choose a Trading Pair\nGo to DEX > Liquidity Pools and browse available pairs. ",
+    "content": "\n<h2>Earn Fees as a Liquidity Provider</h2>\n<p>Provide liquidity to earn a share of trading fees.</p>\n<h3>Step 1: Choose a Trading Pair</h3>\n<p>Go to DEX > Liquidity Pools and browse available pairs. Check the current APR.</p>\n<h3>Step 2: Check Requirements</h3>\n<p>You'll need equal values of both tokens. For example, for XOM/USDC pool, you need $500 of XOM and $500 of USDC.</p>\n<h3>Step 3: Add Liquidity</h3>\n<ol>\n  <li>Click \"Add Liquidity\"</li>\n  <li>Enter amount of first token</li>\n  <li>Amount of second token is calculated automatically</li>\n  <li>Review the transaction</li>\n  <li>Click \"Supply\"</li>\n  <li>Confirm in your wallet</li>\n</ol>\n<h3>Step 4: Receive LP Tokens</h3>\n<p>You'll receive LP (Liquidity Provider) tokens representing your share of the pool.</p>\n<h3>Step 5: Earn Fees</h3>\n<p>You now earn a portion of every trade in that pair! Fees compound automatically.</p>\n<h3>Step 6: Monitor Your Position</h3>\n<p>Check your liquidity dashboard to see accumulated fees and current value.</p>\n<h3>Step 7: Remove Liquidity</h3>\n<p>When ready to withdraw:</p>\n<ol>\n  <li>Go to your liquidity positions</li>\n  <li>Click \"Remove\"</li>\n  <li>Choose how much to remove (partial or full)</li>\n  <li>Confirm transaction</li>\n  <li>You'll receive both tokens back plus earned fees</li>\n</ol>\n<h3>Understanding Impermanent Loss</h3>\n<p>If token prices diverge significantly, you might have less value than if you'd just held. The trading fees usually compensate for this.</p>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "how-to-leave-and-manage-reviews",
+    "title": "How to Leave and Manage Reviews",
+    "description": "\nGive and Receive Feedback\nReviews help build trust in the community.\nLeaving a Review as Buyer\n\n  After receiving item, go to your orders\n  Click \"Leave Revi",
+    "content": "\n<h2>Give and Receive Feedback</h2>\n<p>Reviews help build trust in the community.</p>\n<h3>Leaving a Review as Buyer</h3>\n<ol>\n  <li>After receiving item, go to your orders</li>\n  <li>Click \"Leave Review\" on the order</li>\n  <li>Rate the seller 1-5 stars</li>\n  <li>Rate specific aspects (shipping, communication, etc.)</li>\n  <li>Write a text review (optional but helpful)</li>\n  <li>Upload photos of the received item (optional)</li>\n  <li>Submit review</li>\n</ol>\n<h3>Review Guidelines</h3>\n<ul>\n  <li>Be honest but fair</li>\n  <li>Focus on facts, not emotions</li>\n  <li>Mention both positives and negatives</li>\n  <li>Don't include personal information</li>\n  <li>Keep it relevant to the transaction</li>\n</ul>\n<h3>Responding to Reviews (Sellers)</h3>\n<p>Sellers can respond to reviews:</p>\n<ol>\n  <li>Go to your seller dashboard</li>\n  <li>Click \"Reviews\" tab</li>\n  <li>Click \"Respond\" on any review</li>\n  <li>Write professional response</li>\n  <li>Thank buyer for positive reviews</li>\n  <li>Address concerns in negative reviews</li>\n</ol>\n<h3>Handling Negative Reviews</h3>\n<ul>\n  <li>Stay professional, never attack buyer</li>\n  <li>Acknowledge any legitimate issues</li>\n  <li>Explain what you're doing to improve</li>\n  <li>Offer to make it right if possible</li>\n  <li>Future buyers will see your professional response</li>\n</ul>\n<h3>Reporting Fake Reviews</h3>\n<p>If a review violates policies:</p>\n<ol>\n  <li>Click \"Report\" on the review</li>\n  <li>Select reason</li>\n  <li>Provide evidence</li>\n  <li>Moderators will investigate</li>\n</ol>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "order-book-vs-amm",
+    "title": "Order Book vs AMM",
+    "description": "\nHybrid Trading Model\nOmniBazaar combines an order book with an AMM (Automated Market Maker) to give you the best of both worlds.\nOrder Book Trading\nSet your exact price wi",
+    "content": "\n<h2>Hybrid Trading Model</h2>\n<p>OmniBazaar combines an order book with an AMM (Automated Market Maker) to give you the best of both worlds.</p>\n<h3>Order Book Trading</h3>\n<p>Set your exact price with limit orders. When someone matches your price, the trade executes.</p>\n<h3>AMM Trading</h3>\n<p>Trade instantly against liquidity pools. No waiting for a match - trades happen immediately.</p>\n<h3>Best Price Routing</h3>\n<p>Our system automatically routes your trade through whichever method gives you the best price.</p>\n",
+    "category": "dex"
+  },
+  {
+    "id": "how-to-optimize-listings-for-search",
+    "title": "How to Optimize Listings for Search",
+    "description": "\nGet More Views with SEO\nOptimize your listings to appear higher in search results.\nTitle Optimization\n\n  Include main keyword at the start\n  Add brand name</",
+    "content": "\n<h2>Get More Views with SEO</h2>\n<p>Optimize your listings to appear higher in search results.</p>\n<h3>Title Optimization</h3>\n<ul>\n  <li>Include main keyword at the start</li>\n  <li>Add brand name</li>\n  <li>Include model number</li>\n  <li>Mention condition</li>\n  <li>Add key features</li>\n  <li>Example: \"Canon EOS R5 Camera Body - Like New - 45MP - 8K Video\"</li>\n</ul>\n<h3>Category Selection</h3>\n<p>Choose the most specific category possible. Items in correct categories rank higher.</p>\n<h3>Description Keywords</h3>\n<ul>\n  <li>Use relevant keywords naturally</li>\n  <li>Include common search terms</li>\n  <li>Mention compatible items</li>\n  <li>Add technical specifications</li>\n  <li>Don't keyword stuff (reduces ranking)</li>\n</ul>\n<h3>Tags</h3>\n<p>Add relevant tags that buyers might search for:</p>\n<ul>\n  <li>Brand names</li>\n  <li>Product types</li>\n  <li>Use cases</li>\n  <li>Compatible items</li>\n  <li>Maximum 10 tags</li>\n</ul>\n<h3>Photo Quality</h3>\n<p>High-quality photos increase click-through rate:</p>\n<ul>\n  <li>Use first photo as main attention-grabber</li>\n  <li>Show item from multiple angles</li>\n  <li>Use white or neutral backgrounds</li>\n  <li>Include size reference</li>\n  <li>Show any defects clearly</li>\n</ul>\n<h3>Pricing Strategy</h3>\n<ul>\n  <li>Research competitor prices</li>\n  <li>Price competitively for category</li>\n  <li>Consider pricing slightly below competitors initially</li>\n  <li>Increase price as you get good ratings</li>\n</ul>\n<h3>Freshness</h3>\n<p>Refresh your listings every 7-14 days:</p>\n<ul>\n  <li>Make small edits to description</li>\n  <li>Update photos</li>\n  <li>Adjust price slightly</li>\n  <li>This pushes listing higher in \"newest\" sort</li>\n</ul>\n",
+    "category": "tutorials"
+  },
+  {
+    "id": "seller-dashboard",
+    "title": "Seller Dashboard",
+    "description": "\nManage Your Sales\nThe seller dashboard gives you complete control over your marketplace business.\nKey Features\n\n  Active listings overview\n  Order management",
+    "content": "\n<h2>Manage Your Sales</h2>\n<p>The seller dashboard gives you complete control over your marketplace business.</p>\n<h3>Key Features</h3>\n<ul>\n  <li>Active listings overview</li>\n  <li>Order management</li>\n  <li>Sales analytics</li>\n  <li>Revenue tracking</li>\n  <li>Customer messages</li>\n  <li>Rating management</li>\n</ul>\n<h3>Analytics</h3>\n<p>See which listings get the most views, where your traffic comes from, and optimize your pricing.</p>\n<h3>Bulk Operations</h3>\n<p>Edit multiple listings at once, import from CSV, or schedule listings to go live later.</p>\n",
+    "category": "marketplace"
+  },
+  {
+    "id": "two-factor-authentication",
+    "title": "Two-Factor Authentication",
+    "description": "\nExtra Security with 2FA\nTwo-factor authentication adds an extra layer of protection to your account.\nHow 2FA Works\nEven if someone steals your password, they can't access ",
+    "content": "\n<h2>Extra Security with 2FA</h2>\n<p>Two-factor authentication adds an extra layer of protection to your account.</p>\n<h3>How 2FA Works</h3>\n<p>Even if someone steals your password, they can't access your account without the 6-digit code from your phone.</p>\n<h3>Setup Options</h3>\n<ul>\n  <li>Authenticator apps (Google Authenticator, Authy)</li>\n  <li>SMS codes to your phone</li>\n  <li>Hardware security keys (YubiKey)</li>\n</ul>\n<h3>When 2FA Is Required</h3>\n<p>Enable 2FA for large withdrawals, changing security settings, and sensitive operations.</p>\n",
+    "category": "wallet"
+  },
+  {
+    "id": "earning-xom",
+    "title": "How to Earn XOM Tokens",
+    "description": "Learn all the ways to earn XOM tokens on OmniBazaar",
+    "content": "<h2>Earn XOM Tokens</h2>\n<p>There are many ways to earn XOM tokens on OmniBazaar:</p>\n<ul>\n  <li><strong>Welcome Bonus</strong> - Get free XOM just for signing up</li>\n  <li><strong>First Sale Bonus</strong> - Earn bonus XOM when you complete your first sale</li>\n  <li><strong>Referral Bonus</strong> - Earn XOM for each friend you refer</li>\n  <li><strong>Staking Rewards</strong> - Stake XOM to earn 5-12% APR</li>\n  <li><strong>Trading</strong> - Provide liquidity or become a validator</li>\n</ul>",
+    "category": "rewards"
+  }
+]
