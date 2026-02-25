@@ -124,7 +124,7 @@ def create_infographic():
     # ── KEY STATS BAR ─────────────────────────────────────────
     draw_rounded_rect(draw, (40, y, WIDTH - 40, y + 78), 12,
                       hex_to_rgb(CARD_COLOR))
-    stats = [("70+", "Blockchains"), ("10,000+", "Orders/Sec"),
+    stats = [("128", "Blockchains"), ("10,000+", "Orders/Sec"),
              ("1-2s", "Finality"), ("ZERO", "Gas Fees"),
              ("12+", "Languages")]
     sw = (WIDTH - 80) // len(stats)
@@ -284,7 +284,7 @@ def create_infographic():
     # ── WALLET ────────────────────────────────────────────────
     draw_hr(draw, y)
     y += 34
-    draw.text((WIDTH // 2, y), "OMNIWALLET: 70+ CHAINS, ONE WALLET",
+    draw.text((WIDTH // 2, y), "OMNIWALLET: 128 CHAINS, ONE WALLET",
               font=f_sect, fill=hex_to_rgb(TEXT_COLOR), anchor="mm")
     y += 42
 

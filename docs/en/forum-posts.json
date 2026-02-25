@@ -32,7 +32,7 @@
   {
     "id": "thread-004-reply-1",
     "thread_id": "thread-004",
-    "content": "Yes! OmniWallet supports standard BIP39 seed phrases, so you can import your MetaMask wallet.\n\nSteps:\n1. Click \"Import Wallet\" on the setup screen\n2. Choose \"Seed Phrase\"\n3. Enter your 12 or 24 word phrase\n4. Set a password for OmniWallet\n5. Done!\n\nIMPORTANT: Your seed phrase gives full access to your funds. Never share it with anyone. OmniWallet encrypts it locally - it never leaves your device.\n\nAfter importing, you'll see all your Ethereum assets plus access to 70+ other blockchains!"
+    "content": "Yes! OmniWallet supports standard BIP39 seed phrases, so you can import your MetaMask wallet.\n\nSteps:\n1. Click \"Import Wallet\" on the setup screen\n2. Choose \"Seed Phrase\"\n3. Enter your 12 or 24 word phrase\n4. Set a password for OmniWallet\n5. Done!\n\nIMPORTANT: Your seed phrase gives full access to your funds. Never share it with anyone. OmniWallet encrypts it locally - it never leaves your device.\n\nAfter importing, you'll see all your Ethereum assets plus access to 128 blockchains!"
   },
   {
     "id": "thread-020-reply-2",

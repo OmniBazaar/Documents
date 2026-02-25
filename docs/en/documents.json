@@ -24,7 +24,7 @@
     "id": "wallet-recovery",
     "title": "Wallet Recovery",
     "description": "\nRecover Your Wallet Anytime\nLost your device? Your 12-word recovery phrase lets you restore your wallet on any device.\nWhat Is Backed Up\n\n  All your wallet addresses ",
-    "content": "\n<h2>Recover Your Wallet Anytime</h2>\n<p>Lost your device? Your 12-word recovery phrase lets you restore your wallet on any device.</p>\n<h3>What Is Backed Up</h3>\n<ul>\n  <li>All your wallet addresses across 70+ blockchains</li>\n  <li>Your private keys</li>\n  <li>Your transaction history</li>\n  <li>Your contacts and preferences</li>\n</ul>\n<h3>Recovery Process</h3>\n<ol>\n  <li>Install OmniBazaar on new device</li>\n  <li>Click \"Restore Wallet\"</li>\n  <li>Enter your 12-word phrase</li>\n  <li>Set a new password</li>\n  <li>Your wallet is restored!</li>\n</ol>\n<h3>Critical Warning</h3>\n<p>Anyone with your recovery phrase can access your funds. Keep it safe and never share it!</p>\n",
+    "content": "\n<h2>Recover Your Wallet Anytime</h2>\n<p>Lost your device? Your 12-word recovery phrase lets you restore your wallet on any device.</p>\n<h3>What Is Backed Up</h3>\n<ul>\n  <li>All your wallet addresses across 128 blockchains</li>\n  <li>Your private keys</li>\n  <li>Your transaction history</li>\n  <li>Your contacts and preferences</li>\n</ul>\n<h3>Recovery Process</h3>\n<ol>\n  <li>Install OmniBazaar on new device</li>\n  <li>Click \"Restore Wallet\"</li>\n  <li>Enter your 12-word phrase</li>\n  <li>Set a new password</li>\n  <li>Your wallet is restored!</li>\n</ol>\n<h3>Critical Warning</h3>\n<p>Anyone with your recovery phrase can access your funds. Keep it safe and never share it!</p>\n",
     "category": "wallet"
   },
   {
@@ -45,7 +45,7 @@
     "id": "wallet-setup",
     "title": "Setting Up Your Wallet",
     "description": "How to create and secure your OmniWallet",
-    "content": "<h2>Create Your Wallet</h2>\n<p>Your OmniWallet gives you access to 70+ blockchains from one secure place.</p>\n<h3>Multi-Chain Support</h3>\n<p>Manage Bitcoin, Ethereum, Solana, Polkadot, and 65+ other blockchains.</p>\n<h3>Security First</h3>\n<p>Your private keys are encrypted and never leave your device.</p>",
+    "content": "<h2>Create Your Wallet</h2>\n<p>Your OmniWallet gives you access to 128 blockchains from one secure place.</p>\n<h3>Multi-Chain Support</h3>\n<p>Manage Bitcoin, Ethereum, Solana, Polkadot, and 65+ other blockchains.</p>\n<h3>Security First</h3>\n<p>Your private keys are encrypted and never leave your device.</p>",
     "category": "wallet"
   },
   {
@@ -59,7 +59,7 @@
     "id": "what-is-omnibazaar",
     "title": "What is OmniBazaar?",
     "description": "Introduction to the OmniBazaar decentralized marketplace platform",
-    "content": "<h2>Welcome to OmniBazaar</h2>\n<p>OmniBazaar is the world's first unified decentralized marketplace that combines shopping, trading, and secure wallet management in one powerful platform.</p>\n<h3>Four Amazing Features in One</h3>\n<ul>\n  <li><strong>Marketplace</strong> - Buy and sell anything peer-to-peer with zero fees and complete privacy</li>\n  <li><strong>DEX Trading</strong> - Trade cryptocurrencies at lightning speed with over 10,000 orders per second</li>\n  <li><strong>Multi-Chain Wallet</strong> - Manage assets across 70+ blockchains from one secure wallet</li>\n  <li><strong>Private Messaging</strong> - Chat directly with buyers and sellers using encrypted communication</li>\n</ul>",
+    "content": "<h2>Welcome to OmniBazaar</h2>\n<p>OmniBazaar is the world's first unified decentralized marketplace that combines shopping, trading, and secure wallet management in one powerful platform.</p>\n<h3>Four Amazing Features in One</h3>\n<ul>\n  <li><strong>Marketplace</strong> - Buy and sell anything peer-to-peer with zero fees and complete privacy</li>\n  <li><strong>DEX Trading</strong> - Trade cryptocurrencies at lightning speed with over 10,000 orders per second</li>\n  <li><strong>Multi-Chain Wallet</strong> - Manage assets across 128 blockchains from one secure wallet</li>\n  <li><strong>Private Messaging</strong> - Chat directly with buyers and sellers using encrypted communication</li>\n</ul>",
     "category": "getting-started"
   },
   {

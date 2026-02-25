@@ -231,7 +231,7 @@ def create_infographic():
     components = [
         ("RWA Aggregator", "Tokenized real-world assets"),
         ("DEX", "10,000+ orders/sec"),
-        ("Web3 Wallet", "70+ chains"),
+        ("Web3 Wallet", "128 chains"),
         ("Marketplace", "Zero on-chain fees")
     ]
 
