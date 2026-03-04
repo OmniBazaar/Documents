@@ -94,7 +94,7 @@ User Query → Federated AI Processing → Multi-Modal Analysis → Swarm Intell
    cd ..
    npm install
    
-   # Note: Dependencies are now managed at the root level in /home/rickc/OmniBazaar/node_modules
+   # Note: Dependencies are now managed at the root level in ~/OmniBazaar/node_modules
    ```
 
 3. **Set up IPFS node**
@@ -120,7 +120,7 @@ The Documents module is integrated with the OmniBazaar test suite:
 
 ```bash
 # Run all integration tests from OmniBazaar root
-cd /home/rickc/OmniBazaar
+cd ~/OmniBazaar
 npm run test:integration
 
 # Run document-specific integration tests
@@ -138,8 +138,8 @@ npm run test:integration -- documents-forum
 - **Cross-Module**: Tests integration with Validator and Marketplace
 
 For detailed integration testing documentation, see:
-- [Integration Test Suite](/home/rickc/OmniBazaar/tests/integration/README.md)
-- [Document Tests](/home/rickc/OmniBazaar/tests/integration/features/documents)
+- [Integration Test Suite](~/OmniBazaar/tests/integration/README.md)
+- [Document Tests](~/OmniBazaar/tests/integration/features/documents)
 
 ### Development Commands
 

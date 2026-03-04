@@ -1,6 +1,6 @@
 # Forum Moderation Service ESLint Fix Summary
 
-## File: `/home/rickc/OmniBazaar/Documents/src/services/forum/ForumModerationService.ts`
+## File: `~/OmniBazaar/Documents/src/services/forum/ForumModerationService.ts`
 
 ### Total Issues Fixed: 81 ESLint violations (80 errors, 1 warning)
 

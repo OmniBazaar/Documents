@@ -117,7 +117,7 @@ The Documents module is undergoing GraphQL integration to eliminate direct datab
 
 ```bash
 # In Documents directory:
-cd /home/rickc/OmniBazaar/Documents
+cd ~/OmniBazaar/Documents
 
 # Start GraphQL server (if not running):
 cd ../Validator

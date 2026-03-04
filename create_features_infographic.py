@@ -21,8 +21,8 @@ MUTED_COLOR = "#8899a6"
 CARD_COLOR = "#192734"
 CARD_HIGHLIGHT = "#1e3044"
 
-OUTPUT_PATH = "/home/rickc/OmniBazaar/OmniBazaar_Infographic.png"
-GLOBE_PATH = "/home/rickc/OmniBazaar/UI Mockup/OmniBazaar Globe-clear-256x256.png"
+OUTPUT_PATH = "/home/omnirick/OmniBazaar/OmniBazaar_Infographic.png"
+GLOBE_PATH = "/home/omnirick/OmniBazaar/UI Mockup/OmniBazaar Globe-clear-256x256.png"
 
 
 def hex_to_rgb(hex_color):

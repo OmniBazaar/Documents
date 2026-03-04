@@ -18,9 +18,9 @@ MUTED_COLOR = "#8899a6"
 CARD_COLOR = "#192734"
 
 # Output path
-OUTPUT_PATH = "/home/rickc/OmniBazaar/Documents/OmniBazaar_Yield_Infographic.png"
-LOGO_PATH = "/home/rickc/OmniBazaar/OmniCoin-WhiteLetters1000x300.png"
-GLOBE_PATH = "/home/rickc/OmniBazaar/UI Mockup/OmniBazaar Globe-clear-256x256.png"
+OUTPUT_PATH = "/home/omnirick/OmniBazaar/Documents/OmniBazaar_Yield_Infographic.png"
+LOGO_PATH = "/home/omnirick/OmniBazaar/OmniCoin-WhiteLetters1000x300.png"
+GLOBE_PATH = "/home/omnirick/OmniBazaar/UI Mockup/OmniBazaar Globe-clear-256x256.png"
 
 def hex_to_rgb(hex_color):
     """Convert hex color to RGB tuple."""
