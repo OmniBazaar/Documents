@@ -121,7 +121,7 @@ cd ~/OmniBazaar/Documents
 
 # Start GraphQL server (if not running):
 cd ../Validator
-YUGABYTE_HOST=127.0.1.1 node scripts/start-graphql-test.js
+YUGABYTE_HOST=127.0.0.1 node scripts/start-graphql-test.js
 
 # Run integration tests:
 cd ../Documents
@@ -155,7 +155,7 @@ The GraphQLDatabase adapter allows existing services to continue using the Datab
 ## Environment Variables
 
 ```bash
-YUGABYTE_HOST=127.0.1.1
+YUGABYTE_HOST=127.0.0.1
 YUGABYTE_PORT=5433
 YUGABYTE_USER=yugabyte
 YUGABYTE_PASSWORD=yugabyte

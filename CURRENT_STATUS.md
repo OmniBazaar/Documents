@@ -45,7 +45,7 @@ Successfully created a comprehensive frontend API client for browser application
 Successfully replaced all mocks with real Validator services:
 
 1. **Real Service Integration**
-   - Using actual YugabyteDB database (127.0.1.1:5433)
+   - Using actual YugabyteDB database (127.0.0.1:5433)
    - Using real ParticipationScoreService from Validator
    - Fixed all database schema mismatches
    - **Result: 12/12 tests passing** ✅
