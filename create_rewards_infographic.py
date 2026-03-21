@@ -22,7 +22,7 @@ MUTED = "#8899a6"
 CARD = "#192734"
 CARD_HI = "#1e3044"
 
-OUTPUT = "/home/omnirick/OmniBazaar/OmniBazaar_Rewards_Infographic.png"
+OUTPUT = "/home/omnirick/OmniBazaar/Documents/OmniBazaar_Rewards_Infographic.png"
 GLOBE = "/home/omnirick/OmniBazaar/UI Mockup/OmniBazaar Globe-clear-256x256.png"
 
 
@@ -164,12 +164,12 @@ def create():
     bw3 = (WIDTH - 100 - 24) // 3
     bh = 155
     block_cards = [
-        ("BLOCK PRODUCER", "Remainder after\nstaking + ODDAO",
-         "~6.2 XOM/block", BLUE),
-        ("STAKING POOL", "Up to 50% of\nblock reward",
-         "~7.8 XOM/block", PRIMARY),
-        ("ODDAO TREASURY", "10% of total\nblock reward",
-         "~1.6 XOM/block", ORANGE),
+        ("GATEWAY VALIDATORS", "Capped at 0.3 XOM\nper epoch per gateway",
+         "5 \u00d7 0.3 = 1.5", BLUE),
+        ("SERVICE NODES", "Capped at 0.2 XOM\nper epoch per node",
+         "0 active", PURPLE),
+        ("LP OVERFLOW", "All remaining reward\nto liquidity providers",
+         "~14.1 XOM/epoch", PRIMARY),
     ]
     for i, (title, desc, amt, color) in enumerate(block_cards):
         cx = 50 + i * (bw3 + 12)
@@ -186,9 +186,14 @@ def create():
             ty += 19
     y += bh + 10
     draw.text((WIDTH // 2, y),
-              "Initial: 15.6 XOM/block (2-sec blocks)  |  "
+              "Initial: 15.6 XOM/epoch (2-sec epochs)  |  "
               "1% reduction every ~146 days  |  "
               "Zero after ~40 years",
+              font=f_t, fill=rgb(MUTED), anchor="mm")
+    y += 20
+    draw.text((WIDTH // 2, y),
+              "Overflow = epoch reward \u2212 sum of validator caps  "
+              "\u2192  routed to LiquidityOverflowPool",
               font=f_t, fill=rgb(MUTED), anchor="mm")
     y += 36
 
@@ -303,8 +308,8 @@ def create():
 
     right_cards = [
         ("VALIDATOR OPERATOR", PRIMARY,
-         ["Block rewards + tx fees",
-          "+ all service fees.",
+         ["Capped block reward per epoch",
+          "+ service fees.",
           "",
           "Requires: 1M XOM stake,",
           "KYC Tier 4, score >= 50,",

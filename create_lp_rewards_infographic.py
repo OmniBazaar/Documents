@@ -4,10 +4,18 @@ OmniBazaar LP Rewards Infographic Generator
 
 Shows how LP APR decreases as total LP investment grows (hyperbolic curve)
 and how total annual LP rewards decrease as the validator network grows.
+All amounts displayed in USD at $0.004/XOM.
 
 On-chain sources:
   OmniValidatorRewards.sol  — INITIAL_BLOCK_REWARD=15.602, gatewayRewardCap=0.3, serviceNodeRewardCap=0.2
   LiquidityOverflowPool.sol — 30% immediate, 70% vests 90 days, 1-day min stake
+
+APR formula (industry-standard MasterChef model):
+  APR = (annualOverflowRewards / totalLPStaked) x 100
+  - No auto-compounding (APR, not APY)
+  - Price-independent (XOM/XOM ratio cancels out USD conversion)
+  - 30% of rewards are immediately claimable, 70% vest linearly over 90 days
+  - For stakers holding >90 days, the full APR is realized
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -15,7 +23,7 @@ import math
 
 # ── Layout ─────────────────────────────────────────────────────
 WIDTH = 1200
-HEIGHT = 1320
+HEIGHT = 1440
 BG       = "#0f1419"
 TEAL     = "#00d4aa"
 BLUE     = "#1da1f2"
@@ -41,6 +49,10 @@ NUM_GW = 5
 OVERFLOW_EPOCH = BLOCK_REWARD - NUM_GW * GATEWAY_CAP   # 14.102
 ANNUAL_OVERFLOW = OVERFLOW_EPOCH * EPOCHS_PER_YEAR      # ~222.5M XOM
 
+# USD conversion
+XOM_PRICE = 0.004              # $0.004 per XOM
+ANNUAL_OVERFLOW_USD = ANNUAL_OVERFLOW * XOM_PRICE       # ~$890K
+
 
 def rgb(h):
     h = h.lstrip('#')
@@ -55,6 +67,14 @@ def rrect(draw, coords, r, fill):
 
 def lerp(a, b, t):
     return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+def fmt_usd(v):
+    """Format USD value for axis labels."""
+    if v >= 1e6:
+        return f"${v/1e6:.0f}M" if v >= 10e6 else f"${v/1e6:.1f}M"
+    if v >= 1e3:
+        return f"${v/1e3:.0f}K"
+    return f"${v:.0f}"
 
 
 def create():
@@ -72,7 +92,8 @@ def create():
     F_BSM     = ft("DejaVuSans-Bold.ttf", 15)
     F_AX      = ft("DejaVuSans.ttf", 13)
     F_BAX     = ft("DejaVuSans-Bold.ttf", 14)
-    F_BIG     = ft("DejaVuSans-Bold.ttf", 46)
+    F_BIG     = ft("DejaVuSans-Bold.ttf", 42)
+    F_BIGSUB  = ft("DejaVuSans-Bold.ttf", 26)
 
     y = 30
 
@@ -100,68 +121,75 @@ def create():
     y += 135
 
     # ════════════ CURRENT STATE ════════════
-    rrect(d, (40, y, WIDTH-40, y+78), 12, rgb(DARK_GOLD))
-    rrect(d, (43, y+3, WIDTH-43, y+75), 10, rgb("#151005"))
+    rrect(d, (40, y, WIDTH-40, y+90), 12, rgb(DARK_GOLD))
+    rrect(d, (43, y+3, WIDTH-43, y+87), 10, rgb("#151005"))
+    usd_k = ANNUAL_OVERFLOW_USD / 1e3
     om = ANNUAL_OVERFLOW / 1e6
-    d.text((WIDTH//2, y+8), f"{om:.1f}M XOM / YEAR", font=F_BIG, fill=rgb(GOLD), anchor="mt")
-    d.text((WIDTH//2, y+56),
+    d.text((WIDTH//2, y+6), f"${usd_k:.0f}K / YEAR", font=F_BIG, fill=rgb(GOLD), anchor="mt")
+    d.text((WIDTH//2, y+50), f"{om:.1f}M XOM at ${XOM_PRICE}/XOM",
+           font=F_BBODY, fill=rgb(MUTED), anchor="mt")
+    d.text((WIDTH//2, y+72),
            f"Available to LP stakers now  \u2014  {NUM_GW} gateways, 0 service nodes",
            font=F_SM, fill=rgb(MUTED), anchor="mt")
-    y += 95
+    y += 107
 
-    # ════════════ CHART 1: APR vs LP Investment ════════════
-    CH1 = 400
+    # ════════════ CHART 1: APR vs LP Investment (USD) ════════════
+    CH1 = 480
     rrect(d, (40, y, WIDTH-40, y+CH1), 12, rgb(CARD))
     d.text((WIDTH//2, y+10), "APR vs. TOTAL LP INVESTMENT", font=F_SEC, fill=rgb(WHITE), anchor="mt")
     d.text((WIDTH//2, y+36),
-           f"Year 1  \u2014  {om:.1f}M XOM overflow  \u2014  Formula: APR = {om:.1f}M \u00f7 LP staked",
+           f"APR = annual overflow \u00f7 total LP staked  "
+           f"(${usd_k:.0f}K/yr at current network size)",
            font=F_SM, fill=rgb(MUTED), anchor="mt")
 
     # Chart area
     cx1, cy1, cx2, cy2 = 120, y+58, WIDTH-55, y+CH1-32
     cw, ch = cx2-cx1, cy2-cy1
-    xlo, xhi = math.log10(50e6), math.log10(10e9)
-    ylo, yhi = 0, 250
+
+    # X-axis: $50K to $40M (log scale, in USD)
+    xlo, xhi = math.log10(50e3), math.log10(40e6)
+    ylo, yhi = 0, 2000  # APR %
 
     def px(v): return cx1 + (math.log10(v) - xlo) / (xhi - xlo) * cw
     def py(a): return cy2 - (min(a, yhi) - ylo) / (yhi - ylo) * ch
 
-    # Horizontal grid (skip 0% label to avoid overlap with X-axis labels)
-    for a in [0, 50, 100, 150, 200, 250]:
+    # Horizontal grid
+    for a in [0, 100, 250, 500, 1000, 1500, 2000]:
         yy = py(a)
         d.line([(cx1, yy), (cx2, yy)], fill=rgb(GRID), width=1)
         if a > 0:
-            d.text((cx1-6, yy), f"{a}%", font=F_AX, fill=rgb(MUTED), anchor="rm")
+            d.text((cx1-6, yy), f"{a:,}%", font=F_AX, fill=rgb(MUTED), anchor="rm")
 
-    # Vertical grid (skip first label to avoid 0% overlap)
-    for val, lbl in [(100e6,"100M"),(250e6,"250M"),(500e6,"500M"),
-                     (1e9,"1B"),(2.5e9,"2.5B"),(5e9,"5B"),(10e9,"10B")]:
+    # Vertical grid
+    xticks = [
+        (50e3, "$50K"), (100e3, "$100K"), (250e3, "$250K"),
+        (500e3, "$500K"), (1e6, "$1M"), (2.5e6, "$2.5M"),
+        (5e6, "$5M"), (10e6, "$10M"), (20e6, "$20M"), (40e6, "$40M"),
+    ]
+    for val, lbl in xticks:
         xx = px(val)
         d.line([(xx, cy1), (xx, cy2)], fill=rgb(GRID), width=1)
         d.text((xx, cy2+4), lbl, font=F_AX, fill=rgb(MUTED), anchor="mt")
-    # First tick (50M) — draw gridline only, label positioned to avoid 0% overlap
-    xx50 = px(50e6)
-    d.line([(xx50, cy1), (xx50, cy2)], fill=rgb(GRID), width=1)
-    d.text((xx50, cy2+4), "50M", font=F_AX, fill=rgb(MUTED), anchor="mt")
 
-    d.text(((cx1+cx2)//2, cy2+19), "Total LP Investment (XOM)", font=F_BAX, fill=rgb(TEAL), anchor="mt")
+    d.text(((cx1+cx2)//2, cy2+19), "Total LP Investment (USD at $0.004/XOM)",
+           font=F_BAX, fill=rgb(TEAL), anchor="mt")
 
     # Fill under curve
     fill_pts = []
-    for lp_m in range(50, 10001, 5):
-        lp = lp_m * 1e6
-        apr = min((ANNUAL_OVERFLOW / lp) * 100, yhi)
-        fill_pts.append((px(lp), py(apr)))
-    fill_pts.append((px(10e9), py(0)))
-    fill_pts.append((px(50e6), py(0)))
+    for step in range(0, 2001):
+        usd = 50e3 * (40e6 / 50e3) ** (step / 2000)
+        apr = min((ANNUAL_OVERFLOW_USD / usd) * 100, yhi)
+        fill_pts.append((px(usd), py(apr)))
+    fill_pts.append((px(40e6), py(0)))
+    fill_pts.append((px(50e3), py(0)))
     d.polygon(fill_pts, fill=rgb(FILL))
 
     # Draw curve
     pts = []
-    for lp_m in range(50, 10001, 3):
-        lp = lp_m * 1e6
-        apr = min((ANNUAL_OVERFLOW / lp) * 100, yhi)
-        pts.append((px(lp), py(apr)))
+    for step in range(0, 2001):
+        usd = 50e3 * (40e6 / 50e3) ** (step / 2000)
+        apr = min((ANNUAL_OVERFLOW_USD / usd) * 100, yhi)
+        pts.append((px(usd), py(apr)))
     for i in range(len(pts)-1):
         d.line([pts[i], pts[i+1]], fill=rgb(TEAL), width=3)
 
@@ -169,32 +197,36 @@ def create():
     bt, bb = py(12), py(5)
     for yy in range(int(bt), int(bb)+1, 2):
         d.line([(cx1+1, yy), (cx2, yy)], fill=rgb("#1a2a20"), width=1)
-    d.text((cx1+8, bt-2), "Staking APR range (5\u201312%)", font=F_AX, fill=rgb("#4a7a5a"), anchor="lb")
+    d.text((cx2-4, bt-2), "Staking APR range (5\u201312%)",
+           font=F_AX, fill=rgb("#4a7a5a"), anchor="rb")
 
     # Key data points
     highlights = [
-        (100e6,  "222%",  -18, 0),
-        (250e6,  "89%",   -18, 0),
-        (500e6,  "44.5%", -18, 0),
-        (1e9,    "22.3%", -18, 0),
-        (2.5e9,  "8.9%",  -18, 0),
-        (5e9,    "4.5%",  -18, 0),
+        (50e3,   "1,780%",  -18, 0),
+        (100e3,  "890%",    -18, 0),
+        (250e3,  "356%",    -18, 0),
+        (500e3,  "178%",    -18, 0),
+        (1e6,    "89%",     -18, 0),
+        (2.5e6,  "35.6%",   -18, 0),
+        (5e6,    "17.8%",   -18, 0),
+        (10e6,   "8.9%",    -18, 0),
     ]
-    for lp_val, label, offy, offx in highlights:
-        apr = (ANNUAL_OVERFLOW / lp_val) * 100
-        xx, yy = px(lp_val), py(apr)
+    for lp_usd, label, offy, offx in highlights:
+        apr = (ANNUAL_OVERFLOW_USD / lp_usd) * 100
+        xx, yy = px(lp_usd), py(apr)
         d.ellipse([xx-4, yy-4, xx+4, yy+4], fill=rgb(GOLD))
         d.text((xx+offx, yy+offy), label, font=F_BSM, fill=rgb(GOLD), anchor="mb")
 
     y += CH1 + 15
 
-    # ════════════ CHART 2: Annual Overflow vs Network Size ════════════
+    # ════════════ CHART 2: Annual Overflow vs Network Size (USD) ════════════
     CH2 = 290
     rrect(d, (40, y, WIDTH-40, y+CH2), 12, rgb(CARD))
     d.text((WIDTH//2, y+10), "ANNUAL LP REWARDS vs. NETWORK SIZE",
            font=F_SEC, fill=rgb(WHITE), anchor="mt")
     d.text((WIDTH//2, y+36),
-           "Each service node reduces overflow by ~3.2M XOM/year  |  Each gateway by ~4.7M",
+           "Each gateway added reduces LP overflow by ~$18.9K/yr  |  "
+           "Each service node by ~$12.6K/yr",
            font=F_SM, fill=rgb(MUTED), anchor="mt")
 
     bx1, by2 = 100, y+CH2-28
@@ -207,7 +239,8 @@ def create():
     for gc in [5, 10, 15, 20, 25, 30, 40, 50]:
         consumed = gc * GATEWAY_CAP
         ov = max(0, BLOCK_REWARD - consumed)
-        bars.append((gc, ov * EPOCHS_PER_YEAR / 1e6))
+        usd_annual = ov * EPOCHS_PER_YEAR * XOM_PRICE
+        bars.append((gc, usd_annual))
 
     mx = bars[0][1]
     n = len(bars)
@@ -224,29 +257,32 @@ def create():
 
         if hb > 4:
             rrect(d, (int(x0), int(yt), int(x0+bwb), by2), 4, col)
-        vlbl = f"{am:.0f}M" if am >= 1 else ("~0" if am < 0.5 else f"{am:.1f}M")
+        vlbl = f"${am/1e3:.0f}K" if am >= 1000 else f"${am:.0f}"
         d.text((int(x0+bwb/2), int(yt-3)), vlbl, font=F_BSM, fill=col, anchor="mb")
         d.text((int(x0+bwb/2), by2+4), str(gc), font=F_AX, fill=rgb(MUTED), anchor="mt")
 
-    d.text(((bx1+bx2)//2, by2+19), "Number of Gateway Validators", font=F_BAX, fill=rgb(TEAL), anchor="mt")
+    d.text(((bx1+bx2)//2, by2+19), "Number of Gateway Validators",
+           font=F_BAX, fill=rgb(TEAL), anchor="mt")
 
     y += CH2 + 12
 
     # ════════════ KEY DETAILS ════════════
-    rrect(d, (40, y, WIDTH-40, y+105), 12, rgb(CARD))
+    rrect(d, (40, y, WIDTH-40, y+140), 12, rgb(CARD))
     d.text((60, y+10), "KEY DETAILS", font=F_SEC, fill=rgb(WHITE))
     details = [
         ("30% immediate  /  70% vests linearly over 90 days", TEAL),
         ("1-day minimum stake duration (anti-flash-stake protection)", WHITE),
         ("Emergency withdrawal: 0.5% fee, forfeits unvested rewards", MUTED),
         ("Block reward reduces 1% per year \u2014 overflow shrinks proportionally", MUTED),
+        (f"XOM price used: ${XOM_PRICE}  \u2014  APR is price-independent (XOM in, XOM out)", MUTED),
+        ("APR = annual overflow rewards \u00f7 total LP staked  (standard DeFi formula)", MUTED),
     ]
     dy = y + 38
     for txt, c in details:
         d.text((80, dy), "\u2022", font=F_BODY, fill=rgb(GOLD))
         d.text((100, dy), txt, font=F_SM, fill=rgb(c))
         dy += 18
-    y += 118
+    y += 153
 
     # ════════════ FOOTER ════════════
     d.text((WIDTH//2, y),
