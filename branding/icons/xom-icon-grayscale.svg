@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>OmniCoin (XOM) Icon - Grayscale Coin</title>
+  <desc>XOM monogram on a silver coin disc</desc>
+
+  <defs>
+    <!-- Silver coin gradient -->
+    <radialGradient id="coinFace" cx="40%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#E8E8E8"/>
+      <stop offset="50%" stop-color="#C0C0C0"/>
+      <stop offset="100%" stop-color="#808080"/>
+    </radialGradient>
+
+    <!-- Rim highlight -->
+    <radialGradient id="rimGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="88%" stop-color="transparent"/>
+      <stop offset="94%" stop-color="rgba(255,255,255,0.15)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.25)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Coin shadow -->
+  <circle cx="260" cy="262" r="244" fill="rgba(0,0,0,0.15)"/>
+
+  <!-- Coin base disc -->
+  <circle cx="256" cy="256" r="244" fill="url(#coinFace)"/>
+
+  <!-- Rim effect -->
+  <circle cx="256" cy="256" r="244" fill="url(#rimGrad)"/>
+
+  <!-- XOM Symbol -->
+  <g fill="none" stroke="#2A2A2A" stroke-width="35" stroke-linecap="round" stroke-linejoin="round">
+    <!-- O: Circle -->
+    <circle cx="256" cy="256" r="178"/>
+
+    <!-- X: Diagonal top-left to bottom-right -->
+    <line x1="130.1" y1="130.1" x2="381.9" y2="381.9"/>
+
+    <!-- X: Diagonal top-right to bottom-left -->
+    <line x1="381.9" y1="130.1" x2="130.1" y2="381.9"/>
+
+    <!-- M: Left vertical -->
+    <line x1="130.1" y1="130.1" x2="130.1" y2="381.9"/>
+
+    <!-- M: Right vertical -->
+    <line x1="381.9" y1="130.1" x2="381.9" y2="381.9"/>
+  </g>
+</svg>

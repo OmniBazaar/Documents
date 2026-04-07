@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>OmniCoin (XOM) Icon - Outline</title>
+  <desc>XOM monogram: Circle (O) with crossing diagonals (X) and vertical side strokes (M)</desc>
+
+  <g fill="none" stroke="#0B1A3B" stroke-width="38" stroke-linecap="round" stroke-linejoin="round">
+    <!-- O: Circle -->
+    <circle cx="256" cy="256" r="218"/>
+
+    <!-- X: Diagonal top-left to bottom-right -->
+    <line x1="101.8" y1="101.8" x2="410.2" y2="410.2"/>
+
+    <!-- X: Diagonal top-right to bottom-left -->
+    <line x1="410.2" y1="101.8" x2="101.8" y2="410.2"/>
+
+    <!-- M: Left vertical -->
+    <line x1="101.8" y1="101.8" x2="101.8" y2="410.2"/>
+
+    <!-- M: Right vertical -->
+    <line x1="410.2" y1="101.8" x2="410.2" y2="410.2"/>
+  </g>
+</svg>
