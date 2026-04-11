@@ -1,7 +1,7 @@
 # OmniBazaar — Blizzard Fund Application
 
-**Form URL:** https://forms.gle/firhBQoNJ1oc5T4S9
-(Redirects to: https://docs.google.com/forms/d/e/1FAIpQLSdZ6Q-RThZrjghdQ5nlZLMzl9ms1WPbPZ98B7GCTolYwxF09Q/viewform)
+**Form URL:** <https://forms.gle/firhBQoNJ1oc5T4S9>
+(Redirects to: <https://docs.google.com/forms/d/e/1FAIpQLSdZ6Q-RThZrjghdQ5nlZLMzl9ms1WPbPZ98B7GCTolYwxF09Q/viewform>)
 
 **Prepared:** April 7, 2026
 
@@ -10,7 +10,9 @@ The Blizzard Fund contact form has only 6 fields. Copy each answer below directl
 ---
 
 ## ═══════════════════════════════════════════
+
 ## FORM FIELDS (all 6 required)
+
 ## ═══════════════════════════════════════════
 
 ### 1. Email
@@ -81,21 +83,23 @@ Avalanche's L1 architecture is what makes a zero-gas, all-in-one commerce platfo
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SUPPORTING MATERIALS (not in form, but have ready)
+
 ## ═══════════════════════════════════════════
 
 If Blizzard follows up (which they likely will since this is just a contact form), have these ready:
 
-- **Investor Deck:** https://tinyurl.com/obdeck1
-- **60-Second Video:** http://youtu.be/Emq7drTI_Qc
-- **Whitepaper (16 languages):** http://whitepaper.omnibazaar.com
-- **Pioneer App:** https://pioneer.omnibazaar.com
-- **Website:** https://omnibazaar.com
-- **YouTube:** https://www.youtube.com/channel/UCTbkLcypGrEeUKjZtxcGCBg
-- **Calendly:** https://calendly.com/omnibazaar/30-minute-meeting-zoom
-- **Richard LinkedIn:** https://www.linkedin.com/in/rickcrites
+- **Investor Deck:** <https://tinyurl.com/obdeck1>
+- **60-Second Video:** <http://youtu.be/Emq7drTI_Qc>
+- **Whitepaper (16 languages):** <http://whitepaper.omnibazaar.com>
+- **Pioneer App:** <https://pioneer.omnibazaar.com>
+- **Website:** <https://omnibazaar.com>
+- **YouTube:** <https://www.youtube.com/channel/UCTbkLcypGrEeUKjZtxcGCBg>
+- **Calendly:** <https://calendly.com/omnibazaar/30-minute-meeting-zoom>
+- **Richard LinkedIn:** <https://www.linkedin.com/in/rickcrites>
 - **Phone:** +507-6970-7932
-- **Email:** CEO@OmniBazaar.com / rickcrites@usa.net
+- **Email:** <CEO@OmniBazaar.com> / <rickcrites@usa.net>
 
 ### Growth Projections (for follow-up conversations)
 

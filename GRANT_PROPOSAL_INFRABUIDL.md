@@ -1,6 +1,6 @@
 # OmniBazaar — infraBUIDL() Grant Application
 
-**Form URL:** https://build.avax.network/grants/infrabuidl
+**Form URL:** <https://build.avax.network/grants/infrabuidl>
 **Prepared:** April 7, 2026
 
 Instructions: Copy each answer below into the corresponding field on the form.
@@ -10,7 +10,9 @@ Fields marked [YOU DECIDE] need your input — I've provided a recommendation.
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 1: PROJECT OVERVIEW
+
 ## ═══════════════════════════════════════════
 
 ### 1. Project/Company Name
@@ -204,7 +206,9 @@ Central America / Americas
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 2: FINANCIAL OVERVIEW
+
 ## ═══════════════════════════════════════════
 
 ### 14. Previous Funding [DROPDOWN]
@@ -222,7 +226,9 @@ No previous funding
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 3: GRANT BUDGET STRUCTURE & MILESTONES
+
 ## ═══════════════════════════════════════════
 
 ### 16. Requested Funding Range [DROPDOWN]
@@ -238,16 +244,19 @@ $100K - $250K (or whichever range includes $150,000)
 ### MILESTONE 1 (Required — Upfront ~20%): ALREADY DELIVERED
 
 **Milestone Name:**
+
 ```
 Platform Development & Mainnet Deployment (Completed)
 ```
 
 **Description:**
+
 ```
 [ALREADY COMPLETED — requesting retroactive recognition.] OmniBazaar has been self-funded and in development for over 2 years. The platform is live on Avalanche L1 (Chain 88008) with 90 deployed smart contracts (63 unique), 5 active validator nodes running Snowman consensus, 4,735 registered users with on-chain balances, and a 7-pass security audit completed. All infrastructure is verifiable on-chain today. Key completed components: hybrid DEX (order book + RWAAMM), 128-blockchain wallet, ICTT bridge contracts deployed on both C-Chain and L1, IPFS storage network with 67K+ pinned assets, LiquidityOverflowPool with audited reward distribution, 6-protocol bridge aggregator, COTI V2 privacy integration, and 12-language internationalization. Soft launch begins the week of April 7, 2026.
 ```
 
 **Deliverables & Success Metrics/KPIs:**
+
 ```
 Deliverables (all verifiable on-chain today):
 - 90 smart contracts deployed on Chain 88008 (verifiable via block explorer)
@@ -266,6 +275,7 @@ Success Metrics (already achieved):
 ```
 
 **Estimated Completion Date:**
+
 ```
 2026-04-07
 ```
@@ -273,6 +283,7 @@ Success Metrics (already achieved):
 > Already completed. Set to today's date or the earliest date the form allows.
 
 **Amount Requested:**
+
 ```
 30000
 ```
@@ -282,16 +293,19 @@ Success Metrics (already achieved):
 ### MILESTONE 2 (Required)
 
 **Milestone Name:**
+
 ```
 C-Chain Liquidity & Public Hard Launch
 ```
 
 **Description:**
+
 ```
 Seed XOM liquidity on Avalanche C-Chain to enable public trading and cross-chain capital flow. Deploy XOM/AVAX pool on LFJ (Trader Joe). Activate ICTT bridge for live bidirectional XOM transfers. Submit DefiLlama TVL adapter. Execute hard launch of the full platform (WebApp + Validator) with public onboarding. Release Coin (Solidity) module as open source. The majority of this milestone's funding goes directly into LP pool seeding — the development is already done.
 ```
 
 **Deliverables & Success Metrics/KPIs:**
+
 ```
 Deliverables:
 - XOM/AVAX trading pair live on LFJ (Trader Joe) on C-Chain with seeded liquidity
@@ -309,11 +323,13 @@ Success Metrics:
 ```
 
 **Estimated Completion Date:**
+
 ```
 2026-05-31
 ```
 
 **Amount Requested:**
+
 ```
 50000
 ```
@@ -323,16 +339,19 @@ Success Metrics:
 ### MILESTONE 3 (Optional)
 
 **Milestone Name:**
+
 ```
 Wallet Extension, Mobile App & Liquidity Growth
 ```
 
 **Description:**
+
 ```
 Release the OmniBazaar Wallet browser extension (128-blockchain support, Ledger/Trezor) and mobile app beta (iOS/Android). Scale C-Chain liquidity and on-chain TVL through LiquidityOverflowPool reward distribution (~$890K/year organic yield from block reward overflow). Begin validator network expansion beyond the initial 5 nodes. Apply for CoinGecko and CoinMarketCap listings.
 ```
 
 **Deliverables & Success Metrics/KPIs:**
+
 ```
 Deliverables:
 - Wallet browser extension published (Chrome Web Store / Firefox Add-ons)
@@ -350,11 +369,13 @@ Success Metrics:
 ```
 
 **Estimated Completion Date:**
+
 ```
 2026-07-15
 ```
 
 **Amount Requested:**
+
 ```
 40000
 ```
@@ -364,16 +385,19 @@ Success Metrics:
 ### MILESTONE 4 (Optional)
 
 **Milestone Name:**
+
 ```
 Ecosystem Scale & Open-Source Infrastructure Release
 ```
 
 **Description:**
+
 ```
 Scale to meaningful Avalanche ecosystem metrics. Open-source remaining infrastructure components (bridge aggregator, RWAAMM, Proof of Participation system, LiquidityOverflowPool) for other Avalanche L1 builders. Expand validator network to 20+ nodes. Achieve sustained cross-chain commerce between L1 and C-Chain. Publish developer documentation and integration guides.
 ```
 
 **Deliverables & Success Metrics/KPIs:**
+
 ```
 Deliverables:
 - Open-source repositories published: bridge aggregator (6 protocols), RWAAMM + EmergencyGuardian, Proof of Participation scoring, LiquidityOverflowPool
@@ -391,11 +415,13 @@ Success Metrics:
 ```
 
 **Estimated Completion Date:**
+
 ```
 2026-09-30
 ```
 
 **Amount Requested:**
+
 ```
 30000
 ```
@@ -419,7 +445,9 @@ No
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 4: CONTRIBUTION TO AVALANCHE ECOSYSTEM
+
 ## ═══════════════════════════════════════════
 
 ### 19. Current Development Stage [DROPDOWN]
@@ -520,7 +548,9 @@ Partially (currently private; Milestone 4 includes full open-source release of k
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 5: APPLICANT INFORMATION
+
 ## ═══════════════════════════════════════════
 
 ### 30. Applicant First Name
@@ -604,7 +634,9 @@ OmniBazaar in 60 seconds: http://youtu.be/Emq7drTI_Qc | Investor deck: https://t
 ---
 
 ## ═══════════════════════════════════════════
+
 ## SECTION 6: TEAM DETAILS
+
 ## ═══════════════════════════════════════════
 
 ### 42. Team Size [DROPDOWN]
@@ -649,7 +681,9 @@ No
 ---
 
 ## ═══════════════════════════════════════════
+
 ## BUDGET SUMMARY
+
 ## ═══════════════════════════════════════════
 
 | Milestone | Amount | Cumulative | Timeline |
